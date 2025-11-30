@@ -1,0 +1,40 @@
+# Sistema de Gestión Integral de Caja de Ahorros
+# .gitignore
+
+# Archivos de configuración local
+config/config.local.php
+
+# Archivos subidos por usuarios
+uploads/*
+!uploads/.htaccess
+!uploads/README.md
+
+# Logs
+*.log
+logs/
+
+# Dependencias (si se usan en el futuro)
+vendor/
+node_modules/
+
+# Archivos del sistema operativo
+.DS_Store
+Thumbs.db
+.idea/
+*.swp
+*.swo
+*~
+
+# Archivos temporales
+tmp/
+temp/
+cache/
+
+# Backups de base de datos
+*.sql.bak
+*.sql.gz
+
+# Variables de entorno
+.env
+.env.local
+.env.*.local
