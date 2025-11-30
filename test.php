@@ -7,19 +7,26 @@
  * - Conexión a la base de datos
  * - URL base configurada correctamente
  * - Requisitos del sistema
+ * 
+ * NOTA: Eliminar o proteger este archivo en producción
  */
 
-// Configuración de errores para debugging
-error_reporting(E_ALL);
-ini_set('display_errors', 1);
-
-// Cargar configuración
+// Solo mostrar errores en desarrollo
 $configFile = __DIR__ . '/config/config.php';
 $configLoaded = false;
 
 if (file_exists($configFile)) {
     require_once $configFile;
     $configLoaded = true;
+}
+
+// Habilitar errores solo si DEBUG_MODE está activo
+if (defined('DEBUG_MODE') && DEBUG_MODE) {
+    error_reporting(E_ALL);
+    ini_set('display_errors', 1);
+} else {
+    error_reporting(0);
+    ini_set('display_errors', 0);
 }
 
 // Función para mostrar estado

@@ -33,6 +33,7 @@ CREATE TABLE IF NOT EXISTS usuarios (
     ultimo_acceso DATETIME,
     token_recuperacion VARCHAR(100),
     token_expiracion DATETIME,
+    requiere_cambio_password TINYINT(1) DEFAULT 1,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -396,10 +397,12 @@ INSERT INTO configuraciones (clave, valor, tipo, descripcion) VALUES
 ('tasa_mora', '0.02', 'number', 'Tasa de mora mensual');
 
 -- Usuario administrador por defecto (password: admin123)
-INSERT INTO usuarios (nombre, email, password, rol, activo) VALUES
-('Administrador Sistema', 'admin@cajadeahorros.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'administrador', 1),
-('Operador Caja', 'operador@cajadeahorros.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'operativo', 1),
-('Consulta General', 'consulta@cajadeahorros.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'consulta', 1);
+-- NOTA: Estos usuarios requieren cambio de contraseña en el primer inicio de sesión
+-- IMPORTANTE: Cambiar las contraseñas inmediatamente después de la instalación
+INSERT INTO usuarios (nombre, email, password, rol, activo, requiere_cambio_password) VALUES
+('Administrador Sistema', 'admin@cajadeahorros.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'administrador', 1, 1),
+('Operador Caja', 'operador@cajadeahorros.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'operativo', 1, 1),
+('Consulta General', 'consulta@cajadeahorros.com', '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi', 'consulta', 1, 1);
 
 -- Unidades de trabajo (dependencias del estado de Querétaro)
 INSERT INTO unidades_trabajo (nombre, clave, direccion, activo) VALUES

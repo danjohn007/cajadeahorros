@@ -38,6 +38,7 @@ class AuthController extends Controller {
                     $_SESSION['user_nombre'] = $user['nombre'];
                     $_SESSION['user_email'] = $user['email'];
                     $_SESSION['user_role'] = $user['rol'];
+                    $_SESSION['requiere_cambio_password'] = $user['requiere_cambio_password'] ?? 0;
                     
                     // Actualizar último acceso
                     $this->db->update('usuarios', 
@@ -48,6 +49,12 @@ class AuthController extends Controller {
                     
                     // Registrar en bitácora
                     $this->logAction('LOGIN', 'Inicio de sesión exitoso', 'usuarios', $user['id']);
+                    
+                    // Si requiere cambio de contraseña, redirigir al perfil
+                    if (!empty($user['requiere_cambio_password'])) {
+                        $this->setFlash('warning', 'Por seguridad, debes cambiar tu contraseña en el primer inicio de sesión.');
+                        $this->redirect('usuarios/perfil');
+                    }
                     
                     $this->redirect('dashboard');
                 } else {

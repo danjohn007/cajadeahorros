@@ -186,8 +186,12 @@ class UsuariosController extends Controller {
                     $errors[] = 'Las contraseñas no coinciden';
                 } else {
                     $this->db->update('usuarios', [
-                        'password' => password_hash($data['password_nueva'], PASSWORD_DEFAULT)
+                        'password' => password_hash($data['password_nueva'], PASSWORD_DEFAULT),
+                        'requiere_cambio_password' => 0
                     ], 'id = :id', ['id' => $id]);
+                    
+                    // Actualizar sesión
+                    $_SESSION['requiere_cambio_password'] = 0;
                     
                     $this->logAction('CAMBIAR_PASSWORD', 'Se cambió la contraseña', 'usuarios', $id);
                     $success = 'Contraseña actualizada exitosamente';

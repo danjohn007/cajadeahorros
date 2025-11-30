@@ -41,7 +41,26 @@ abstract class Controller {
     }
 
     protected function redirect($url) {
-        header('Location: ' . BASE_URL . '/' . ltrim($url, '/'));
+        // Validate URL to prevent open redirect vulnerability
+        // Only allow relative URLs starting with known paths
+        $url = ltrim($url, '/');
+        $allowedPrefixes = ['dashboard', 'socios', 'ahorro', 'creditos', 'nomina', 
+                           'cartera', 'reportes', 'configuraciones', 'usuarios', 
+                           'bitacora', 'auth', 'api'];
+        
+        $isAllowed = false;
+        foreach ($allowedPrefixes as $prefix) {
+            if ($url === '' || strpos($url, $prefix) === 0) {
+                $isAllowed = true;
+                break;
+            }
+        }
+        
+        if (!$isAllowed) {
+            $url = 'dashboard'; // Default safe redirect
+        }
+        
+        header('Location: ' . BASE_URL . '/' . $url);
         exit;
     }
 
