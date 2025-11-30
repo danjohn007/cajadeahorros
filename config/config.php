@@ -56,3 +56,6 @@ if (session_status() === PHP_SESSION_NONE) {
     session_name(SESSION_NAME);
     session_start();
 }
+
+// Cargar helpers globales
+require_once CORE_PATH . '/helpers.php';
