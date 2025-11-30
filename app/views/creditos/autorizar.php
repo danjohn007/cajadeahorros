@@ -22,7 +22,7 @@
     <!-- Form -->
     <div class="lg:col-span-2">
         <form method="POST" action="<?= BASE_URL ?>/creditos/autorizar/<?= $credito['id'] ?>" class="bg-white rounded-xl shadow-sm">
-            <input type="hidden" name="csrf_token" value="<?= $this->csrf_token() ?>">
+            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
             
             <!-- Resumen Solicitud -->
             <div class="p-6 border-b border-gray-200">

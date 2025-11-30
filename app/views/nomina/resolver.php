@@ -53,7 +53,7 @@
     <!-- Selección de Socio -->
     <div class="lg:col-span-2">
         <form method="POST" action="<?= BASE_URL ?>/nomina/resolver/<?= $registro['id'] ?>" class="bg-white rounded-xl shadow-sm">
-            <input type="hidden" name="csrf_token" value="<?= $this->csrf_token() ?>">
+            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
             
             <div class="p-6 border-b border-gray-200">
                 <h3 class="font-semibold text-gray-800 mb-4">
