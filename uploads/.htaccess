@@ -1,0 +1,11 @@
+# Deny access to all files
+<FilesMatch ".*">
+    Order Allow,Deny
+    Deny from all
+</FilesMatch>
+
+# Allow specific file types
+<FilesMatch "\.(jpg|jpeg|png|gif|pdf|doc|docx|xls|xlsx|csv)$">
+    Order Deny,Allow
+    Allow from all
+</FilesMatch>

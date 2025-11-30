@@ -45,4 +45,107 @@ class ApiController extends Controller {
         
         $this->json($stats);
     }
+    
+    public function qr() {
+        // API para generar códigos QR
+        header('Content-Type: application/json');
+        
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            http_response_code(405);
+            echo json_encode(['error' => 'Método no permitido']);
+            exit;
+        }
+        
+        $input = json_decode(file_get_contents('php://input'), true);
+        
+        $contenido = $input['contenido'] ?? '';
+        $tamano = min(max((int)($input['tamano'] ?? 200), 50), 500);
+        
+        if (empty($contenido)) {
+            http_response_code(400);
+            echo json_encode(['error' => 'El contenido es requerido']);
+            exit;
+        }
+        
+        // Generar URL del QR usando servicio externo
+        $qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=' . $tamano . 'x' . $tamano . '&data=' . urlencode($contenido);
+        
+        echo json_encode([
+            'success' => true,
+            'qr_url' => $qrUrl,
+            'contenido' => $contenido,
+            'tamano' => $tamano
+        ]);
+        exit;
+    }
+    
+    public function generarQRMasivo() {
+        $this->requireAuth();
+        $this->requireRole(['administrador', 'operativo']);
+        
+        header('Content-Type: application/json');
+        
+        $tipo = $_POST['tipo'] ?? 'socios';
+        $qrs = [];
+        
+        switch ($tipo) {
+            case 'socios':
+                $registros = $this->db->fetchAll(
+                    "SELECT id, numero_socio, nombre, apellido_paterno FROM socios WHERE estatus = 'activo' LIMIT 100"
+                );
+                foreach ($registros as $r) {
+                    $data = "SOCIO|{$r['numero_socio']}|{$r['nombre']} {$r['apellido_paterno']}";
+                    $qrs[] = [
+                        'id' => $r['id'],
+                        'label' => $r['numero_socio'],
+                        'url' => 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($data)
+                    ];
+                }
+                break;
+                
+            case 'creditos':
+                $registros = $this->db->fetchAll(
+                    "SELECT c.id, c.numero_credito, s.nombre, s.apellido_paterno 
+                     FROM creditos c 
+                     JOIN socios s ON c.socio_id = s.id 
+                     WHERE c.estatus IN ('activo', 'formalizado') 
+                     LIMIT 100"
+                );
+                foreach ($registros as $r) {
+                    $data = "CREDITO|{$r['numero_credito']}|{$r['nombre']} {$r['apellido_paterno']}";
+                    $qrs[] = [
+                        'id' => $r['id'],
+                        'label' => $r['numero_credito'],
+                        'url' => 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($data)
+                    ];
+                }
+                break;
+                
+            case 'cuentas':
+                $registros = $this->db->fetchAll(
+                    "SELECT ca.id, ca.numero_cuenta, s.nombre, s.apellido_paterno 
+                     FROM cuentas_ahorro ca 
+                     JOIN socios s ON ca.socio_id = s.id 
+                     WHERE ca.estatus = 'activa' 
+                     LIMIT 100"
+                );
+                foreach ($registros as $r) {
+                    $data = "CUENTA|{$r['numero_cuenta']}|{$r['nombre']} {$r['apellido_paterno']}";
+                    $qrs[] = [
+                        'id' => $r['id'],
+                        'label' => $r['numero_cuenta'],
+                        'url' => 'https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=' . urlencode($data)
+                    ];
+                }
+                break;
+        }
+        
+        echo json_encode([
+            'success' => true,
+            'tipo' => $tipo,
+            'total' => count($qrs),
+            'qrs' => $qrs
+        ]);
+        exit;
+    }
 }

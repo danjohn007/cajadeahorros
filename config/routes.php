@@ -85,3 +85,5 @@ $router->add('bitacora', ['controller' => 'bitacora', 'action' => 'index']);
 // API endpoints
 $router->add('api/socios/buscar', ['controller' => 'api', 'action' => 'buscarSocios']);
 $router->add('api/dashboard/stats', ['controller' => 'api', 'action' => 'dashboardStats']);
+$router->add('api/qr', ['controller' => 'api', 'action' => 'qr']);
+$router->add('api/qr/masivo', ['controller' => 'api', 'action' => 'generarQRMasivo']);
