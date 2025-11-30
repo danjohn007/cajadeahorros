@@ -11,7 +11,7 @@
         <?php if ($archivo['estatus'] !== 'aplicado'): ?>
         <div class="mt-4 md:mt-0 flex space-x-2">
             <form method="POST" action="<?= BASE_URL ?>/nomina/procesar/<?= $archivo['id'] ?>" class="inline">
-                <input type="hidden" name="csrf_token" value="<?= $this->csrf_token() ?>">
+                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                 <button type="submit" class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
                     <i class="fas fa-sync mr-2"></i> Ejecutar Matching
                 </button>
@@ -19,7 +19,7 @@
             <?php if ($stats['coincidencia'] > 0 && $_SESSION['user_role'] === 'administrador'): ?>
             <form method="POST" action="<?= BASE_URL ?>/nomina/aplicar/<?= $archivo['id'] ?>" 
                   onsubmit="return confirm('¿Está seguro de aplicar estos movimientos?')">
-                <input type="hidden" name="csrf_token" value="<?= $this->csrf_token() ?>">
+                <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                 <button type="submit" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
                     <i class="fas fa-check mr-2"></i> Aplicar Nómina
                 </button>

@@ -26,7 +26,7 @@
 <!-- Form -->
 <form method="POST" action="<?= BASE_URL ?>/socios/<?= $action === 'crear' ? 'crear' : 'editar/' . ($socio['id'] ?? '') ?>" 
       class="bg-white rounded-xl shadow-sm">
-    <input type="hidden" name="csrf_token" value="<?= $this->csrf_token() ?>">
+    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
     
     <!-- Datos Personales -->
     <div class="p-6 border-b border-gray-200">
