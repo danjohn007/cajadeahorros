@@ -128,8 +128,45 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                     <span class="ml-3" x-show="sidebarOpen">Reportes</span>
                 </a>
                 
+                <!-- Nuevos Módulos -->
+                <a href="<?= BASE_URL ?>/financiero" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'financiero') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-coins w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Módulo Financiero</span>
+                </a>
+                
+                <a href="<?= BASE_URL ?>/membresias" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'membresias') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-id-card w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Membresías</span>
+                </a>
+                
+                <a href="<?= BASE_URL ?>/crm" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'crm') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-chart-line w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Informe CRM</span>
+                </a>
+                
                 <?php if ($_SESSION['user_role'] === 'administrador'): ?>
                 <div class="border-t border-primary-700 mt-4 pt-4">
+                    <a href="<?= BASE_URL ?>/importar" 
+                       class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'importar') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-file-import w-6"></i>
+                        <span class="ml-3" x-show="sidebarOpen">Importar Clientes</span>
+                    </a>
+                    
+                    <a href="<?= BASE_URL ?>/dispositivos" 
+                       class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'dispositivos') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-microchip w-6"></i>
+                        <span class="ml-3" x-show="sidebarOpen">Dispositivos IoT</span>
+                    </a>
+                    
+                    <a href="<?= BASE_URL ?>/auditoria" 
+                       class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'auditoria') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-shield-alt w-6"></i>
+                        <span class="ml-3" x-show="sidebarOpen">Auditoría</span>
+                    </a>
+                    
                     <a href="<?= BASE_URL ?>/usuarios" 
                        class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'usuarios') !== false ? 'active' : '' ?>">
                         <i class="fas fa-user-cog w-6"></i>

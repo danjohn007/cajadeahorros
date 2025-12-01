@@ -82,6 +82,54 @@ $router->add('usuarios/perfil', ['controller' => 'usuarios', 'action' => 'perfil
 // Bitácora
 $router->add('bitacora', ['controller' => 'bitacora', 'action' => 'index']);
 
+// Membresías
+$router->add('membresias', ['controller' => 'membresias', 'action' => 'index']);
+$router->add('membresias/crear', ['controller' => 'membresias', 'action' => 'crear']);
+$router->add('membresias/editar/{id}', ['controller' => 'membresias', 'action' => 'editar']);
+$router->add('membresias/ver/{id}', ['controller' => 'membresias', 'action' => 'ver']);
+$router->add('membresias/renovar/{id}', ['controller' => 'membresias', 'action' => 'renovar']);
+$router->add('membresias/tipos', ['controller' => 'membresias', 'action' => 'tipos']);
+
+// Módulo Financiero
+$router->add('financiero', ['controller' => 'financiero', 'action' => 'index']);
+$router->add('financiero/transaccion', ['controller' => 'financiero', 'action' => 'transaccion']);
+$router->add('financiero/transaccion/{id}', ['controller' => 'financiero', 'action' => 'transaccion']);
+$router->add('financiero/categorias', ['controller' => 'financiero', 'action' => 'categorias']);
+$router->add('financiero/reportes', ['controller' => 'financiero', 'action' => 'reportes']);
+$router->add('financiero/presupuestos', ['controller' => 'financiero', 'action' => 'presupuestos']);
+
+// Importar Clientes
+$router->add('importar', ['controller' => 'importar', 'action' => 'index']);
+$router->add('importar/clientes', ['controller' => 'importar', 'action' => 'clientes']);
+$router->add('importar/procesar/{id}', ['controller' => 'importar', 'action' => 'procesar']);
+$router->add('importar/historial', ['controller' => 'importar', 'action' => 'historial']);
+$router->add('importar/detalle/{id}', ['controller' => 'importar', 'action' => 'detalle']);
+
+// Auditoría (Logs extendidos)
+$router->add('auditoria', ['controller' => 'auditoria', 'action' => 'index']);
+$router->add('auditoria/logs', ['controller' => 'auditoria', 'action' => 'logs']);
+$router->add('auditoria/sesiones', ['controller' => 'auditoria', 'action' => 'sesiones']);
+$router->add('auditoria/cambios', ['controller' => 'auditoria', 'action' => 'cambios']);
+
+// Informe CRM
+$router->add('crm', ['controller' => 'crm', 'action' => 'index']);
+$router->add('crm/segmentos', ['controller' => 'crm', 'action' => 'segmentos']);
+$router->add('crm/metricas', ['controller' => 'crm', 'action' => 'metricas']);
+$router->add('crm/interacciones', ['controller' => 'crm', 'action' => 'interacciones']);
+$router->add('crm/interaccion/{id}', ['controller' => 'crm', 'action' => 'interaccion']);
+
+// Dispositivos IoT (Shelly Cloud y HikVision)
+$router->add('dispositivos', ['controller' => 'dispositivos', 'action' => 'index']);
+$router->add('dispositivos/crear', ['controller' => 'dispositivos', 'action' => 'crear']);
+$router->add('dispositivos/editar/{id}', ['controller' => 'dispositivos', 'action' => 'editar']);
+$router->add('dispositivos/ver/{id}', ['controller' => 'dispositivos', 'action' => 'ver']);
+$router->add('dispositivos/shelly', ['controller' => 'dispositivos', 'action' => 'shelly']);
+$router->add('dispositivos/shelly/{id}', ['controller' => 'dispositivos', 'action' => 'shellyConfig']);
+$router->add('dispositivos/hikvision', ['controller' => 'dispositivos', 'action' => 'hikvision']);
+$router->add('dispositivos/hikvision/{id}', ['controller' => 'dispositivos', 'action' => 'hikvisionConfig']);
+$router->add('dispositivos/eventos', ['controller' => 'dispositivos', 'action' => 'eventos']);
+$router->add('dispositivos/programacion', ['controller' => 'dispositivos', 'action' => 'programacion']);
+
 // API endpoints
 $router->add('api/socios/buscar', ['controller' => 'api', 'action' => 'buscarSocios']);
 $router->add('api/dashboard/stats', ['controller' => 'api', 'action' => 'dashboardStats']);
