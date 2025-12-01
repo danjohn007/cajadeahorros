@@ -15,18 +15,6 @@
     </a>
 </div>
 
-<?php if ($flash = getFlash('success')): ?>
-    <div class="bg-green-100 border-l-4 border-green-500 text-green-700 p-4 mb-6" role="alert">
-        <p><?= htmlspecialchars($flash) ?></p>
-    </div>
-<?php endif; ?>
-
-<?php if ($flash = getFlash('error')): ?>
-    <div class="bg-red-100 border-l-4 border-red-500 text-red-700 p-4 mb-6" role="alert">
-        <p><?= htmlspecialchars($flash) ?></p>
-    </div>
-<?php endif; ?>
-
 <div class="bg-white rounded-lg shadow-md overflow-hidden">
     <div class="overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">

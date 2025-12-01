@@ -77,30 +77,31 @@
                 <?php foreach ($vencida as $item): ?>
                 <tr class="hover:bg-gray-50">
                     <td class="px-4 py-3">
-                        <a href="<?= BASE_URL ?>/creditos/ver/<?= $item['credito_id'] ?>" class="text-blue-600 hover:text-blue-800">
-                            <?= htmlspecialchars($item['numero_credito']) ?>
+                        <a href="<?= BASE_URL ?>/creditos/ver/<?= $item['credito_id'] ?? '' ?>" class="text-blue-600 hover:text-blue-800">
+                            <?= htmlspecialchars($item['numero_credito'] ?? '') ?>
                         </a>
-                        <p class="text-xs text-gray-500"><?= htmlspecialchars($item['tipo_credito']) ?></p>
+                        <p class="text-xs text-gray-500"><?= htmlspecialchars($item['tipo_credito'] ?? '') ?></p>
                     </td>
                     <td class="px-4 py-3">
-                        <p class="font-medium"><?= htmlspecialchars($item['nombre_socio']) ?></p>
-                        <p class="text-xs text-gray-500"><?= htmlspecialchars($item['numero_socio']) ?></p>
+                        <p class="font-medium"><?= htmlspecialchars($item['nombre_socio'] ?? 'Sin nombre') ?></p>
+                        <p class="text-xs text-gray-500"><?= htmlspecialchars($item['numero_socio'] ?? '') ?></p>
                     </td>
                     <td class="px-4 py-3 text-sm">
-                        <?php if ($item['telefono']): ?><p><i class="fas fa-phone text-gray-400 mr-1"></i><?= htmlspecialchars($item['telefono']) ?></p><?php endif; ?>
-                        <?php if ($item['celular']): ?><p><i class="fas fa-mobile text-gray-400 mr-1"></i><?= htmlspecialchars($item['celular']) ?></p><?php endif; ?>
+                        <?php if (!empty($item['telefono'])): ?><p><i class="fas fa-phone text-gray-400 mr-1"></i><?= htmlspecialchars($item['telefono']) ?></p><?php endif; ?>
+                        <?php if (!empty($item['celular'])): ?><p><i class="fas fa-mobile text-gray-400 mr-1"></i><?= htmlspecialchars($item['celular']) ?></p><?php endif; ?>
                     </td>
-                    <td class="px-4 py-3 text-center"><?= $item['numero_pago'] ?></td>
+                    <td class="px-4 py-3 text-center"><?= $item['numero_pago'] ?? 0 ?></td>
                     <td class="px-4 py-3 text-sm text-red-600">
-                        <?= date('d/m/Y', strtotime($item['fecha_vencimiento'])) ?>
+                        <?= !empty($item['fecha_vencimiento']) ? date('d/m/Y', strtotime($item['fecha_vencimiento'])) : '-' ?>
                     </td>
-                    <td class="px-4 py-3 text-right font-medium">$<?= number_format($item['monto_vencido'], 2) ?></td>
+                    <td class="px-4 py-3 text-right font-medium">$<?= number_format($item['monto_vencido'] ?? 0, 2) ?></td>
                     <td class="px-4 py-3 text-center">
+                        <?php $diasVencido = $item['dias_vencido'] ?? 0; ?>
                         <span class="px-2 py-1 text-xs font-medium rounded-full 
-                            <?= $item['dias_vencido'] > 90 ? 'bg-red-200 text-red-800' : 
-                                ($item['dias_vencido'] > 60 ? 'bg-red-100 text-red-700' : 
-                                ($item['dias_vencido'] > 30 ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700')) ?>">
-                            <?= $item['dias_vencido'] ?> días
+                            <?= $diasVencido > 90 ? 'bg-red-200 text-red-800' : 
+                                ($diasVencido > 60 ? 'bg-red-100 text-red-700' : 
+                                ($diasVencido > 30 ? 'bg-orange-100 text-orange-700' : 'bg-yellow-100 text-yellow-700')) ?>">
+                            <?= $diasVencido ?> días
                         </span>
                     </td>
                 </tr>
