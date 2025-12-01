@@ -274,9 +274,18 @@ class ImportarController extends Controller {
         }
         
         try {
-            // Generar número de socio
-            $ultimoSocio = $this->db->fetch("SELECT numero_socio FROM socios ORDER BY id DESC LIMIT 1");
-            $nuevoNumero = 'SOC-' . str_pad(($ultimoSocio ? (int)substr($ultimoSocio['numero_socio'], 4) + 1 : 1), 4, '0', STR_PAD_LEFT);
+            // Use a transaction and locking to prevent race conditions
+            // Generate number from database to ensure uniqueness
+            $this->db->beginTransaction();
+            
+            // Lock and get the maximum socio number atomically
+            $ultimoSocio = $this->db->fetch(
+                "SELECT MAX(CAST(SUBSTRING(numero_socio, 5) AS UNSIGNED)) as max_num 
+                 FROM socios 
+                 WHERE numero_socio LIKE 'SOC-%' 
+                 FOR UPDATE"
+            );
+            $nuevoNumero = 'SOC-' . str_pad(($ultimoSocio['max_num'] ?? 0) + 1, 4, '0', STR_PAD_LEFT);
             
             // Insertar socio
             $this->db->insert('socios', [
@@ -314,9 +323,11 @@ class ImportarController extends Controller {
                 'entidad_id' => $socioId
             ]);
             
+            $this->db->commit();
             return true;
             
         } catch (Exception $e) {
+            $this->db->rollBack();
             $this->db->insert('importaciones_detalle', [
                 'importacion_id' => $importacionId,
                 'fila' => $fila,

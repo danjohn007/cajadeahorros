@@ -129,23 +129,35 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <?php 
                             $dias = $m['dias_restantes'];
-                            $color = $dias > 7 ? 'green' : ($dias > 0 ? 'yellow' : 'red');
+                            if ($dias > 7) {
+                                $diasClass = 'bg-green-100 text-green-800';
+                            } elseif ($dias > 0) {
+                                $diasClass = 'bg-yellow-100 text-yellow-800';
+                            } else {
+                                $diasClass = 'bg-red-100 text-red-800';
+                            }
                             ?>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<?= $color ?>-100 text-<?= $color ?>-800">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $diasClass ?>">
                                 <?= $dias > 0 ? $dias . ' días' : 'Vencida' ?>
                             </span>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap">
                             <?php
-                            $estadoColores = [
-                                'activa' => 'green',
-                                'vencida' => 'red',
-                                'pendiente' => 'yellow',
-                                'cancelada' => 'gray'
-                            ];
-                            $color = $estadoColores[$m['estatus']] ?? 'gray';
+                            switch ($m['estatus']) {
+                                case 'activa':
+                                    $estatusClass = 'bg-green-100 text-green-800';
+                                    break;
+                                case 'vencida':
+                                    $estatusClass = 'bg-red-100 text-red-800';
+                                    break;
+                                case 'pendiente':
+                                    $estatusClass = 'bg-yellow-100 text-yellow-800';
+                                    break;
+                                default:
+                                    $estatusClass = 'bg-gray-100 text-gray-800';
+                            }
                             ?>
-                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-<?= $color ?>-100 text-<?= $color ?>-800">
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full <?= $estatusClass ?>">
                                 <?= ucfirst($m['estatus']) ?>
                             </span>
                         </td>

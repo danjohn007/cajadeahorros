@@ -344,7 +344,12 @@ class DispositivosController extends Controller {
             
             // Solo actualizar password si se proporcionó uno nuevo
             if (!empty($password)) {
-                $data['password_encrypted'] = base64_encode($password); // En producción usar mejor encriptación
+                // Use proper encryption for storing the password
+                // In production, consider using PHP's openssl_encrypt with a secure key
+                $key = DB_PASS; // Use database password as encryption key
+                $iv = openssl_random_pseudo_bytes(16);
+                $encrypted = openssl_encrypt($password, 'AES-256-CBC', $key, 0, $iv);
+                $data['password_encrypted'] = base64_encode($iv . $encrypted);
             }
             
             $this->db->update('hikvision_config', $data, 'dispositivo_id = :id', ['id' => $id]);

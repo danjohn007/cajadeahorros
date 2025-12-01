@@ -88,4 +88,8 @@ class Database {
     public function rollBack() {
         return $this->connection->rollBack();
     }
+
+    public function execute($sql, $params = []) {
+        return $this->query($sql, $params);
+    }
 }
