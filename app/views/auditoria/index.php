@@ -116,11 +116,66 @@
     </div>
 </div>
 
-<!-- Últimas acciones -->
+<!-- Filtros de búsqueda -->
+<div class="bg-white rounded-lg shadow-md p-6 mt-6">
+    <h2 class="text-lg font-semibold text-gray-800 mb-4">
+        <i class="fas fa-filter mr-2"></i>Filtros de Búsqueda
+    </h2>
+    <form method="GET" action="<?= url('auditoria') ?>" class="grid grid-cols-1 md:grid-cols-6 gap-4">
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Buscar</label>
+            <input type="text" name="buscar" value="<?= htmlspecialchars($buscar ?? '') ?>" 
+                   placeholder="Descripción o acción..."
+                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Inicio</label>
+            <input type="date" name="fecha_inicio" value="<?= htmlspecialchars($fechaInicio ?? '') ?>" 
+                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha Fin</label>
+            <input type="date" name="fecha_fin" value="<?= htmlspecialchars($fechaFin ?? '') ?>" 
+                   class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Usuario</label>
+            <select name="usuario" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+                <option value="">Todos</option>
+                <?php foreach ($usuarios ?? [] as $u): ?>
+                    <option value="<?= $u['id'] ?>" <?= ($usuarioFilter ?? '') == $u['id'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($u['nombre']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Acción</label>
+            <select name="accion" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-3 py-2 border">
+                <option value="">Todas</option>
+                <?php foreach ($acciones ?? [] as $a): ?>
+                    <option value="<?= htmlspecialchars($a['accion']) ?>" <?= ($accionFilter ?? '') == $a['accion'] ? 'selected' : '' ?>>
+                        <?= htmlspecialchars($a['accion']) ?>
+                    </option>
+                <?php endforeach; ?>
+            </select>
+        </div>
+        <div class="flex items-end space-x-2">
+            <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors">
+                <i class="fas fa-search mr-1"></i>Filtrar
+            </button>
+            <a href="<?= url('auditoria') ?>" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+                <i class="fas fa-times"></i>
+            </a>
+        </div>
+    </form>
+</div>
+
+<!-- Últimas acciones con paginación -->
 <div class="bg-white rounded-lg shadow-md mt-6 overflow-hidden">
     <div class="px-6 py-4 border-b flex justify-between items-center">
-        <h2 class="text-lg font-semibold text-gray-800">Últimas Acciones</h2>
-        <a href="<?= url('bitacora') ?>" class="text-blue-600 hover:text-blue-800 text-sm">Ver todas</a>
+        <h2 class="text-lg font-semibold text-gray-800">Registro de Acciones</h2>
+        <span class="text-sm text-gray-600">Total: <?= number_format($total ?? 0) ?> registros</span>
     </div>
     <table class="min-w-full divide-y divide-gray-200">
         <thead class="bg-gray-50">
@@ -133,27 +188,70 @@
             </tr>
         </thead>
         <tbody class="bg-white divide-y divide-gray-200">
-            <?php foreach ($ultimasAcciones as $accion): ?>
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <?= date('d/m/Y H:i', strtotime($accion['fecha'])) ?>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                        <?= htmlspecialchars($accion['usuario_nombre'] ?? 'Sistema') ?>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
-                            <?= htmlspecialchars($accion['accion']) ?>
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
-                        <?= htmlspecialchars($accion['descripcion']) ?>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                        <?= htmlspecialchars($accion['ip']) ?>
+            <?php if (empty($ultimasAcciones)): ?>
+                <tr>
+                    <td colspan="5" class="px-6 py-8 text-center text-gray-500">
+                        No hay registros que coincidan con los filtros
                     </td>
                 </tr>
-            <?php endforeach; ?>
+            <?php else: ?>
+                <?php foreach ($ultimasAcciones as $accion): ?>
+                    <tr class="hover:bg-gray-50">
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <?= date('d/m/Y H:i', strtotime($accion['fecha'])) ?>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                            <?= htmlspecialchars($accion['usuario_nombre'] ?? 'Sistema') ?>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap">
+                            <span class="px-2 py-1 text-xs rounded-full bg-blue-100 text-blue-800">
+                                <?= htmlspecialchars($accion['accion']) ?>
+                            </span>
+                        </td>
+                        <td class="px-6 py-4 text-sm text-gray-600 max-w-xs truncate">
+                            <?= htmlspecialchars($accion['descripcion']) ?>
+                        </td>
+                        <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                            <?= htmlspecialchars($accion['ip']) ?>
+                        </td>
+                    </tr>
+                <?php endforeach; ?>
+            <?php endif; ?>
         </tbody>
     </table>
+    
+    <!-- Paginación -->
+    <?php if (($totalPages ?? 0) > 1): ?>
+        <div class="px-6 py-4 bg-gray-50 border-t flex items-center justify-between">
+            <div class="text-sm text-gray-700">
+                Página <?= $page ?> de <?= $totalPages ?> (<?= number_format($total) ?> registros)
+            </div>
+            <div class="flex space-x-2">
+                <?php if ($page > 1): ?>
+                    <a href="<?= url('auditoria') ?>?page=<?= $page - 1 ?>&fecha_inicio=<?= urlencode($fechaInicio) ?>&fecha_fin=<?= urlencode($fechaFin) ?>&usuario=<?= urlencode($usuarioFilter ?? '') ?>&accion=<?= urlencode($accionFilter ?? '') ?>&buscar=<?= urlencode($buscar ?? '') ?>" 
+                       class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 text-sm">
+                        <i class="fas fa-chevron-left"></i> Anterior
+                    </a>
+                <?php endif; ?>
+                
+                <?php 
+                $startPage = max(1, $page - 2);
+                $endPage = min($totalPages, $page + 2);
+                for ($i = $startPage; $i <= $endPage; $i++): 
+                ?>
+                    <a href="<?= url('auditoria') ?>?page=<?= $i ?>&fecha_inicio=<?= urlencode($fechaInicio) ?>&fecha_fin=<?= urlencode($fechaFin) ?>&usuario=<?= urlencode($usuarioFilter ?? '') ?>&accion=<?= urlencode($accionFilter ?? '') ?>&buscar=<?= urlencode($buscar ?? '') ?>" 
+                       class="px-3 py-1 rounded border <?= $i === $page ? 'bg-blue-600 text-white border-blue-600' : 'border-gray-300 hover:bg-gray-100' ?> text-sm">
+                        <?= $i ?>
+                    </a>
+                <?php endfor; ?>
+                
+                <?php if ($page < $totalPages): ?>
+                    <a href="<?= url('auditoria') ?>?page=<?= $page + 1 ?>&fecha_inicio=<?= urlencode($fechaInicio) ?>&fecha_fin=<?= urlencode($fechaFin) ?>&usuario=<?= urlencode($usuarioFilter ?? '') ?>&accion=<?= urlencode($accionFilter ?? '') ?>&buscar=<?= urlencode($buscar ?? '') ?>" 
+                       class="px-3 py-1 rounded border border-gray-300 hover:bg-gray-100 text-sm">
+                        Siguiente <i class="fas fa-chevron-right"></i>
+                    </a>
+                <?php endif; ?>
+            </div>
+        </div>
+    <?php endif; ?>
 </div>

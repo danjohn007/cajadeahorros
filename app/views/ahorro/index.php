@@ -121,6 +121,10 @@
                                class="p-2 text-gray-600 hover:bg-gray-50 rounded-lg" title="Historial">
                                 <i class="fas fa-history"></i>
                             </a>
+                            <a href="<?= BASE_URL ?>/ahorro/cardex/<?= $cuenta['id'] ?>" 
+                               class="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Imprimir Cardex del Socio">
+                                <i class="fas fa-print"></i>
+                            </a>
                         </div>
                     </td>
                 </tr>

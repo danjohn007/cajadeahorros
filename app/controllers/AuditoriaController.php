@@ -11,6 +11,14 @@ class AuditoriaController extends Controller {
     public function index() {
         $this->requireRole(['administrador']);
         
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $perPage = 20;
+        $fechaInicio = $_GET['fecha_inicio'] ?? '';
+        $fechaFin = $_GET['fecha_fin'] ?? '';
+        $usuario = $_GET['usuario'] ?? '';
+        $accion = $_GET['accion'] ?? '';
+        $buscar = $_GET['buscar'] ?? '';
+        
         // Estadísticas generales
         $stats = [
             'acciones_hoy' => $this->db->fetch(
@@ -27,13 +35,50 @@ class AuditoriaController extends Controller {
             )['total'] ?? 0
         ];
         
-        // Últimas acciones
+        // Build conditions for filtered query
+        $conditions = '1=1';
+        $params = [];
+        
+        if ($fechaInicio) {
+            $conditions .= ' AND DATE(b.fecha) >= :fecha_inicio';
+            $params['fecha_inicio'] = $fechaInicio;
+        }
+        if ($fechaFin) {
+            $conditions .= ' AND DATE(b.fecha) <= :fecha_fin';
+            $params['fecha_fin'] = $fechaFin;
+        }
+        if ($usuario) {
+            $conditions .= ' AND b.usuario_id = :usuario';
+            $params['usuario'] = $usuario;
+        }
+        if ($accion) {
+            $conditions .= ' AND b.accion = :accion';
+            $params['accion'] = $accion;
+        }
+        if ($buscar) {
+            $conditions .= ' AND (b.descripcion LIKE :buscar OR b.accion LIKE :buscar2)';
+            $params['buscar'] = "%{$buscar}%";
+            $params['buscar2'] = "%{$buscar}%";
+        }
+        
+        // Total count for pagination
+        $total = $this->db->fetch(
+            "SELECT COUNT(*) as total FROM bitacora b WHERE {$conditions}",
+            $params
+        )['total'];
+        
+        $totalPages = ceil($total / $perPage);
+        $offset = ($page - 1) * $perPage;
+        
+        // Últimas acciones con filtros y paginación
         $ultimasAcciones = $this->db->fetchAll(
             "SELECT b.*, u.nombre as usuario_nombre
              FROM bitacora b
              LEFT JOIN usuarios u ON b.usuario_id = u.id
+             WHERE {$conditions}
              ORDER BY b.fecha DESC
-             LIMIT 10"
+             LIMIT {$perPage} OFFSET {$offset}",
+            $params
         );
         
         // Acciones por tipo
@@ -46,11 +91,25 @@ class AuditoriaController extends Controller {
              LIMIT 10"
         );
         
+        // Get users and actions for filters
+        $usuarios = $this->db->fetchAll("SELECT id, nombre FROM usuarios ORDER BY nombre");
+        $acciones = $this->db->fetchAll("SELECT DISTINCT accion FROM bitacora ORDER BY accion");
+        
         $this->view('auditoria/index', [
             'pageTitle' => 'Auditoría del Sistema',
             'stats' => $stats,
             'ultimasAcciones' => $ultimasAcciones,
-            'accionesPorTipo' => $accionesPorTipo
+            'accionesPorTipo' => $accionesPorTipo,
+            'usuarios' => $usuarios,
+            'acciones' => $acciones,
+            'total' => $total,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'fechaInicio' => $fechaInicio,
+            'fechaFin' => $fechaFin,
+            'usuarioFilter' => $usuario,
+            'accionFilter' => $accion,
+            'buscar' => $buscar
         ]);
     }
     
