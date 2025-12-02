@@ -38,7 +38,7 @@ class ConfiguracionesController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             
-            $campos = ['nombre_sitio', 'telefono_contacto', 'horario_atencion', 'email_contacto', 'cuota_mantenimiento', 'texto_copyright'];
+            $campos = ['nombre_sitio', 'telefono_contacto', 'horario_atencion', 'email_contacto', 'texto_copyright'];
             
             foreach ($campos as $campo) {
                 if (isset($_POST[$campo])) {
@@ -85,7 +85,7 @@ class ConfiguracionesController extends Controller {
             }
         }
         
-        $config = $this->getConfiguraciones(['nombre_sitio', 'logo', 'telefono_contacto', 'horario_atencion', 'email_contacto', 'cuota_mantenimiento', 'texto_copyright']);
+        $config = $this->getConfiguraciones(['nombre_sitio', 'logo', 'telefono_contacto', 'horario_atencion', 'email_contacto', 'texto_copyright']);
         
         $this->view('configuraciones/general', [
             'pageTitle' => 'Configuración General',

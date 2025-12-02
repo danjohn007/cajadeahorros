@@ -42,13 +42,11 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
     <div class="max-w-md w-full mx-4">
         <!-- Logo -->
         <div class="text-center mb-8">
-            <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
-                <?php if ($logoUrl): ?>
-                    <img src="<?= htmlspecialchars($logoUrl) ?>" alt="<?= htmlspecialchars($siteName) ?>" class="h-12 w-auto">
-                <?php else: ?>
-                    <i class="fas fa-piggy-bank text-4xl" style="color: <?= htmlspecialchars($colorSecundario) ?>"></i>
-                <?php endif; ?>
-            </div>
+            <?php if ($logoUrl): ?>
+                <img src="<?= htmlspecialchars($logoUrl) ?>" alt="<?= htmlspecialchars($siteName) ?>" class="h-20 w-auto mx-auto mb-4">
+            <?php else: ?>
+                <i class="fas fa-piggy-bank text-6xl text-white mb-4" style="text-shadow: 2px 2px 4px rgba(0,0,0,0.3);"></i>
+            <?php endif; ?>
             <h1 class="text-3xl font-bold text-white"><?= htmlspecialchars($siteName) ?></h1>
             <p class="text-blue-200 mt-2">Sistema de Gestión Integral</p>
         </div>
