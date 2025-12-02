@@ -1,9 +1,19 @@
+<?php
+// Get system configuration for colors and branding
+$systemColors = getSystemColors();
+$siteName = getSiteName();
+$logoUrl = getLogo();
+$colorPrimario = $systemColors['color_primario'];
+$colorSecundario = $systemColors['color_secundario'];
+$colorAcento = $systemColors['color_acento'];
+$textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAME . '. Todos los derechos reservados.');
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><?= $pageTitle ?? APP_NAME ?></title>
+    <title><?= $pageTitle ?? $siteName ?></title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,17 +23,18 @@
                 extend: {
                     colors: {
                         primary: {
-                            50: '#eff6ff',
-                            100: '#dbeafe',
-                            200: '#bfdbfe',
-                            300: '#93c5fd',
-                            400: '#60a5fa',
-                            500: '#3b82f6',
-                            600: '#2563eb',
-                            700: '#1d4ed8',
-                            800: '#1e40af',
-                            900: '#1e3a8a',
-                        }
+                            50: '<?= adjustColor($colorPrimario, 0.95) ?>',
+                            100: '<?= adjustColor($colorPrimario, 0.9) ?>',
+                            200: '<?= adjustColor($colorPrimario, 0.8) ?>',
+                            300: '<?= adjustColor($colorPrimario, 0.6) ?>',
+                            400: '<?= adjustColor($colorPrimario, 0.4) ?>',
+                            500: '<?= $colorSecundario ?>',
+                            600: '<?= adjustColor($colorPrimario, 0.1) ?>',
+                            700: '<?= adjustColor($colorPrimario, 0.05) ?>',
+                            800: '<?= $colorPrimario ?>',
+                            900: '<?= adjustColor($colorPrimario, -0.1) ?>',
+                        },
+                        accent: '<?= $colorAcento ?>'
                     }
                 }
             }
@@ -61,8 +72,12 @@
             <!-- Logo -->
             <div class="flex items-center justify-between p-4 border-b border-primary-700">
                 <div class="flex items-center space-x-3" x-show="sidebarOpen">
-                    <i class="fas fa-piggy-bank text-2xl"></i>
-                    <span class="font-bold text-lg"><?= APP_NAME ?></span>
+                    <?php if ($logoUrl): ?>
+                        <img src="<?= htmlspecialchars($logoUrl) ?>" alt="<?= htmlspecialchars($siteName) ?>" class="h-8 w-auto">
+                    <?php else: ?>
+                        <i class="fas fa-piggy-bank text-2xl"></i>
+                    <?php endif; ?>
+                    <span class="font-bold text-lg"><?= htmlspecialchars($siteName) ?></span>
                 </div>
                 <button @click="sidebarOpen = !sidebarOpen" class="text-white hover:text-gray-300">
                     <i :class="sidebarOpen ? 'fa-chevron-left' : 'fa-chevron-right'" class="fas"></i>
@@ -113,8 +128,45 @@
                     <span class="ml-3" x-show="sidebarOpen">Reportes</span>
                 </a>
                 
+                <!-- Nuevos Módulos -->
+                <a href="<?= BASE_URL ?>/financiero" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'financiero') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-coins w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Módulo Financiero</span>
+                </a>
+                
+                <a href="<?= BASE_URL ?>/membresias" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'membresias') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-id-card w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Membresías</span>
+                </a>
+                
+                <a href="<?= BASE_URL ?>/crm" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'crm') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-chart-line w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Informe CRM</span>
+                </a>
+                
                 <?php if ($_SESSION['user_role'] === 'administrador'): ?>
                 <div class="border-t border-primary-700 mt-4 pt-4">
+                    <a href="<?= BASE_URL ?>/importar" 
+                       class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'importar') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-file-import w-6"></i>
+                        <span class="ml-3" x-show="sidebarOpen">Importar Clientes</span>
+                    </a>
+                    
+                    <a href="<?= BASE_URL ?>/dispositivos" 
+                       class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'dispositivos') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-microchip w-6"></i>
+                        <span class="ml-3" x-show="sidebarOpen">Dispositivos IoT</span>
+                    </a>
+                    
+                    <a href="<?= BASE_URL ?>/auditoria" 
+                       class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'auditoria') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-shield-alt w-6"></i>
+                        <span class="ml-3" x-show="sidebarOpen">Auditoría</span>
+                    </a>
+                    
                     <a href="<?= BASE_URL ?>/usuarios" 
                        class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'usuarios') !== false ? 'active' : '' ?>">
                         <i class="fas fa-user-cog w-6"></i>
@@ -199,7 +251,7 @@
             <!-- Footer -->
             <footer class="bg-white border-t mt-auto py-4 px-6">
                 <div class="flex items-center justify-between text-sm text-gray-600">
-                    <span>&copy; <?= date('Y') ?> <?= APP_NAME ?>. Todos los derechos reservados.</span>
+                    <span><?= htmlspecialchars($textoCopyright) ?></span>
                     <span>Versión <?= APP_VERSION ?></span>
                 </div>
             </footer>

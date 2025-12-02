@@ -1,9 +1,20 @@
+<?php
+// Get system configuration for colors and branding
+$systemColors = getSystemColors();
+$siteName = getSiteName();
+$logoUrl = getLogo();
+$colorPrimario = $systemColors['color_primario'];
+$colorSecundario = $systemColors['color_secundario'];
+$emailContacto = getConfig('email_contacto', '');
+$telefonoContacto = getConfig('telefono_contacto', '');
+$textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAME . '. Todos los derechos reservados.');
+?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Iniciar Sesión - <?= APP_NAME ?></title>
+    <title>Iniciar Sesión - <?= htmlspecialchars($siteName) ?></title>
     
     <!-- Tailwind CSS -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -13,16 +24,32 @@
     
     <!-- Alpine.js -->
     <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    
+    <style>
+        .login-gradient {
+            background: linear-gradient(135deg, <?= htmlspecialchars($colorPrimario) ?> 0%, <?= htmlspecialchars($colorSecundario) ?> 100%);
+        }
+        .btn-primary {
+            background-color: <?= htmlspecialchars($colorSecundario) ?>;
+        }
+        .btn-primary:hover {
+            background-color: <?= htmlspecialchars($colorPrimario) ?>;
+        }
+    </style>
 </head>
 <body>
-<div class="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-900 via-blue-800 to-blue-600">
+<div class="min-h-screen flex items-center justify-center login-gradient">
     <div class="max-w-md w-full mx-4">
         <!-- Logo -->
         <div class="text-center mb-8">
             <div class="inline-flex items-center justify-center w-20 h-20 bg-white rounded-full shadow-lg mb-4">
-                <i class="fas fa-piggy-bank text-4xl text-blue-600"></i>
+                <?php if ($logoUrl): ?>
+                    <img src="<?= htmlspecialchars($logoUrl) ?>" alt="<?= htmlspecialchars($siteName) ?>" class="h-12 w-auto">
+                <?php else: ?>
+                    <i class="fas fa-piggy-bank text-4xl" style="color: <?= htmlspecialchars($colorSecundario) ?>"></i>
+                <?php endif; ?>
             </div>
-            <h1 class="text-3xl font-bold text-white"><?= APP_NAME ?></h1>
+            <h1 class="text-3xl font-bold text-white"><?= htmlspecialchars($siteName) ?></h1>
             <p class="text-blue-200 mt-2">Sistema de Gestión Integral</p>
         </div>
         
@@ -78,14 +105,27 @@
                 </div>
                 
                 <button type="submit" 
-                        class="w-full py-3 px-4 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 focus:ring-4 focus:ring-blue-200 transition">
+                        class="w-full py-3 px-4 btn-primary text-white font-semibold rounded-lg focus:ring-4 focus:ring-blue-200 transition">
                     <i class="fas fa-sign-in-alt mr-2"></i> Iniciar Sesión
                 </button>
             </form>
         </div>
         
         <div class="text-center mt-6 text-blue-200 text-sm">
-            <p>&copy; <?= date('Y') ?> <?= APP_NAME ?>. Todos los derechos reservados.</p>
+            <p><?= htmlspecialchars($textoCopyright) ?></p>
+            <?php if ($telefonoContacto || $emailContacto): ?>
+            <div class="mt-2">
+                <?php if ($telefonoContacto): ?>
+                    <span><i class="fas fa-phone mr-1"></i> <?= htmlspecialchars($telefonoContacto) ?></span>
+                <?php endif; ?>
+                <?php if ($telefonoContacto && $emailContacto): ?>
+                    <span class="mx-2">|</span>
+                <?php endif; ?>
+                <?php if ($emailContacto): ?>
+                    <span><i class="fas fa-envelope mr-1"></i> <?= htmlspecialchars($emailContacto) ?></span>
+                <?php endif; ?>
+            </div>
+            <?php endif; ?>
         </div>
     </div>
 </div>

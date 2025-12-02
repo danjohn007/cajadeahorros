@@ -38,7 +38,7 @@ class ConfiguracionesController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             
-            $campos = ['nombre_sitio', 'telefono_contacto', 'horario_atencion'];
+            $campos = ['nombre_sitio', 'telefono_contacto', 'horario_atencion', 'email_contacto', 'cuota_mantenimiento', 'texto_copyright'];
             
             foreach ($campos as $campo) {
                 if (isset($_POST[$campo])) {
@@ -48,25 +48,44 @@ class ConfiguracionesController extends Controller {
             
             // Procesar logo si se subió
             if (isset($_FILES['logo']) && $_FILES['logo']['error'] === UPLOAD_ERR_OK) {
-                $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
-                if (in_array($ext, ['jpg', 'jpeg', 'png', 'gif'])) {
-                    $nombreArchivo = 'logo.' . $ext;
-                    $ruta = PUBLIC_PATH . '/images/' . $nombreArchivo;
+                $allowedTypes = ['image/jpeg', 'image/png', 'image/svg+xml', 'image/gif'];
+                $maxSize = 2 * 1024 * 1024; // 2MB
+                
+                $fileType = mime_content_type($_FILES['logo']['tmp_name']);
+                $fileSize = $_FILES['logo']['size'];
+                
+                if (!in_array($fileType, $allowedTypes)) {
+                    $errors[] = 'Formato de imagen no válido. Use JPG, PNG, SVG o GIF.';
+                } elseif ($fileSize > $maxSize) {
+                    $errors[] = 'El archivo es demasiado grande. Máximo 2MB.';
+                } else {
+                    $ext = strtolower(pathinfo($_FILES['logo']['name'], PATHINFO_EXTENSION));
+                    $nombreArchivo = 'logo_' . time() . '.' . $ext;
+                    
+                    // Ensure images directory exists
+                    $imagesDir = PUBLIC_PATH . '/images';
+                    if (!is_dir($imagesDir)) {
+                        mkdir($imagesDir, 0755, true);
+                    }
+                    
+                    $ruta = $imagesDir . '/' . $nombreArchivo;
                     if (move_uploaded_file($_FILES['logo']['tmp_name'], $ruta)) {
                         $this->guardarConfiguracion('logo', $nombreArchivo);
+                    } else {
+                        $errors[] = 'Error al guardar el archivo';
                     }
-                } else {
-                    $errors[] = 'Formato de imagen no válido';
                 }
             }
             
             if (empty($errors)) {
+                // Clear config cache so changes take effect immediately
+                clearConfigCache();
                 $this->logAction('ACTUALIZAR_CONFIG', 'Se actualizaron configuraciones generales', 'configuraciones', null);
                 $success = 'Configuraciones guardadas exitosamente';
             }
         }
         
-        $config = $this->getConfiguraciones(['nombre_sitio', 'logo', 'telefono_contacto', 'horario_atencion']);
+        $config = $this->getConfiguraciones(['nombre_sitio', 'logo', 'telefono_contacto', 'horario_atencion', 'email_contacto', 'cuota_mantenimiento', 'texto_copyright']);
         
         $this->view('configuraciones/general', [
             'pageTitle' => 'Configuración General',
@@ -80,22 +99,42 @@ class ConfiguracionesController extends Controller {
         $this->requireRole(['administrador']);
         
         $success = '';
+        $errors = [];
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             
-            $this->guardarConfiguracion('correo_sistema', $this->sanitize($_POST['correo_sistema'] ?? ''));
+            // Save SMTP configuration
+            $smtpFields = ['smtp_host', 'smtp_port', 'smtp_user', 'smtp_from_name', 'smtp_encryption', 'correo_sistema'];
             
-            $this->logAction('ACTUALIZAR_CONFIG', 'Se actualizó configuración de correo', 'configuraciones', null);
-            $success = 'Configuración de correo guardada';
+            foreach ($smtpFields as $field) {
+                if (isset($_POST[$field])) {
+                    $this->guardarConfiguracion($field, $this->sanitize($_POST[$field]));
+                }
+            }
+            
+            // Handle password separately (only update if provided)
+            if (!empty($_POST['smtp_password'])) {
+                $this->guardarConfiguracion('smtp_password', $this->sanitize($_POST['smtp_password']));
+            }
+            
+            // Clear config cache so changes take effect immediately
+            clearConfigCache();
+            
+            $this->logAction('ACTUALIZAR_CONFIG', 'Se actualizó configuración de correo SMTP', 'configuraciones', null);
+            $success = 'Configuración de correo guardada exitosamente';
         }
         
-        $config = $this->getConfiguraciones(['correo_sistema']);
+        $config = $this->getConfiguraciones([
+            'smtp_host', 'smtp_port', 'smtp_user', 'smtp_password', 
+            'smtp_from_name', 'smtp_encryption', 'correo_sistema'
+        ]);
         
         $this->view('configuraciones/correo', [
             'pageTitle' => 'Configuración de Correo',
             'config' => $config,
-            'success' => $success
+            'success' => $success,
+            'errors' => $errors
         ]);
     }
     
@@ -107,14 +146,24 @@ class ConfiguracionesController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             
-            $this->guardarConfiguracion('color_primario', $this->sanitize($_POST['color_primario'] ?? '#1e40af'));
-            $this->guardarConfiguracion('color_secundario', $this->sanitize($_POST['color_secundario'] ?? '#3b82f6'));
+            // Validate color format (hex colors)
+            $colorFields = ['color_primario', 'color_secundario', 'color_acento'];
+            
+            foreach ($colorFields as $field) {
+                $color = $_POST[$field] ?? '';
+                if (preg_match('/^#[0-9A-Fa-f]{6}$/', $color)) {
+                    $this->guardarConfiguracion($field, $color);
+                }
+            }
+            
+            // Clear config cache so changes take effect immediately
+            clearConfigCache();
             
             $this->logAction('ACTUALIZAR_CONFIG', 'Se actualizaron estilos del sistema', 'configuraciones', null);
             $success = 'Estilos guardados exitosamente';
         }
         
-        $config = $this->getConfiguraciones(['color_primario', 'color_secundario']);
+        $config = $this->getConfiguraciones(['color_primario', 'color_secundario', 'color_acento']);
         
         $this->view('configuraciones/estilos', [
             'pageTitle' => 'Configuración de Estilos',
@@ -131,19 +180,26 @@ class ConfiguracionesController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             
+            // Save PayPal configuration
+            $this->guardarConfiguracion('paypal_enabled', isset($_POST['paypal_enabled']) ? '1' : '0');
+            $this->guardarConfiguracion('paypal_mode', $this->sanitize($_POST['paypal_mode'] ?? 'sandbox'));
             $this->guardarConfiguracion('paypal_client_id', $this->sanitize($_POST['paypal_client_id'] ?? ''));
+            
             if (!empty($_POST['paypal_secret'])) {
                 $this->guardarConfiguracion('paypal_secret', $this->sanitize($_POST['paypal_secret']));
             }
+            
+            // Clear config cache so changes take effect immediately
+            clearConfigCache();
             
             $this->logAction('ACTUALIZAR_CONFIG', 'Se actualizó configuración de PayPal', 'configuraciones', null);
             $success = 'Configuración de PayPal guardada';
         }
         
-        $config = $this->getConfiguraciones(['paypal_client_id', 'paypal_secret']);
+        $config = $this->getConfiguraciones(['paypal_enabled', 'paypal_mode', 'paypal_client_id', 'paypal_secret']);
         
         $this->view('configuraciones/paypal', [
-            'pageTitle' => 'Configuración de PayPal',
+            'pageTitle' => 'Configuración de Pagos',
             'config' => $config,
             'success' => $success
         ]);
