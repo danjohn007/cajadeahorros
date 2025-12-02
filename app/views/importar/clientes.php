@@ -34,6 +34,53 @@
     </div>
 <?php endif; ?>
 
+<?php if (!empty($previewData) && !empty($previewData['datos'])): ?>
+<!-- Vista Previa de Datos -->
+<div class="bg-white rounded-lg shadow-md p-6 mb-6">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-lg font-semibold text-gray-800">
+            <i class="fas fa-eye text-blue-600 mr-2"></i>Vista Previa de Registros
+        </h2>
+        <span class="text-sm text-gray-500">Mostrando primeros <?= count($previewData['datos']) ?> de <?= $previewData['total'] ?> registros</span>
+    </div>
+    
+    <div class="overflow-x-auto mb-4">
+        <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase">#</th>
+                    <?php foreach ($previewData['columnas'] as $col): ?>
+                        <th class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"><?= htmlspecialchars($col) ?></th>
+                    <?php endforeach; ?>
+                </tr>
+            </thead>
+            <tbody class="bg-white divide-y divide-gray-200">
+                <?php foreach ($previewData['datos'] as $i => $row): ?>
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-2 text-sm text-gray-500"><?= $i + 1 ?></td>
+                    <?php foreach ($row as $value): ?>
+                        <td class="px-4 py-2 text-sm text-gray-900"><?= htmlspecialchars($value ?: '-') ?></td>
+                    <?php endforeach; ?>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    
+    <div class="flex justify-end space-x-4">
+        <a href="<?= url('importar/clientes') ?>" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50">
+            Cancelar
+        </a>
+        <form method="POST" action="<?= url('importar/clientes') ?>" class="inline">
+            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+            <input type="hidden" name="action" value="import">
+            <button type="submit" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                <i class="fas fa-check mr-2"></i>Confirmar e Importar <?= $previewData['total'] ?> Registros
+            </button>
+        </form>
+    </div>
+</div>
+<?php else: ?>
 <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
     <!-- Formulario de importación -->
     <div class="bg-white rounded-lg shadow-md p-6">
@@ -43,6 +90,7 @@
         
         <form method="POST" action="<?= url('importar/clientes') ?>" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+            <input type="hidden" name="action" value="preview">
             
             <div class="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center hover:border-blue-500 transition-colors">
                 <input type="file" id="archivo" name="archivo" accept=".xlsx,.xls,.csv" class="hidden" onchange="updateFileName(this)">
@@ -54,7 +102,7 @@
             </div>
             
             <button type="submit" class="mt-4 w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                <i class="fas fa-upload mr-2"></i>Procesar Archivo
+                <i class="fas fa-eye mr-2"></i>Vista Previa
             </button>
         </form>
         
@@ -118,6 +166,7 @@
         </div>
     </div>
 </div>
+<?php endif; ?>
 
 <script>
 function updateFileName(input) {
