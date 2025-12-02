@@ -6,6 +6,92 @@
     <h2 class="text-2xl font-bold text-gray-800">Registrar Movimiento de Ahorro</h2>
 </div>
 
+<!-- Movimiento Realizado - Print Option -->
+<?php if (!empty($movimientoRealizado)): ?>
+<div class="mb-6 p-6 bg-green-50 border border-green-200 rounded-lg" id="movimiento-exitoso">
+    <div class="flex items-start justify-between">
+        <div class="flex items-start">
+            <i class="fas fa-check-circle text-green-500 text-2xl mt-0.5 mr-3"></i>
+            <div>
+                <h3 class="font-bold text-green-800 text-lg">¡Movimiento Registrado Exitosamente!</h3>
+                <p class="text-green-700 mt-1">
+                    <?= ucfirst($movimientoRealizado['tipo']) ?> de 
+                    <strong>$<?= number_format($movimientoRealizado['monto'], 2) ?></strong>
+                </p>
+                <p class="text-green-600 text-sm mt-1">
+                    <?= htmlspecialchars($movimientoRealizado['nombre_socio']) ?> - 
+                    Cuenta: <?= htmlspecialchars($movimientoRealizado['numero_cuenta']) ?>
+                </p>
+                <p class="text-green-600 text-sm">
+                    Nuevo Saldo: <strong>$<?= number_format($movimientoRealizado['saldo_nuevo'], 2) ?></strong>
+                </p>
+            </div>
+        </div>
+        <button type="button" onclick="imprimirMovimiento()" 
+                class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition flex items-center">
+            <i class="fas fa-print mr-2"></i> Imprimir Comprobante
+        </button>
+    </div>
+</div>
+
+<!-- Hidden Print Template -->
+<div id="print-template" class="hidden">
+    <div style="font-family: Arial, sans-serif; padding: 20px; max-width: 400px; margin: 0 auto;">
+        <div style="text-align: center; border-bottom: 2px solid #000; padding-bottom: 10px; margin-bottom: 15px;">
+            <h2 style="margin: 0;">CAJA DE AHORROS</h2>
+            <p style="margin: 5px 0; font-size: 14px;">Comprobante de <?= ucfirst($movimientoRealizado['tipo']) ?></p>
+        </div>
+        
+        <div style="margin-bottom: 15px;">
+            <p style="margin: 5px 0;"><strong>Folio:</strong> <?= str_pad($movimientoRealizado['id'], 6, '0', STR_PAD_LEFT) ?></p>
+            <p style="margin: 5px 0;"><strong>Fecha:</strong> <?= date('d/m/Y H:i:s', strtotime($movimientoRealizado['fecha'])) ?></p>
+        </div>
+        
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
+            <p style="margin: 5px 0;"><strong>Socio:</strong> <?= htmlspecialchars($movimientoRealizado['nombre_socio']) ?></p>
+            <p style="margin: 5px 0;"><strong>No. Socio:</strong> <?= htmlspecialchars($movimientoRealizado['numero_socio']) ?></p>
+            <p style="margin: 5px 0;"><strong>Cuenta:</strong> <?= htmlspecialchars($movimientoRealizado['numero_cuenta']) ?></p>
+        </div>
+        
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
+            <p style="margin: 5px 0;"><strong>Tipo:</strong> <?= ucfirst($movimientoRealizado['tipo']) ?></p>
+            <p style="margin: 5px 0; font-size: 18px;"><strong>Monto: $<?= number_format($movimientoRealizado['monto'], 2) ?></strong></p>
+            <?php if ($movimientoRealizado['concepto']): ?>
+            <p style="margin: 5px 0;"><strong>Concepto:</strong> <?= htmlspecialchars($movimientoRealizado['concepto']) ?></p>
+            <?php endif; ?>
+            <?php if ($movimientoRealizado['referencia']): ?>
+            <p style="margin: 5px 0;"><strong>Referencia:</strong> <?= htmlspecialchars($movimientoRealizado['referencia']) ?></p>
+            <?php endif; ?>
+        </div>
+        
+        <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 15px;">
+            <p style="margin: 5px 0;"><strong>Saldo Anterior:</strong> $<?= number_format($movimientoRealizado['saldo_anterior'], 2) ?></p>
+            <p style="margin: 5px 0; font-size: 16px;"><strong>Saldo Nuevo: $<?= number_format($movimientoRealizado['saldo_nuevo'], 2) ?></strong></p>
+        </div>
+        
+        <div style="text-align: center; border-top: 1px dashed #ccc; padding-top: 10px; margin-top: 15px;">
+            <p style="margin: 5px 0; font-size: 12px;">Atendió: <?= htmlspecialchars($movimientoRealizado['usuario']) ?></p>
+            <p style="margin: 5px 0; font-size: 12px;">Este comprobante es válido sin firma ni sello</p>
+        </div>
+    </div>
+</div>
+
+<script>
+function imprimirMovimiento() {
+    var printContent = document.getElementById('print-template').innerHTML;
+    var printWindow = window.open('', '_blank', 'width=450,height=600');
+    printWindow.document.write('<html><head><title>Comprobante de Movimiento</title>');
+    printWindow.document.write('<style>@media print { body { margin: 0; } }</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(printContent);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    setTimeout(function() { printWindow.print(); }, 250);
+}
+</script>
+<?php endif; ?>
+
 <!-- Errors -->
 <?php if (!empty($errors)): ?>
 <div class="mb-6 p-4 bg-red-100 border border-red-200 text-red-700 rounded-lg">

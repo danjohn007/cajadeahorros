@@ -125,6 +125,40 @@ class ImportarController extends Controller {
         ]);
     }
     
+    public function plantilla() {
+        $this->requireRole(['administrador', 'operativo']);
+        
+        // Generate CSV template
+        $headers = ['nombre', 'apellido_paterno', 'apellido_materno', 'email', 'telefono', 'celular', 'rfc', 'curp'];
+        $sampleData = [
+            ['Juan', 'García', 'López', 'juan.garcia@email.com', '4421234567', '4421234568', 'GALJ850315ABC', 'GALJ850315HQTRRN09'],
+            ['María', 'Hernández', 'Ramírez', 'maria.hernandez@email.com', '4422345678', '4422345679', 'HERM900520DEF', 'HERM900520MQTRML05'],
+        ];
+        
+        // Set headers for CSV download
+        header('Content-Type: text/csv; charset=utf-8');
+        header('Content-Disposition: attachment; filename=plantilla_importacion_clientes.csv');
+        header('Pragma: no-cache');
+        header('Expires: 0');
+        
+        // Create output stream
+        $output = fopen('php://output', 'w');
+        
+        // Add UTF-8 BOM for Excel compatibility
+        fprintf($output, chr(0xEF).chr(0xBB).chr(0xBF));
+        
+        // Write headers
+        fputcsv($output, $headers);
+        
+        // Write sample data
+        foreach ($sampleData as $row) {
+            fputcsv($output, $row);
+        }
+        
+        fclose($output);
+        exit;
+    }
+    
     private function procesarArchivo($archivo) {
         $extension = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
         

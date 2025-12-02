@@ -120,9 +120,11 @@
                            class="flex-1 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border">
                     <button type="button" id="btn_test_email" 
                             class="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700">
-                        Enviar Correo de Prueba
+                        <span id="btn_text">Enviar Correo de Prueba</span>
+                        <i id="btn_spinner" class="fas fa-spinner fa-spin ml-2 hidden"></i>
                     </button>
                 </div>
+                <div id="test_result" class="mt-4 hidden"></div>
             </div>
             
             <div class="mt-8 flex justify-end">
@@ -133,3 +135,53 @@
         </form>
     </div>
 </div>
+
+<script>
+document.getElementById('btn_test_email').addEventListener('click', function() {
+    const email = document.getElementById('test_email').value;
+    const btn = this;
+    const btnText = document.getElementById('btn_text');
+    const spinner = document.getElementById('btn_spinner');
+    const resultDiv = document.getElementById('test_result');
+    
+    if (!email) {
+        alert('Por favor ingrese un correo de destino');
+        return;
+    }
+    
+    // Disable button and show spinner
+    btn.disabled = true;
+    btnText.textContent = 'Enviando...';
+    spinner.classList.remove('hidden');
+    resultDiv.classList.add('hidden');
+    
+    fetch('<?= url('configuraciones/testEmail') ?>', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email: email })
+    })
+    .then(response => response.json())
+    .then(data => {
+        resultDiv.classList.remove('hidden');
+        if (data.success) {
+            resultDiv.className = 'mt-4 p-4 bg-green-100 border border-green-200 text-green-700 rounded-lg';
+            resultDiv.innerHTML = '<i class="fas fa-check-circle mr-2"></i>' + data.message;
+        } else {
+            resultDiv.className = 'mt-4 p-4 bg-red-100 border border-red-200 text-red-700 rounded-lg';
+            resultDiv.innerHTML = '<i class="fas fa-times-circle mr-2"></i>' + data.message;
+        }
+    })
+    .catch(error => {
+        resultDiv.classList.remove('hidden');
+        resultDiv.className = 'mt-4 p-4 bg-red-100 border border-red-200 text-red-700 rounded-lg';
+        resultDiv.innerHTML = '<i class="fas fa-times-circle mr-2"></i>Error de conexión: ' + error.message;
+    })
+    .finally(() => {
+        btn.disabled = false;
+        btnText.textContent = 'Enviar Correo de Prueba';
+        spinner.classList.add('hidden');
+    });
+});
+</script>

@@ -23,8 +23,12 @@ class AhorroController extends Controller {
         $params = [];
         
         if ($search) {
-            $conditions .= " AND (s.nombre LIKE :search OR s.apellido_paterno LIKE :search OR ca.numero_cuenta LIKE :search OR s.numero_socio LIKE :search)";
-            $params['search'] = "%{$search}%";
+            $conditions .= " AND (s.nombre LIKE :search1 OR s.apellido_paterno LIKE :search2 OR ca.numero_cuenta LIKE :search3 OR s.numero_socio LIKE :search4)";
+            $searchTerm = "%{$search}%";
+            $params['search1'] = $searchTerm;
+            $params['search2'] = $searchTerm;
+            $params['search3'] = $searchTerm;
+            $params['search4'] = $searchTerm;
         }
         
         $total = $this->db->fetch(
@@ -109,6 +113,7 @@ class AhorroController extends Controller {
         
         $errors = [];
         $data = [];
+        $movimientoRealizado = null;
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
@@ -122,9 +127,13 @@ class AhorroController extends Controller {
             
             // Verificar cuenta
             $cuenta = null;
+            $socio = null;
             if (!empty($data['socio_id'])) {
                 $cuenta = $this->db->fetch(
-                    "SELECT * FROM cuentas_ahorro WHERE socio_id = :socio_id AND estatus = 'activa'",
+                    "SELECT ca.*, s.numero_socio, s.nombre, s.apellido_paterno, s.apellido_materno 
+                     FROM cuentas_ahorro ca 
+                     JOIN socios s ON ca.socio_id = s.id
+                     WHERE ca.socio_id = :socio_id AND ca.estatus = 'activa'",
                     ['socio_id' => $data['socio_id']]
                 );
                 
@@ -162,6 +171,8 @@ class AhorroController extends Controller {
                         'fecha' => date('Y-m-d H:i:s')
                     ]);
                     
+                    $movimientoId = $this->db->lastInsertId();
+                    
                     // Actualizar saldo de cuenta
                     $this->db->update('cuentas_ahorro', 
                         ['saldo' => $saldoNuevo],
@@ -174,11 +185,28 @@ class AhorroController extends Controller {
                     $this->logAction('MOVIMIENTO_AHORRO', 
                         ucfirst($data['tipo']) . " de $" . number_format($monto, 2) . " en cuenta " . $cuenta['numero_cuenta'],
                         'movimientos_ahorro',
-                        $this->db->lastInsertId()
+                        $movimientoId
                     );
                     
+                    // Store movement data for printing
+                    $movimientoRealizado = [
+                        'id' => $movimientoId,
+                        'tipo' => $data['tipo'],
+                        'monto' => $monto,
+                        'saldo_anterior' => $saldoAnterior,
+                        'saldo_nuevo' => $saldoNuevo,
+                        'concepto' => $data['concepto'] ?? '',
+                        'referencia' => $data['referencia'] ?? '',
+                        'fecha' => date('Y-m-d H:i:s'),
+                        'numero_cuenta' => $cuenta['numero_cuenta'],
+                        'numero_socio' => $cuenta['numero_socio'],
+                        'nombre_socio' => $cuenta['nombre'] . ' ' . $cuenta['apellido_paterno'] . ' ' . ($cuenta['apellido_materno'] ?? ''),
+                        'usuario' => $_SESSION['user_name'] ?? 'Sistema'
+                    ];
+                    
                     $this->setFlash('success', 'Movimiento registrado exitosamente');
-                    $this->redirect('ahorro/socio/' . $data['socio_id']);
+                    // Don't redirect - show form with print option
+                    $data = []; // Clear form data
                     
                 } catch (Exception $e) {
                     $this->db->rollBack();
@@ -202,7 +230,8 @@ class AhorroController extends Controller {
             'pageTitle' => 'Registrar Movimiento de Ahorro',
             'socios' => $socios,
             'data' => $data,
-            'errors' => $errors
+            'errors' => $errors,
+            'movimientoRealizado' => $movimientoRealizado
         ]);
     }
     
@@ -274,6 +303,42 @@ class AhorroController extends Controller {
             'fechaInicio' => $fechaInicio,
             'fechaFin' => $fechaFin,
             'tipo' => $tipo
+        ]);
+    }
+    
+    public function cardex() {
+        $this->requireAuth();
+        
+        $cuentaId = $this->params['id'] ?? 0;
+        
+        $cuenta = $this->db->fetch(
+            "SELECT ca.*, s.numero_socio, s.nombre, s.apellido_paterno, s.apellido_materno,
+                    s.rfc, s.curp, s.telefono, s.celular, s.email, s.direccion
+             FROM cuentas_ahorro ca
+             JOIN socios s ON ca.socio_id = s.id
+             WHERE ca.id = :id",
+            ['id' => $cuentaId]
+        );
+        
+        if (!$cuenta) {
+            $this->setFlash('error', 'Cuenta no encontrada');
+            $this->redirect('ahorro');
+        }
+        
+        // Get all movements for the cardex (complete history)
+        $movimientos = $this->db->fetchAll(
+            "SELECT m.*, u.nombre as usuario_nombre
+             FROM movimientos_ahorro m
+             LEFT JOIN usuarios u ON m.usuario_id = u.id
+             WHERE m.cuenta_id = :cuenta_id
+             ORDER BY m.fecha ASC",
+            ['cuenta_id' => $cuentaId]
+        );
+        
+        $this->view('ahorro/cardex', [
+            'pageTitle' => 'Cardex del Socio',
+            'cuenta' => $cuenta,
+            'movimientos' => $movimientos
         ]);
     }
     

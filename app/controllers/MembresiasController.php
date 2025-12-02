@@ -25,8 +25,11 @@ class MembresiasController extends Controller {
         }
         
         if ($buscar) {
-            $conditions .= ' AND (s.nombre LIKE :buscar OR s.apellido_paterno LIKE :buscar OR s.numero_socio LIKE :buscar)';
-            $params['buscar'] = "%{$buscar}%";
+            $conditions .= ' AND (s.nombre LIKE :buscar1 OR s.apellido_paterno LIKE :buscar2 OR s.numero_socio LIKE :buscar3)';
+            $buscarTerm = "%{$buscar}%";
+            $params['buscar1'] = $buscarTerm;
+            $params['buscar2'] = $buscarTerm;
+            $params['buscar3'] = $buscarTerm;
         }
         
         $total = $this->db->fetch(
