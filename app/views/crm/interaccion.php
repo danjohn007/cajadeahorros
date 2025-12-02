@@ -25,7 +25,7 @@
 
 <div class="bg-white rounded-lg shadow-md p-6">
     <form method="POST">
-        <input type="hidden" name="csrf_token" value="<?= $this->csrf_token() ?>">
+        <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
         
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
             <!-- Selección de Cliente -->

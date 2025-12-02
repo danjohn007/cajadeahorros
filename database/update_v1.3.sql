@@ -14,6 +14,76 @@ ALTER TABLE usuarios
 MODIFY COLUMN rol ENUM('administrador', 'operativo', 'consulta', 'cliente') NOT NULL DEFAULT 'consulta';
 
 -- =====================================================
+-- TABLA PARA MÉTRICAS CRM (si no existe)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS metricas_crm (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    socio_id INT NOT NULL,
+    ltv DECIMAL(12,2) DEFAULT 0,
+    frecuencia_transacciones INT DEFAULT 0,
+    ultima_transaccion DATE,
+    dias_sin_actividad INT DEFAULT 0,
+    nivel_riesgo ENUM('bajo', 'medio', 'alto') DEFAULT 'bajo',
+    es_vip TINYINT(1) DEFAULT 0,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    FOREIGN KEY (socio_id) REFERENCES socios(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_socio (socio_id),
+    INDEX idx_riesgo (nivel_riesgo),
+    INDEX idx_vip (es_vip)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABLA PARA SEGMENTOS DE CLIENTES (si no existe)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS segmentos_clientes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    nombre VARCHAR(100) NOT NULL,
+    descripcion TEXT,
+    color VARCHAR(7) DEFAULT '#3b82f6',
+    activo TINYINT(1) DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABLA PARA RELACIÓN SOCIOS-SEGMENTOS (si no existe)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS socios_segmentos (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    socio_id INT NOT NULL,
+    segmento_id INT NOT NULL,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (socio_id) REFERENCES socios(id) ON DELETE CASCADE,
+    FOREIGN KEY (segmento_id) REFERENCES segmentos_clientes(id) ON DELETE CASCADE,
+    UNIQUE KEY unique_socio_segmento (socio_id, segmento_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
+-- TABLA PARA INTERACCIONES CON CLIENTES (si no existe)
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS interacciones_clientes (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    socio_id INT NOT NULL,
+    tipo ENUM('llamada', 'email', 'visita', 'whatsapp', 'reunion', 'otro') NOT NULL,
+    asunto VARCHAR(255),
+    descripcion TEXT NOT NULL,
+    resultado TEXT,
+    seguimiento_requerido TINYINT(1) DEFAULT 0,
+    fecha_seguimiento DATE,
+    usuario_id INT,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (socio_id) REFERENCES socios(id) ON DELETE CASCADE,
+    FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL,
+    INDEX idx_tipo (tipo),
+    INDEX idx_seguimiento (seguimiento_requerido, fecha_seguimiento)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- =====================================================
 -- TABLA PARA TOKENS DE PAGO
 -- =====================================================
 

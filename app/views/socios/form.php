@@ -382,7 +382,9 @@ function takePhoto() {
     canvas.getContext('2d').drawImage(video, 0, 0);
     
     canvas.toBlob(function(blob) {
-        const file = new File([blob], 'identificacion_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+        // Generate a unique file name using timestamp and random string
+        const uniqueId = Date.now().toString(36) + Math.random().toString(36).substr(2, 9);
+        const file = new File([blob], 'identificacion_' + uniqueId + '.jpg', { type: 'image/jpeg' });
         const dataTransfer = new DataTransfer();
         dataTransfer.items.add(file);
         input.files = dataTransfer.files;

@@ -38,7 +38,7 @@
             <i class="fas fa-plus-circle mr-2"></i>Nuevo Segmento
         </h3>
         <form method="POST">
-            <input type="hidden" name="csrf_token" value="<?= $this->csrf_token() ?>">
+            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
             <input type="hidden" name="action" value="crear">
             
             <div class="mb-4">
@@ -70,7 +70,7 @@
         
         <!-- Actualizar métricas -->
         <form method="POST">
-            <input type="hidden" name="csrf_token" value="<?= $this->csrf_token() ?>">
+            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
             <input type="hidden" name="action" value="actualizar_clientes">
             <button type="submit" class="w-full px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
                 <i class="fas fa-sync-alt mr-2"></i>Actualizar Métricas CRM

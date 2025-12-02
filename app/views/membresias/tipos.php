@@ -38,7 +38,7 @@
             <i class="fas fa-plus-circle mr-2"></i>Nuevo Tipo de Membresía
         </h3>
         <form method="POST">
-            <input type="hidden" name="csrf_token" value="<?= $this->csrf_token() ?>">
+            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
             <input type="hidden" name="action" value="crear">
             
             <div class="mb-4">
