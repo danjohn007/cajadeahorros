@@ -25,7 +25,7 @@
 
 <!-- Form -->
 <form method="POST" action="<?= BASE_URL ?>/socios/<?= $action === 'crear' ? 'crear' : 'editar/' . ($socio['id'] ?? '') ?>" 
-      class="bg-white rounded-xl shadow-sm">
+      class="bg-white rounded-xl shadow-sm" enctype="multipart/form-data">
     <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
     
     <!-- Datos Personales -->
@@ -231,6 +231,74 @@
         </div>
     </div>
     
+    <!-- Identificación Oficial -->
+    <div class="p-6 border-b border-gray-200">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-id-card text-teal-500 mr-2"></i> Identificación Oficial
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+                <label class="block text-sm font-medium text-gray-700 mb-2">Adjuntar Identificación</label>
+                <div class="flex items-center space-x-4">
+                    <!-- File Upload -->
+                    <div class="flex-1">
+                        <input type="file" name="identificacion_oficial" id="identificacion_oficial" 
+                               accept="image/*" capture="environment"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500"
+                               onchange="previewImage(this)">
+                        <p class="text-xs text-gray-500 mt-1">Formatos: JPG, PNG, JPEG. Max 5MB</p>
+                    </div>
+                    <!-- Camera Button for Mobile -->
+                    <button type="button" onclick="openCamera()" 
+                            class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 transition"
+                            title="Tomar foto con cámara">
+                        <i class="fas fa-camera"></i>
+                    </button>
+                </div>
+                
+                <!-- Image Preview -->
+                <div id="imagePreviewContainer" class="mt-4 hidden">
+                    <p class="text-sm font-medium text-gray-700 mb-2">Vista previa:</p>
+                    <img id="imagePreview" src="" alt="Vista previa" 
+                         class="max-w-xs max-h-48 rounded-lg border border-gray-300">
+                </div>
+                
+                <?php if (!empty($socio['identificacion_oficial'])): ?>
+                <div class="mt-4">
+                    <p class="text-sm font-medium text-gray-700 mb-2">Identificación actual:</p>
+                    <img src="<?= BASE_URL ?>/uploads/identificaciones/<?= htmlspecialchars($socio['identificacion_oficial']) ?>" 
+                         alt="Identificación actual" class="max-w-xs max-h-48 rounded-lg border border-gray-300">
+                </div>
+                <?php endif; ?>
+            </div>
+            
+            <!-- Camera Modal -->
+            <div id="cameraModal" class="fixed inset-0 bg-black bg-opacity-75 hidden z-50 flex items-center justify-center">
+                <div class="bg-white rounded-lg p-4 max-w-lg w-full mx-4">
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="text-lg font-semibold">Capturar Identificación</h4>
+                        <button type="button" onclick="closeCamera()" class="text-gray-500 hover:text-gray-700">
+                            <i class="fas fa-times text-xl"></i>
+                        </button>
+                    </div>
+                    <video id="cameraVideo" autoplay playsinline class="w-full rounded-lg"></video>
+                    <canvas id="cameraCanvas" class="hidden"></canvas>
+                    <div class="mt-4 flex justify-center space-x-4">
+                        <button type="button" onclick="takePhoto()" 
+                                class="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
+                            <i class="fas fa-camera mr-2"></i>Capturar
+                        </button>
+                        <button type="button" onclick="closeCamera()" 
+                                class="px-6 py-2 border border-gray-300 rounded-lg hover:bg-gray-100">
+                            Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
     <!-- Observaciones -->
     <div class="p-6 border-b border-gray-200">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">
@@ -252,3 +320,77 @@
         </button>
     </div>
 </form>
+
+<script>
+let videoStream = null;
+
+function previewImage(input) {
+    const preview = document.getElementById('imagePreview');
+    const container = document.getElementById('imagePreviewContainer');
+    
+    if (input.files && input.files[0]) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            preview.src = e.target.result;
+            container.classList.remove('hidden');
+        };
+        reader.readAsDataURL(input.files[0]);
+    }
+}
+
+async function openCamera() {
+    const modal = document.getElementById('cameraModal');
+    const video = document.getElementById('cameraVideo');
+    
+    try {
+        videoStream = await navigator.mediaDevices.getUserMedia({ 
+            video: { 
+                facingMode: 'environment',
+                width: { ideal: 1280 },
+                height: { ideal: 720 }
+            } 
+        });
+        video.srcObject = videoStream;
+        modal.classList.remove('hidden');
+    } catch (err) {
+        alert('No se pudo acceder a la cámara. Asegúrese de dar permisos de cámara.');
+        console.error('Error accessing camera:', err);
+    }
+}
+
+function closeCamera() {
+    const modal = document.getElementById('cameraModal');
+    const video = document.getElementById('cameraVideo');
+    
+    if (videoStream) {
+        videoStream.getTracks().forEach(track => track.stop());
+        videoStream = null;
+    }
+    video.srcObject = null;
+    modal.classList.add('hidden');
+}
+
+function takePhoto() {
+    const video = document.getElementById('cameraVideo');
+    const canvas = document.getElementById('cameraCanvas');
+    const preview = document.getElementById('imagePreview');
+    const container = document.getElementById('imagePreviewContainer');
+    const input = document.getElementById('identificacion_oficial');
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    canvas.getContext('2d').drawImage(video, 0, 0);
+    
+    canvas.toBlob(function(blob) {
+        const file = new File([blob], 'identificacion_' + Date.now() + '.jpg', { type: 'image/jpeg' });
+        const dataTransfer = new DataTransfer();
+        dataTransfer.items.add(file);
+        input.files = dataTransfer.files;
+        
+        preview.src = URL.createObjectURL(blob);
+        container.classList.remove('hidden');
+        
+        closeCamera();
+    }, 'image/jpeg', 0.8);
+}
+</script>

@@ -90,8 +90,11 @@
                         <?php endif; ?>
                     </td>
                     <td class="px-6 py-4 text-right">
-                        <a href="<?= BASE_URL ?>/creditos/ver/<?= $item['id'] ?>" class="text-blue-600 hover:text-blue-800">
+                        <a href="<?= BASE_URL ?>/creditos/ver/<?= $item['id'] ?>" class="text-blue-600 hover:text-blue-800 mr-2" title="Ver detalle">
                             <i class="fas fa-eye"></i>
+                        </a>
+                        <a href="<?= BASE_URL ?>/pago/enlace/<?= $item['id'] ?>" class="text-green-600 hover:text-green-800 mr-2" title="Generar enlace de pago">
+                            <i class="fab fa-paypal"></i>
                         </a>
                     </td>
                 </tr>
