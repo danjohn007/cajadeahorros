@@ -23,8 +23,12 @@ class AhorroController extends Controller {
         $params = [];
         
         if ($search) {
-            $conditions .= " AND (s.nombre LIKE :search OR s.apellido_paterno LIKE :search OR ca.numero_cuenta LIKE :search OR s.numero_socio LIKE :search)";
-            $params['search'] = "%{$search}%";
+            $conditions .= " AND (s.nombre LIKE :search1 OR s.apellido_paterno LIKE :search2 OR ca.numero_cuenta LIKE :search3 OR s.numero_socio LIKE :search4)";
+            $searchTerm = "%{$search}%";
+            $params['search1'] = $searchTerm;
+            $params['search2'] = $searchTerm;
+            $params['search3'] = $searchTerm;
+            $params['search4'] = $searchTerm;
         }
         
         $total = $this->db->fetch(
