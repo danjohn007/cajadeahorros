@@ -522,8 +522,9 @@ LEFT JOIN hikvision_config hc ON d.id = hc.dispositivo_id;
 -- =====================================================
 
 -- Procedimiento para actualizar métricas CRM de un socio
+DROP PROCEDURE IF EXISTS sp_actualizar_metricas_crm;
 DELIMITER //
-CREATE PROCEDURE IF NOT EXISTS sp_actualizar_metricas_crm(IN p_socio_id INT)
+CREATE PROCEDURE sp_actualizar_metricas_crm(IN p_socio_id INT)
 BEGIN
     DECLARE v_ltv DECIMAL(14,2);
     DECLARE v_frecuencia INT;
@@ -575,8 +576,9 @@ END //
 DELIMITER ;
 
 -- Procedimiento para verificar y actualizar membresías vencidas
+DROP PROCEDURE IF EXISTS sp_actualizar_membresias_vencidas;
 DELIMITER //
-CREATE PROCEDURE IF NOT EXISTS sp_actualizar_membresias_vencidas()
+CREATE PROCEDURE sp_actualizar_membresias_vencidas()
 BEGIN
     UPDATE membresias 
     SET estatus = 'vencida'
@@ -589,11 +591,11 @@ DELIMITER ;
 -- =====================================================
 
 -- Índices en tabla bitacora para auditoría mejorada
-CREATE INDEX IF NOT EXISTS idx_bitacora_fecha_usuario ON bitacora(fecha, usuario_id);
+CREATE INDEX idx_bitacora_fecha_usuario ON bitacora(fecha, usuario_id);
 
 -- Índices en tabla socios para CRM
-CREATE INDEX IF NOT EXISTS idx_socios_email ON socios(email);
-CREATE INDEX IF NOT EXISTS idx_socios_celular ON socios(celular);
+CREATE INDEX idx_socios_email ON socios(email);
+CREATE INDEX idx_socios_celular ON socios(celular);
 
 -- =====================================================
 -- ACTUALIZACIÓN DE VERSIÓN DEL SISTEMA
