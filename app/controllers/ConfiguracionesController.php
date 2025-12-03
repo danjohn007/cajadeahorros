@@ -319,8 +319,8 @@ class ConfiguracionesController extends Controller {
         // Set socket timeout
         stream_set_timeout($socket, $timeout);
         
-        // Read greeting
-        $response = fgets($socket, 515);
+        // Read greeting (may be multi-line)
+        $response = $this->getSmtpResponse($socket);
         if (!$response || substr($response, 0, 3) != '220') {
             fclose($socket);
             return "Error en respuesta inicial del servidor: " . ($response ?: "Sin respuesta");
@@ -342,7 +342,7 @@ class ConfiguracionesController extends Controller {
                 // This might work for local/internal SMTP servers
             } else {
                 fputs($socket, "STARTTLS\r\n");
-                $response = fgets($socket, 515);
+                $response = $this->getSmtpResponse($socket);
                 if ($response && substr($response, 0, 3) == '220') {
                     // Enable TLS on the socket
                     $cryptoEnabled = @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
@@ -408,21 +408,21 @@ class ConfiguracionesController extends Controller {
         
         // Send email
         fputs($socket, "MAIL FROM:<{$fromEmail}>\r\n");
-        $response = fgets($socket, 515);
+        $response = $this->getSmtpResponse($socket);
         if (!$response || substr($response, 0, 3) != '250') {
             fclose($socket);
             return "Error en MAIL FROM: " . ($response ?: "Sin respuesta") . ". Verifique el correo del remitente.";
         }
         
         fputs($socket, "RCPT TO:<{$to}>\r\n");
-        $response = fgets($socket, 515);
+        $response = $this->getSmtpResponse($socket);
         if (!$response || substr($response, 0, 3) != '250') {
             fclose($socket);
             return "Error en RCPT TO: " . ($response ?: "Sin respuesta") . ". Verifique el correo del destinatario.";
         }
         
         fputs($socket, "DATA\r\n");
-        $response = fgets($socket, 515);
+        $response = $this->getSmtpResponse($socket);
         if (!$response || substr($response, 0, 3) != '354') {
             fclose($socket);
             return "Error en DATA: " . ($response ?: "Sin respuesta");
@@ -437,7 +437,7 @@ class ConfiguracionesController extends Controller {
         $headers .= "Date: " . date('r') . "\r\n";
         
         fputs($socket, $headers . "\r\n" . $body . "\r\n.\r\n");
-        $response = fgets($socket, 515);
+        $response = $this->getSmtpResponse($socket);
         if (!$response || substr($response, 0, 3) != '250') {
             fclose($socket);
             return "Error al enviar mensaje: " . ($response ?: "Sin respuesta");
