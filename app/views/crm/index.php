@@ -196,16 +196,192 @@
     
     <!-- Otros tabs (contenido simplificado) -->
     <div id="tab-actividad" class="crm-tab-content p-6 hidden">
-        <p class="text-gray-500">Análisis de actividad de clientes - En desarrollo</p>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-line mr-2"></i>Análisis de Actividad de Clientes
+        </h3>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
+            <div class="bg-blue-50 rounded-lg p-4">
+                <p class="text-sm text-blue-600">Clientes Nuevos (este mes)</p>
+                <p class="text-3xl font-bold text-blue-800"><?= number_format($actividadReciente['clientes_nuevos_mes'] ?? 0) ?></p>
+            </div>
+            
+            <?php foreach ($actividadReciente['por_tipo'] ?? [] as $actividad): ?>
+            <div class="bg-gray-50 rounded-lg p-4">
+                <p class="text-sm text-gray-600"><?= htmlspecialchars($actividad['tipo']) ?> (30 días)</p>
+                <p class="text-2xl font-bold text-gray-800"><?= number_format($actividad['cantidad']) ?></p>
+                <p class="text-sm text-green-600">$<?= number_format($actividad['total'], 2) ?></p>
+            </div>
+            <?php endforeach; ?>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-4">
+            <h4 class="font-medium text-gray-700 mb-3">Evolución Diaria (últimos 7 días)</h4>
+            <?php if (empty($actividadReciente['evolucion_diaria'])): ?>
+                <p class="text-gray-500">Sin datos disponibles</p>
+            <?php else: ?>
+                <div class="space-y-2">
+                    <?php foreach ($actividadReciente['evolucion_diaria'] ?? [] as $dia): ?>
+                    <div class="flex justify-between items-center p-2 bg-white rounded">
+                        <span class="text-sm text-gray-600"><?= date('d/m', strtotime($dia['dia'])) ?></span>
+                        <span class="text-sm font-medium"><?= number_format($dia['transacciones']) ?> transacciones</span>
+                        <span class="text-sm text-green-600">$<?= number_format($dia['total'], 2) ?></span>
+                    </div>
+                    <?php endforeach; ?>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
+    
     <div id="tab-ventas" class="crm-tab-content p-6 hidden">
-        <p class="text-gray-500">Análisis de ventas - En desarrollo</p>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-shopping-cart mr-2"></i>Análisis de Ventas (Créditos)
+        </h3>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-700 mb-3">Top Tipos de Crédito</h4>
+                <?php if (empty($analisisVentas['top_tipos_credito'])): ?>
+                    <p class="text-gray-500">Sin datos disponibles</p>
+                <?php else: ?>
+                    <div class="space-y-3">
+                        <?php foreach ($analisisVentas['top_tipos_credito'] ?? [] as $tipo): ?>
+                        <div class="flex justify-between items-center p-2 bg-white rounded">
+                            <div>
+                                <span class="font-medium"><?= htmlspecialchars($tipo['nombre']) ?></span>
+                                <span class="text-xs text-gray-500 ml-2">(<?= number_format($tipo['cantidad']) ?> créditos)</span>
+                            </div>
+                            <span class="text-green-600 font-medium">$<?= number_format($tipo['total'], 2) ?></span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-700 mb-3">Créditos por Mes (últimos 6 meses)</h4>
+                <div class="mb-4 p-3 bg-blue-50 rounded">
+                    <p class="text-sm text-blue-600">Ticket Promedio</p>
+                    <p class="text-2xl font-bold text-blue-800">$<?= number_format($analisisVentas['ticket_promedio'] ?? 0, 2) ?></p>
+                </div>
+                <?php if (empty($analisisVentas['creditos_por_mes'])): ?>
+                    <p class="text-gray-500">Sin datos disponibles</p>
+                <?php else: ?>
+                    <div class="space-y-2">
+                        <?php foreach ($analisisVentas['creditos_por_mes'] ?? [] as $mes): ?>
+                        <div class="flex justify-between items-center p-2 bg-white rounded">
+                            <span class="text-sm"><?= $mes['mes'] ?></span>
+                            <span class="text-sm"><?= number_format($mes['cantidad']) ?> créditos</span>
+                            <span class="text-sm text-green-600">$<?= number_format($mes['total'], 2) ?></span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
+    
     <div id="tab-embudo" class="crm-tab-content p-6 hidden">
-        <p class="text-gray-500">Análisis de embudo de conversión - En desarrollo</p>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-filter mr-2"></i>Análisis de Embudo de Conversión
+        </h3>
+        
+        <div class="mb-6 p-4 bg-green-50 rounded-lg">
+            <p class="text-sm text-green-600">Tasa de Conversión General</p>
+            <p class="text-3xl font-bold text-green-800"><?= $embudoConversion['tasa_conversion'] ?? 0 ?>%</p>
+            <p class="text-xs text-green-600">Solicitudes que llegan a formalización o activo</p>
+        </div>
+        
+        <div class="bg-gray-50 rounded-lg p-6">
+            <h4 class="font-medium text-gray-700 mb-4">Embudo de Créditos</h4>
+            <div class="space-y-4">
+                <?php 
+                $embudoItems = [
+                    ['label' => 'Solicitudes/En Revisión', 'key' => 'solicitudes', 'color' => 'bg-blue-500'],
+                    ['label' => 'Autorizados', 'key' => 'autorizados', 'color' => 'bg-indigo-500'],
+                    ['label' => 'Formalizados', 'key' => 'formalizados', 'color' => 'bg-purple-500'],
+                    ['label' => 'Activos', 'key' => 'activos', 'color' => 'bg-green-500'],
+                    ['label' => 'Liquidados', 'key' => 'liquidados', 'color' => 'bg-teal-500'],
+                    ['label' => 'Rechazados', 'key' => 'rechazados', 'color' => 'bg-red-500'],
+                ];
+                $maxVal = max(array_values($embudoConversion['embudo'] ?? [1])) ?: 1;
+                foreach ($embudoItems as $item):
+                    $val = $embudoConversion['embudo'][$item['key']] ?? 0;
+                    $width = ($val / $maxVal) * 100;
+                ?>
+                <div>
+                    <div class="flex justify-between text-sm mb-1">
+                        <span><?= $item['label'] ?></span>
+                        <span class="font-medium"><?= number_format($val) ?></span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-4">
+                        <div class="<?= $item['color'] ?> h-4 rounded-full" style="width: <?= $width ?>%"></div>
+                    </div>
+                </div>
+                <?php endforeach; ?>
+            </div>
+        </div>
     </div>
+    
     <div id="tab-retencion" class="crm-tab-content p-6 hidden">
-        <p class="text-gray-500">Análisis de retención - En desarrollo</p>
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-heart mr-2"></i>Análisis de Retención
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-green-50 rounded-lg p-4">
+                <p class="text-sm text-green-600">Tasa de Retención</p>
+                <p class="text-3xl font-bold text-green-800"><?= $analisisRetencion['tasa_retencion'] ?? 0 ?>%</p>
+            </div>
+            <div class="bg-red-50 rounded-lg p-4">
+                <p class="text-sm text-red-600">Bajas este Mes</p>
+                <p class="text-3xl font-bold text-red-800"><?= number_format($analisisRetencion['bajas_mes'] ?? 0) ?></p>
+            </div>
+            <div class="bg-blue-50 rounded-lg p-4">
+                <p class="text-sm text-blue-600">Total Socios Activos</p>
+                <p class="text-3xl font-bold text-blue-800"><?= number_format($stats['total_clientes'] ?? 0) ?></p>
+            </div>
+        </div>
+        
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-700 mb-3">Distribución por Nivel de Riesgo</h4>
+                <?php if (empty($analisisRetencion['distribucion_riesgo'])): ?>
+                    <p class="text-gray-500">Sin datos disponibles</p>
+                <?php else: ?>
+                    <div class="space-y-3">
+                        <?php 
+                        $riesgoColors = ['bajo' => 'bg-green-500', 'medio' => 'bg-yellow-500', 'alto' => 'bg-red-500'];
+                        foreach ($analisisRetencion['distribucion_riesgo'] ?? [] as $riesgo): 
+                        ?>
+                        <div class="flex items-center justify-between p-2 bg-white rounded">
+                            <div class="flex items-center">
+                                <span class="w-3 h-3 rounded-full <?= $riesgoColors[$riesgo['nivel_riesgo']] ?? 'bg-gray-500' ?> mr-2"></span>
+                                <span class="capitalize"><?= htmlspecialchars($riesgo['nivel_riesgo']) ?></span>
+                            </div>
+                            <span class="font-medium"><?= number_format($riesgo['cantidad']) ?></span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+            
+            <div class="bg-gray-50 rounded-lg p-4">
+                <h4 class="font-medium text-gray-700 mb-3">Socios por Antigüedad</h4>
+                <?php if (empty($analisisRetencion['por_antiguedad'])): ?>
+                    <p class="text-gray-500">Sin datos disponibles</p>
+                <?php else: ?>
+                    <div class="space-y-3">
+                        <?php foreach ($analisisRetencion['por_antiguedad'] ?? [] as $antiguedad): ?>
+                        <div class="flex justify-between items-center p-2 bg-white rounded">
+                            <span><?= htmlspecialchars($antiguedad['antiguedad']) ?></span>
+                            <span class="font-medium"><?= number_format($antiguedad['cantidad']) ?></span>
+                        </div>
+                        <?php endforeach; ?>
+                    </div>
+                <?php endif; ?>
+            </div>
+        </div>
     </div>
 </div>
 

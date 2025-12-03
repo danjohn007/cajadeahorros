@@ -83,8 +83,193 @@ class CrmController extends Controller {
             'segmentacion' => $segmentacion,
             'rendimientoPorSegmento' => $rendimientoPorSegmento,
             'clientesRiesgo' => $clientesRiesgo,
-            'clientesVip' => $clientesVip
+            'clientesVip' => $clientesVip,
+            'actividadReciente' => $this->getActividadReciente(),
+            'analisisVentas' => $this->getAnalisisVentas(),
+            'embudoConversion' => $this->getEmbudoConversion(),
+            'analisisRetencion' => $this->getAnalisisRetencion()
         ]);
+    }
+    
+    /**
+     * Obtener actividad reciente de clientes
+     */
+    private function getActividadReciente() {
+        // Actividad por tipo de transacción en los últimos 30 días
+        $actividadPorTipo = $this->db->fetchAll(
+            "SELECT 
+                'Aportaciones' as tipo, COUNT(*) as cantidad, COALESCE(SUM(monto), 0) as total
+             FROM movimientos_ahorro ma
+             JOIN cuentas_ahorro ca ON ma.cuenta_id = ca.id
+             WHERE ma.tipo = 'aportacion' AND ma.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+             UNION ALL
+             SELECT 
+                'Retiros' as tipo, COUNT(*) as cantidad, COALESCE(SUM(monto), 0) as total
+             FROM movimientos_ahorro ma
+             JOIN cuentas_ahorro ca ON ma.cuenta_id = ca.id
+             WHERE ma.tipo = 'retiro' AND ma.fecha >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+             UNION ALL
+             SELECT 
+                'Pagos de Crédito' as tipo, COUNT(*) as cantidad, COALESCE(SUM(monto), 0) as total
+             FROM pagos_credito
+             WHERE fecha_pago >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)"
+        );
+        
+        // Evolución diaria de la última semana
+        $evolucionDiaria = $this->db->fetchAll(
+            "SELECT 
+                DATE(fecha) as dia,
+                COUNT(*) as transacciones,
+                SUM(monto) as total
+             FROM (
+                SELECT fecha, monto FROM movimientos_ahorro ma
+                JOIN cuentas_ahorro ca ON ma.cuenta_id = ca.id
+                WHERE ma.fecha >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+                UNION ALL
+                SELECT fecha_pago as fecha, monto FROM pagos_credito
+                WHERE fecha_pago >= DATE_SUB(CURDATE(), INTERVAL 7 DAY)
+             ) t
+             GROUP BY DATE(fecha)
+             ORDER BY dia"
+        );
+        
+        // Clientes nuevos vs recurrentes este mes
+        $clientesNuevos = $this->db->fetch(
+            "SELECT COUNT(*) as total FROM socios WHERE MONTH(created_at) = MONTH(CURDATE()) AND YEAR(created_at) = YEAR(CURDATE())"
+        )['total'];
+        
+        return [
+            'por_tipo' => $actividadPorTipo,
+            'evolucion_diaria' => $evolucionDiaria,
+            'clientes_nuevos_mes' => $clientesNuevos
+        ];
+    }
+    
+    /**
+     * Obtener análisis de ventas
+     */
+    private function getAnalisisVentas() {
+        // Top tipos de crédito por monto autorizado
+        $topTiposCredito = $this->db->fetchAll(
+            "SELECT tc.nombre, COUNT(c.id) as cantidad, COALESCE(SUM(c.monto_autorizado), 0) as total
+             FROM tipos_credito tc
+             LEFT JOIN creditos c ON tc.id = c.tipo_credito_id AND c.estatus IN ('activo', 'formalizado', 'liquidado')
+             GROUP BY tc.id, tc.nombre
+             ORDER BY total DESC
+             LIMIT 5"
+        );
+        
+        // Créditos por mes (últimos 6 meses)
+        $creditosPorMes = $this->db->fetchAll(
+            "SELECT 
+                DATE_FORMAT(fecha_formalizacion, '%Y-%m') as mes,
+                COUNT(*) as cantidad,
+                SUM(monto_autorizado) as total
+             FROM creditos
+             WHERE fecha_formalizacion >= DATE_SUB(CURDATE(), INTERVAL 6 MONTH)
+                   AND estatus IN ('activo', 'formalizado', 'liquidado')
+             GROUP BY DATE_FORMAT(fecha_formalizacion, '%Y-%m')
+             ORDER BY mes"
+        );
+        
+        // Ticket promedio de crédito
+        $ticketPromedio = $this->db->fetch(
+            "SELECT COALESCE(AVG(monto_autorizado), 0) as promedio FROM creditos WHERE estatus IN ('activo', 'formalizado', 'liquidado')"
+        )['promedio'];
+        
+        return [
+            'top_tipos_credito' => $topTiposCredito,
+            'creditos_por_mes' => $creditosPorMes,
+            'ticket_promedio' => $ticketPromedio
+        ];
+    }
+    
+    /**
+     * Obtener análisis del embudo de conversión
+     */
+    private function getEmbudoConversion() {
+        // Embudo de créditos
+        $embudo = [
+            'solicitudes' => $this->db->fetch(
+                "SELECT COUNT(*) as total FROM creditos WHERE estatus IN ('solicitud', 'en_revision')"
+            )['total'],
+            'autorizados' => $this->db->fetch(
+                "SELECT COUNT(*) as total FROM creditos WHERE estatus = 'autorizado'"
+            )['total'],
+            'formalizados' => $this->db->fetch(
+                "SELECT COUNT(*) as total FROM creditos WHERE estatus = 'formalizado'"
+            )['total'],
+            'activos' => $this->db->fetch(
+                "SELECT COUNT(*) as total FROM creditos WHERE estatus = 'activo'"
+            )['total'],
+            'liquidados' => $this->db->fetch(
+                "SELECT COUNT(*) as total FROM creditos WHERE estatus = 'liquidado'"
+            )['total'],
+            'rechazados' => $this->db->fetch(
+                "SELECT COUNT(*) as total FROM creditos WHERE estatus = 'rechazado'"
+            )['total']
+        ];
+        
+        // Tasa de conversión
+        $totalSolicitudes = $this->db->fetch(
+            "SELECT COUNT(*) as total FROM creditos"
+        )['total'];
+        
+        $tasaConversion = $totalSolicitudes > 0 
+            ? round(($embudo['activos'] + $embudo['liquidados'] + $embudo['formalizados']) / $totalSolicitudes * 100, 1)
+            : 0;
+        
+        return [
+            'embudo' => $embudo,
+            'tasa_conversion' => $tasaConversion
+        ];
+    }
+    
+    /**
+     * Obtener análisis de retención
+     */
+    private function getAnalisisRetencion() {
+        // Distribución por nivel de riesgo
+        $distribucionRiesgo = $this->db->fetchAll(
+            "SELECT nivel_riesgo, COUNT(*) as cantidad
+             FROM metricas_crm
+             GROUP BY nivel_riesgo
+             ORDER BY FIELD(nivel_riesgo, 'bajo', 'medio', 'alto')"
+        );
+        
+        // Socios activos por antigüedad
+        $porAntiguedad = $this->db->fetchAll(
+            "SELECT 
+                CASE 
+                    WHEN DATEDIFF(CURDATE(), fecha_alta) <= 365 THEN '0-1 año'
+                    WHEN DATEDIFF(CURDATE(), fecha_alta) <= 730 THEN '1-2 años'
+                    WHEN DATEDIFF(CURDATE(), fecha_alta) <= 1095 THEN '2-3 años'
+                    ELSE '3+ años'
+                END as antiguedad,
+                COUNT(*) as cantidad
+             FROM socios
+             WHERE estatus = 'activo' AND fecha_alta IS NOT NULL
+             GROUP BY antiguedad
+             ORDER BY FIELD(antiguedad, '0-1 año', '1-2 años', '2-3 años', '3+ años')"
+        );
+        
+        // Tasa de retención (socios activos / total socios)
+        $totalSocios = $this->db->fetch("SELECT COUNT(*) as total FROM socios")['total'];
+        $sociosActivos = $this->db->fetch("SELECT COUNT(*) as total FROM socios WHERE estatus = 'activo'")['total'];
+        $tasaRetencion = $totalSocios > 0 ? round($sociosActivos / $totalSocios * 100, 1) : 0;
+        
+        // Socios que dieron de baja este mes
+        $bajasEsteMes = $this->db->fetch(
+            "SELECT COUNT(*) as total FROM socios 
+             WHERE estatus = 'baja' AND MONTH(fecha_baja) = MONTH(CURDATE()) AND YEAR(fecha_baja) = YEAR(CURDATE())"
+        )['total'];
+        
+        return [
+            'distribucion_riesgo' => $distribucionRiesgo,
+            'por_antiguedad' => $porAntiguedad,
+            'tasa_retencion' => $tasaRetencion,
+            'bajas_mes' => $bajasEsteMes
+        ];
     }
     
     public function segmentos() {
