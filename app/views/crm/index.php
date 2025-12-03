@@ -10,9 +10,38 @@
         <h1 class="text-2xl font-bold text-gray-800">Informe CRM - Customer Relationship Management</h1>
         <p class="text-gray-600">Análisis completo del comportamiento y métricas de clientes</p>
     </div>
-    <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-        <i class="fas fa-print mr-2"></i>Imprimir
-    </button>
+    <div class="flex space-x-2">
+        <a href="<?= BASE_URL ?>/crm/customerjourney" class="px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+            <i class="fas fa-route mr-2"></i>Customer Journey
+        </a>
+        <button onclick="window.print()" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+            <i class="fas fa-print mr-2"></i>Imprimir
+        </button>
+    </div>
+</div>
+
+<!-- Accesos rápidos -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+    <a href="<?= BASE_URL ?>/crm/metricas" class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition">
+        <i class="fas fa-chart-bar text-2xl text-blue-600 mb-2"></i>
+        <p class="font-medium text-gray-800">Métricas de Clientes</p>
+        <p class="text-sm text-gray-500">Ver métricas detalladas</p>
+    </a>
+    <a href="<?= BASE_URL ?>/crm/segmentos" class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition">
+        <i class="fas fa-layer-group text-2xl text-purple-600 mb-2"></i>
+        <p class="font-medium text-gray-800">Segmentos</p>
+        <p class="text-sm text-gray-500">Gestionar segmentos</p>
+    </a>
+    <a href="<?= BASE_URL ?>/crm/interacciones" class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition">
+        <i class="fas fa-comments text-2xl text-green-600 mb-2"></i>
+        <p class="font-medium text-gray-800">Interacciones</p>
+        <p class="text-sm text-gray-500">Historial de contactos</p>
+    </a>
+    <a href="<?= BASE_URL ?>/crm/customerjourney" class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition">
+        <i class="fas fa-route text-2xl text-orange-600 mb-2"></i>
+        <p class="font-medium text-gray-800">Customer Journey</p>
+        <p class="text-sm text-gray-500">Prospectos y vinculación</p>
+    </a>
 </div>
 
 <!-- KPIs Principales -->

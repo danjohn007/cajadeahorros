@@ -388,4 +388,150 @@ class CrmController extends Controller {
             )['total'] ?? 0
         ];
     }
+    
+    /**
+     * Customer Journey - Gestión de prospectos y solicitudes de vinculación
+     */
+    public function customerjourney() {
+        $this->requireRole(['administrador', 'operativo']);
+        
+        $errors = [];
+        $success = '';
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->validateCsrf();
+            
+            $action = $_POST['action'] ?? '';
+            $solicitudId = (int)($_POST['solicitud_id'] ?? 0);
+            
+            if ($action === 'aprobar' && $solicitudId) {
+                $socioId = (int)($_POST['socio_id'] ?? 0);
+                
+                if (!$socioId) {
+                    $errors[] = 'Debe seleccionar un socio para vincular';
+                } else {
+                    $solicitud = $this->db->fetch(
+                        "SELECT * FROM solicitudes_vinculacion WHERE id = :id",
+                        ['id' => $solicitudId]
+                    );
+                    
+                    if ($solicitud && $solicitud['estatus'] === 'pendiente') {
+                        // Vincular usuario con socio
+                        $this->db->insert('usuarios_socios', [
+                            'usuario_id' => $solicitud['usuario_id'],
+                            'socio_id' => $socioId
+                        ]);
+                        
+                        // Actualizar solicitud
+                        $this->db->update('solicitudes_vinculacion', [
+                            'estatus' => 'aprobada',
+                            'revisado_por' => $_SESSION['user_id'],
+                            'fecha_revision' => date('Y-m-d H:i:s'),
+                            'socio_id' => $socioId
+                        ], 'id = :id', ['id' => $solicitudId]);
+                        
+                        // Notificar al usuario
+                        $this->db->insert('notificaciones', [
+                            'usuario_id' => $solicitud['usuario_id'],
+                            'tipo' => 'success',
+                            'titulo' => 'Cuenta vinculada exitosamente',
+                            'mensaje' => 'Tu solicitud de vinculación ha sido aprobada. Ya puedes acceder a tu portal de socio.',
+                            'url' => 'cliente'
+                        ]);
+                        
+                        $this->logAction('APROBAR_VINCULACION', 
+                            "Se aprobó vinculación de usuario {$solicitud['usuario_id']} con socio {$socioId}",
+                            'solicitudes_vinculacion',
+                            $solicitudId
+                        );
+                        
+                        $success = 'Solicitud aprobada y cuenta vinculada exitosamente';
+                    }
+                }
+            } elseif ($action === 'rechazar' && $solicitudId) {
+                $notas = $this->sanitize($_POST['notas_revision'] ?? '');
+                
+                $this->db->update('solicitudes_vinculacion', [
+                    'estatus' => 'rechazada',
+                    'revisado_por' => $_SESSION['user_id'],
+                    'fecha_revision' => date('Y-m-d H:i:s'),
+                    'notas_revision' => $notas
+                ], 'id = :id', ['id' => $solicitudId]);
+                
+                // Notificar al usuario
+                $solicitud = $this->db->fetch(
+                    "SELECT usuario_id FROM solicitudes_vinculacion WHERE id = :id",
+                    ['id' => $solicitudId]
+                );
+                
+                if ($solicitud) {
+                    $this->db->insert('notificaciones', [
+                        'usuario_id' => $solicitud['usuario_id'],
+                        'tipo' => 'warning',
+                        'titulo' => 'Solicitud de vinculación rechazada',
+                        'mensaje' => 'Tu solicitud de vinculación ha sido rechazada. Contacta a la oficina para más información.',
+                        'url' => 'cliente'
+                    ]);
+                }
+                
+                $this->logAction('RECHAZAR_VINCULACION', 
+                    "Se rechazó vinculación de solicitud {$solicitudId}",
+                    'solicitudes_vinculacion',
+                    $solicitudId
+                );
+                
+                $success = 'Solicitud rechazada';
+            }
+        }
+        
+        // Obtener solicitudes de vinculación pendientes
+        $solicitudesPendientes = $this->db->fetchAll(
+            "SELECT sv.*, u.email as usuario_email
+             FROM solicitudes_vinculacion sv
+             JOIN usuarios u ON sv.usuario_id = u.id
+             WHERE sv.estatus IN ('pendiente', 'en_revision')
+             ORDER BY sv.created_at DESC"
+        );
+        
+        // Obtener historial de solicitudes
+        $historialSolicitudes = $this->db->fetchAll(
+            "SELECT sv.*, u.email as usuario_email,
+                    ur.nombre as revisado_por_nombre,
+                    s.numero_socio
+             FROM solicitudes_vinculacion sv
+             JOIN usuarios u ON sv.usuario_id = u.id
+             LEFT JOIN usuarios ur ON sv.revisado_por = ur.id
+             LEFT JOIN socios s ON sv.socio_id = s.id
+             WHERE sv.estatus IN ('aprobada', 'rechazada')
+             ORDER BY sv.fecha_revision DESC
+             LIMIT 20"
+        );
+        
+        // Estadísticas
+        $stats = [
+            'pendientes' => count($solicitudesPendientes),
+            'aprobadas_mes' => $this->db->fetch(
+                "SELECT COUNT(*) as total FROM solicitudes_vinculacion 
+                 WHERE estatus = 'aprobada' AND MONTH(fecha_revision) = MONTH(CURDATE())"
+            )['total'],
+            'rechazadas_mes' => $this->db->fetch(
+                "SELECT COUNT(*) as total FROM solicitudes_vinculacion 
+                 WHERE estatus = 'rechazada' AND MONTH(fecha_revision) = MONTH(CURDATE())"
+            )['total'],
+            'usuarios_sin_vincular' => $this->db->fetch(
+                "SELECT COUNT(*) as total FROM usuarios u
+                 WHERE u.rol = 'cliente' AND u.activo = 1
+                 AND u.id NOT IN (SELECT usuario_id FROM usuarios_socios)"
+            )['total']
+        ];
+        
+        $this->view('crm/customerjourney', [
+            'pageTitle' => 'Customer Journey',
+            'solicitudesPendientes' => $solicitudesPendientes,
+            'historialSolicitudes' => $historialSolicitudes,
+            'stats' => $stats,
+            'errors' => $errors,
+            'success' => $success
+        ]);
+    }
 }
