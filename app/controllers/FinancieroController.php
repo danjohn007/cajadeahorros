@@ -223,12 +223,12 @@ class FinancieroController extends Controller {
     public function reportes() {
         $this->requireRole(['administrador', 'operativo']);
         
-        $año = (int)($_GET['año'] ?? date('Y'));
+        $anio = (int)($_GET['anio'] ?? $_GET['año'] ?? date('Y'));
         $mes = (int)($_GET['mes'] ?? 0);
         
         // Resumen por categoría
-        $conditions = 'YEAR(t.fecha) = :año';
-        $params = ['año' => $año];
+        $conditions = 'YEAR(t.fecha) = :anio';
+        $params = ['anio' => $anio];
         
         if ($mes > 0) {
             $conditions .= ' AND MONTH(t.fecha) = :mes';
@@ -262,10 +262,10 @@ class FinancieroController extends Controller {
                 SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as ingresos,
                 SUM(CASE WHEN tipo = 'egreso' THEN monto ELSE 0 END) as egresos
              FROM transacciones_financieras
-             WHERE YEAR(fecha) = :año
+             WHERE YEAR(fecha) = :anio
              GROUP BY DATE_FORMAT(fecha, '%Y-%m')
              ORDER BY periodo",
-            ['año' => $año]
+            ['anio' => $anio]
         );
         
         $this->view('financiero/reportes', [
@@ -273,7 +273,7 @@ class FinancieroController extends Controller {
             'resumenCategoria' => $resumenCategoria,
             'totales' => $totales,
             'evolucionMensual' => $evolucionMensual,
-            'año' => $año,
+            'año' => $anio,
             'mes' => $mes
         ]);
     }
@@ -281,7 +281,7 @@ class FinancieroController extends Controller {
     public function presupuestos() {
         $this->requireRole(['administrador']);
         
-        $año = (int)($_GET['año'] ?? date('Y'));
+        $anio = (int)($_GET['anio'] ?? $_GET['año'] ?? date('Y'));
         $errors = [];
         $success = '';
         
@@ -295,8 +295,8 @@ class FinancieroController extends Controller {
             if ($categoriaId && $mesPresupuesto && $montoPresupuestado > 0) {
                 // Insertar o actualizar
                 $existe = $this->db->fetch(
-                    "SELECT id FROM presupuestos WHERE categoria_id = :cat AND año = :año AND mes = :mes",
-                    ['cat' => $categoriaId, 'año' => $año, 'mes' => $mesPresupuesto]
+                    "SELECT id FROM presupuestos WHERE categoria_id = :cat AND año = :anio AND mes = :mes",
+                    ['cat' => $categoriaId, 'anio' => $anio, 'mes' => $mesPresupuesto]
                 );
                 
                 if ($existe) {
@@ -308,7 +308,7 @@ class FinancieroController extends Controller {
                 } else {
                     $this->db->insert('presupuestos', [
                         'categoria_id' => $categoriaId,
-                        'año' => $año,
+                        'año' => $anio,
                         'mes' => $mesPresupuesto,
                         'monto_presupuestado' => $montoPresupuestado
                     ]);
@@ -327,9 +327,9 @@ class FinancieroController extends Controller {
                      AND YEAR(fecha) = p.año AND MONTH(fecha) = p.mes) as ejecutado
              FROM presupuestos p
              JOIN categorias_financieras cf ON p.categoria_id = cf.id
-             WHERE p.año = :año
+             WHERE p.año = :anio
              ORDER BY p.mes, cf.nombre",
-            ['año' => $año]
+            ['anio' => $anio]
         );
         
         $categorias = $this->db->fetchAll(
@@ -340,7 +340,7 @@ class FinancieroController extends Controller {
             'pageTitle' => 'Presupuestos',
             'presupuestos' => $presupuestos,
             'categorias' => $categorias,
-            'año' => $año,
+            'año' => $anio,
             'errors' => $errors,
             'success' => $success
         ]);
