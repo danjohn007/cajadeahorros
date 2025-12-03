@@ -67,41 +67,6 @@
     </div>
 </div>
 
-<!-- Gráficas -->
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-    <!-- Gráfica 1: Evolución Diaria -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-chart-line mr-2 text-blue-500"></i>Evolución Diaria
-        </h3>
-        <canvas id="chartEvolucion" height="200"></canvas>
-    </div>
-    
-    <!-- Gráfica 2: Distribución por Categoría -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-chart-pie mr-2 text-purple-500"></i>Distribución por Categoría
-        </h3>
-        <canvas id="chartDistribucion" height="200"></canvas>
-    </div>
-    
-    <!-- Gráfica 3: Top Egresos -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-chart-bar mr-2 text-red-500"></i>Top 5 Egresos por Categoría
-        </h3>
-        <canvas id="chartTopEgresos" height="200"></canvas>
-    </div>
-    
-    <!-- Gráfica 4: Comparación Mensual -->
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h3 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-chart-area mr-2 text-green-500"></i>Comparación Mensual
-        </h3>
-        <canvas id="chartMensual" height="200"></canvas>
-    </div>
-</div>
-
 <!-- Filtros -->
 <div class="bg-white rounded-lg shadow-md p-4 mb-6">
     <form method="GET" action="<?= url('financiero') ?>" class="flex flex-wrap gap-4 items-end">
@@ -138,6 +103,49 @@
             <i class="fas fa-filter mr-2"></i>Filtrar
         </button>
     </form>
+</div>
+
+<!-- Gráficas -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Gráfica 1: Evolución Diaria -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-line mr-2 text-blue-500"></i>Evolución Diaria
+        </h3>
+        <div style="height: 250px;">
+            <canvas id="chartEvolucion"></canvas>
+        </div>
+    </div>
+    
+    <!-- Gráfica 2: Distribución por Categoría -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-pie mr-2 text-purple-500"></i>Distribución por Categoría
+        </h3>
+        <div style="height: 250px;">
+            <canvas id="chartDistribucion"></canvas>
+        </div>
+    </div>
+    
+    <!-- Gráfica 3: Top Egresos -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-bar mr-2 text-red-500"></i>Top 5 Egresos por Categoría
+        </h3>
+        <div style="height: 250px;">
+            <canvas id="chartTopEgresos"></canvas>
+        </div>
+    </div>
+    
+    <!-- Gráfica 4: Comparación Mensual -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-area mr-2 text-green-500"></i>Comparación Mensual
+        </h3>
+        <div style="height: 250px;">
+            <canvas id="chartMensual"></canvas>
+        </div>
+    </div>
 </div>
 
 <!-- Tabla de transacciones -->
