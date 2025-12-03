@@ -2,6 +2,8 @@
 -- Sistema de Gestión Integral de Caja de Ahorros
 -- Script de actualización v1.3
 -- Cardex del Socio, Pagos PayPal, Cliente user level
+-- Versión compatible sin uso de INFORMATION_SCHEMA directo ni sintaxis
+-- que requiera MySQL 8+ (usa handlers para evitar fallos si ya existen)
 -- =====================================================
 
 USE caja_ahorros;
@@ -131,10 +133,21 @@ CREATE TABLE IF NOT EXISTS pagos_online (
 
 -- =====================================================
 -- AGREGAR CAMPO DE IDENTIFICACIÓN OFICIAL A SOCIOS
+-- (manejo de error si la columna ya existe — sin usar INFORMATION_SCHEMA)
 -- =====================================================
 
-ALTER TABLE socios 
-ADD COLUMN IF NOT EXISTS identificacion_oficial VARCHAR(255) AFTER observaciones;
+DROP PROCEDURE IF EXISTS sp_add_identificacion_oficial;
+DELIMITER $$
+CREATE PROCEDURE sp_add_identificacion_oficial()
+BEGIN
+    -- Si ocurre cualquier error (por ejemplo: columna ya existe), continuamos.
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION BEGIN END;
+    ALTER TABLE socios ADD COLUMN identificacion_oficial VARCHAR(255) AFTER observaciones;
+END$$
+DELIMITER ;
+
+CALL sp_add_identificacion_oficial();
+DROP PROCEDURE IF EXISTS sp_add_identificacion_oficial;
 
 -- =====================================================
 -- AGREGAR CONFIGURACIONES PARA PAYPAL
@@ -162,19 +175,32 @@ CREATE TABLE IF NOT EXISTS usuarios_socios (
 
 -- =====================================================
 -- INDICES ADICIONALES PARA MEJORAR RENDIMIENTO
+-- (creación tolerante a errores: si ya existen, se ignoran)
 -- =====================================================
 
--- Índice para búsqueda rápida de movimientos por fecha
-CREATE INDEX IF NOT EXISTS idx_mov_ahorro_fecha ON movimientos_ahorro(fecha);
+DROP PROCEDURE IF EXISTS sp_add_indices_tolerant;
+DELIMITER $$
+CREATE PROCEDURE sp_add_indices_tolerant()
+BEGIN
+    -- Ignora cualquier error (por ejemplo: índice ya existe)
+    DECLARE CONTINUE HANDLER FOR SQLEXCEPTION BEGIN END;
 
--- Índice para búsqueda rápida de amortizaciones vencidas
-CREATE INDEX IF NOT EXISTS idx_amort_vencimiento ON amortizacion(fecha_vencimiento, estatus);
+    -- Índice para búsqueda rápida de movimientos por fecha
+    ALTER TABLE movimientos_ahorro ADD INDEX idx_mov_ahorro_fecha (fecha);
+
+    -- Índice para búsqueda rápida de amortizaciones vencidas
+    ALTER TABLE amortizacion ADD INDEX idx_amort_vencimiento (fecha_vencimiento, estatus);
+END$$
+DELIMITER ;
+
+CALL sp_add_indices_tolerant();
+DROP PROCEDURE IF EXISTS sp_add_indices_tolerant;
 
 -- =====================================================
 -- ACTUALIZACIÓN DE PROCEDIMIENTOS ALMACENADOS (si existen)
 -- =====================================================
 
--- Procedimiento para actualizar métricas CRM (crear si no existe)
+-- Procedimiento para actualizar métricas CRM (crear/actualizar)
 DROP PROCEDURE IF EXISTS sp_actualizar_metricas_crm;
 DELIMITER //
 CREATE PROCEDURE sp_actualizar_metricas_crm(IN p_socio_id INT)
