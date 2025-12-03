@@ -124,11 +124,42 @@
                 </div>
                 
                 <!-- Proveedor/Cliente -->
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                        <label for="socio_id" class="block text-sm font-medium text-gray-700 mb-1">Socio (Cliente)</label>
+                        <select id="socio_id" name="socio_id"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border">
+                            <option value="">Seleccionar socio...</option>
+                            <?php foreach ($socios as $s): ?>
+                                <option value="<?= $s['id'] ?>" <?= ($transaccion['socio_id'] ?? '') == $s['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($s['numero_socio'] . ' - ' . $s['nombre_completo']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Para ingresos de socios</p>
+                    </div>
+                    
+                    <div>
+                        <label for="proveedor_id" class="block text-sm font-medium text-gray-700 mb-1">Proveedor</label>
+                        <select id="proveedor_id" name="proveedor_id"
+                                class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border">
+                            <option value="">Seleccionar proveedor...</option>
+                            <?php foreach ($proveedores as $p): ?>
+                                <option value="<?= $p['id'] ?>" <?= ($transaccion['proveedor_id'] ?? '') == $p['id'] ? 'selected' : '' ?>>
+                                    <?= htmlspecialchars($p['nombre']) ?>
+                                </option>
+                            <?php endforeach; ?>
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Para egresos a proveedores</p>
+                    </div>
+                </div>
+                
+                <!-- Nombre Proveedor/Cliente (alternativo) -->
                 <div>
-                    <label for="proveedor" class="block text-sm font-medium text-gray-700 mb-1">Proveedor/Cliente</label>
+                    <label for="proveedor" class="block text-sm font-medium text-gray-700 mb-1">Nombre Proveedor/Cliente (texto libre)</label>
                     <input type="text" id="proveedor" name="proveedor"
                            value="<?= htmlspecialchars($transaccion['proveedor'] ?? '') ?>"
-                           placeholder="Nombre del proveedor o cliente"
+                           placeholder="Usar si no está en los catálogos"
                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border">
                 </div>
                 

@@ -20,6 +20,7 @@ $router->add('cliente/creditos', ['controller' => 'cliente', 'action' => 'credit
 $router->add('cliente/credito/{id}', ['controller' => 'cliente', 'action' => 'credito']);
 $router->add('cliente/amortizacion/{id}', ['controller' => 'cliente', 'action' => 'amortizacion']);
 $router->add('cliente/pagar', ['controller' => 'cliente', 'action' => 'pagar']);
+$router->add('cliente/solicitarVinculacion', ['controller' => 'cliente', 'action' => 'solicitarVinculacion']);
 
 // Dashboard
 $router->add('dashboard', ['controller' => 'dashboard', 'action' => 'index']);
@@ -109,6 +110,9 @@ $router->add('financiero/transaccion/{id}', ['controller' => 'financiero', 'acti
 $router->add('financiero/categorias', ['controller' => 'financiero', 'action' => 'categorias']);
 $router->add('financiero/reportes', ['controller' => 'financiero', 'action' => 'reportes']);
 $router->add('financiero/presupuestos', ['controller' => 'financiero', 'action' => 'presupuestos']);
+$router->add('financiero/proveedores', ['controller' => 'financiero', 'action' => 'proveedores']);
+$router->add('financiero/proveedor', ['controller' => 'financiero', 'action' => 'proveedor']);
+$router->add('financiero/proveedor/{id}', ['controller' => 'financiero', 'action' => 'proveedor']);
 
 // Importar Clientes
 $router->add('importar', ['controller' => 'importar', 'action' => 'index']);
@@ -131,6 +135,7 @@ $router->add('crm/metricas', ['controller' => 'crm', 'action' => 'metricas']);
 $router->add('crm/interacciones', ['controller' => 'crm', 'action' => 'interacciones']);
 $router->add('crm/interaccion', ['controller' => 'crm', 'action' => 'interaccion']);
 $router->add('crm/interaccion/{id}', ['controller' => 'crm', 'action' => 'interaccion']);
+$router->add('crm/customerjourney', ['controller' => 'crm', 'action' => 'customerjourney']);
 
 // Dispositivos IoT (Shelly Cloud y HikVision)
 $router->add('dispositivos', ['controller' => 'dispositivos', 'action' => 'index']);
@@ -157,3 +162,6 @@ $router->add('api/socios/buscar', ['controller' => 'api', 'action' => 'buscarSoc
 $router->add('api/dashboard/stats', ['controller' => 'api', 'action' => 'dashboardStats']);
 $router->add('api/qr', ['controller' => 'api', 'action' => 'qr']);
 $router->add('api/qr/masivo', ['controller' => 'api', 'action' => 'generarQRMasivo']);
+$router->add('api/notificaciones', ['controller' => 'api', 'action' => 'notificaciones']);
+$router->add('api/notificaciones/marcarLeida/{id}', ['controller' => 'api', 'action' => 'marcarNotificacionLeida']);
+$router->add('api/notificaciones/marcarTodasLeidas', ['controller' => 'api', 'action' => 'marcarTodasNotificacionesLeidas']);

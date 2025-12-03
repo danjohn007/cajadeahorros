@@ -65,11 +65,15 @@ class FinancieroController extends Controller {
         // Resumen financiero
         $resumen = $this->getResumen($fechaInicio, $fechaFin);
         
+        // Chart data
+        $chartData = $this->getChartData($fechaInicio, $fechaFin);
+        
         $this->view('financiero/index', [
             'pageTitle' => 'Módulo Financiero',
             'transacciones' => $transacciones,
             'categorias' => $categorias,
             'resumen' => $resumen,
+            'chartData' => $chartData,
             'total' => $total,
             'page' => $page,
             'totalPages' => $totalPages,
@@ -104,6 +108,8 @@ class FinancieroController extends Controller {
             $fecha = $this->sanitize($_POST['fecha'] ?? date('Y-m-d'));
             $metodoPago = $this->sanitize($_POST['metodo_pago'] ?? 'efectivo');
             $referencia = $this->sanitize($_POST['referencia'] ?? '');
+            $proveedorId = (int)($_POST['proveedor_id'] ?? 0);
+            $socioId = (int)($_POST['socio_id'] ?? 0);
             $proveedor = $this->sanitize($_POST['proveedor'] ?? '');
             $notas = $this->sanitize($_POST['notas'] ?? '');
             
@@ -127,6 +133,8 @@ class FinancieroController extends Controller {
                     'fecha' => $fecha,
                     'metodo_pago' => $metodoPago,
                     'referencia' => $referencia,
+                    'proveedor_id' => $proveedorId ?: null,
+                    'socio_id' => $socioId ?: null,
                     'proveedor' => $proveedor,
                     'notas' => $notas,
                     'usuario_id' => $_SESSION['user_id']
@@ -151,10 +159,21 @@ class FinancieroController extends Controller {
             "SELECT * FROM categorias_financieras WHERE activo = 1 ORDER BY tipo, nombre"
         );
         
+        $socios = $this->db->fetchAll(
+            "SELECT id, numero_socio, CONCAT(nombre, ' ', apellido_paterno) as nombre_completo 
+             FROM socios WHERE estatus = 'activo' ORDER BY nombre LIMIT 100"
+        );
+        
+        $proveedores = $this->db->fetchAll(
+            "SELECT id, nombre FROM proveedores WHERE activo = 1 ORDER BY nombre"
+        );
+        
         $this->view('financiero/transaccion', [
             'pageTitle' => $id ? 'Editar Transacción' : 'Nueva Transacción',
             'transaccion' => $transaccion,
             'categorias' => $categorias,
+            'socios' => $socios,
+            'proveedores' => $proveedores,
             'errors' => $errors
         ]);
     }
@@ -366,5 +385,227 @@ class FinancieroController extends Controller {
             'egresos' => $egresos,
             'balance' => $ingresos - $egresos
         ];
+    }
+    
+    private function getChartData($fechaInicio, $fechaFin) {
+        $params = ['fi' => $fechaInicio, 'ff' => $fechaFin];
+        
+        // 1. Daily evolution (Ingresos vs Egresos por día)
+        $evolucionDiaria = $this->db->fetchAll(
+            "SELECT DATE(fecha) as fecha,
+                    SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as ingresos,
+                    SUM(CASE WHEN tipo = 'egreso' THEN monto ELSE 0 END) as egresos
+             FROM transacciones_financieras
+             WHERE fecha BETWEEN :fi AND :ff
+             GROUP BY DATE(fecha)
+             ORDER BY fecha",
+            $params
+        );
+        
+        // 2. Distribution by category (pie chart)
+        $distribucionCategorias = $this->db->fetchAll(
+            "SELECT cf.nombre, cf.color, SUM(t.monto) as total, t.tipo
+             FROM transacciones_financieras t
+             LEFT JOIN categorias_financieras cf ON t.categoria_id = cf.id
+             WHERE t.fecha BETWEEN :fi AND :ff
+             GROUP BY cf.id, cf.nombre, cf.color, t.tipo
+             ORDER BY total DESC",
+            $params
+        );
+        
+        // 3. Top 5 expenses by category
+        $topEgresos = $this->db->fetchAll(
+            "SELECT COALESCE(cf.nombre, 'Sin categoría') as nombre, 
+                    COALESCE(cf.color, '#6b7280') as color, 
+                    SUM(t.monto) as total
+             FROM transacciones_financieras t
+             LEFT JOIN categorias_financieras cf ON t.categoria_id = cf.id
+             WHERE t.fecha BETWEEN :fi AND :ff AND t.tipo = 'egreso'
+             GROUP BY cf.id, cf.nombre, cf.color
+             ORDER BY total DESC
+             LIMIT 5",
+            $params
+        );
+        
+        // 4. Monthly comparison (current period vs previous period)
+        $comparacionMensual = $this->db->fetchAll(
+            "SELECT DATE_FORMAT(fecha, '%Y-%m') as mes,
+                    SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END) as ingresos,
+                    SUM(CASE WHEN tipo = 'egreso' THEN monto ELSE 0 END) as egresos
+             FROM transacciones_financieras
+             WHERE fecha >= DATE_SUB(:fi, INTERVAL 3 MONTH) AND fecha <= :ff
+             GROUP BY DATE_FORMAT(fecha, '%Y-%m')
+             ORDER BY mes",
+            $params
+        );
+        
+        return [
+            'evolucion_diaria' => $evolucionDiaria,
+            'distribucion_categorias' => $distribucionCategorias,
+            'top_egresos' => $topEgresos,
+            'comparacion_mensual' => $comparacionMensual
+        ];
+    }
+    
+    /**
+     * Gestión de Proveedores
+     */
+    public function proveedores() {
+        $this->requireAuth();
+        
+        $page = isset($_GET['page']) ? max(1, (int)$_GET['page']) : 1;
+        $perPage = 20;
+        $buscar = $_GET['q'] ?? '';
+        
+        $conditions = '1=1';
+        $params = [];
+        
+        if ($buscar) {
+            $conditions .= ' AND (nombre LIKE :buscar OR rfc LIKE :buscar2 OR contacto LIKE :buscar3)';
+            $buscarTerm = "%{$buscar}%";
+            $params['buscar'] = $buscarTerm;
+            $params['buscar2'] = $buscarTerm;
+            $params['buscar3'] = $buscarTerm;
+        }
+        
+        $total = $this->db->fetch(
+            "SELECT COUNT(*) as total FROM proveedores WHERE {$conditions}",
+            $params
+        )['total'];
+        
+        $totalPages = ceil($total / $perPage);
+        $offset = ($page - 1) * $perPage;
+        
+        $proveedores = $this->db->fetchAll(
+            "SELECT p.*, 
+                    (SELECT COUNT(*) FROM transacciones_financieras t WHERE t.proveedor_id = p.id) as num_transacciones,
+                    (SELECT COALESCE(SUM(monto), 0) FROM transacciones_financieras t WHERE t.proveedor_id = p.id) as total_transacciones
+             FROM proveedores p
+             WHERE {$conditions}
+             ORDER BY p.nombre
+             LIMIT {$perPage} OFFSET {$offset}",
+            $params
+        );
+        
+        $errors = [];
+        $success = '';
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->validateCsrf();
+            
+            $action = $_POST['action'] ?? '';
+            
+            if ($action === 'crear') {
+                $nombre = $this->sanitize($_POST['nombre'] ?? '');
+                $rfc = $this->sanitize($_POST['rfc'] ?? '');
+                $contacto = $this->sanitize($_POST['contacto'] ?? '');
+                $telefono = $this->sanitize($_POST['telefono'] ?? '');
+                $email = $this->sanitize($_POST['email'] ?? '');
+                $direccion = $this->sanitize($_POST['direccion'] ?? '');
+                $notas = $this->sanitize($_POST['notas'] ?? '');
+                
+                if (empty($nombre)) {
+                    $errors[] = 'El nombre es requerido';
+                } else {
+                    $this->db->insert('proveedores', [
+                        'nombre' => $nombre,
+                        'rfc' => $rfc,
+                        'contacto' => $contacto,
+                        'telefono' => $telefono,
+                        'email' => $email,
+                        'direccion' => $direccion,
+                        'notas' => $notas,
+                        'activo' => 1
+                    ]);
+                    
+                    $this->logAction('CREAR_PROVEEDOR', "Se creó proveedor: {$nombre}", 'proveedores', $this->db->lastInsertId());
+                    $this->setFlash('success', 'Proveedor creado exitosamente');
+                    $this->redirect('financiero/proveedores');
+                }
+            } elseif ($action === 'toggle') {
+                $id = (int)($_POST['id'] ?? 0);
+                $proveedor = $this->db->fetch("SELECT activo FROM proveedores WHERE id = :id", ['id' => $id]);
+                if ($proveedor) {
+                    $nuevoEstado = $proveedor['activo'] ? 0 : 1;
+                    $this->db->update('proveedores', ['activo' => $nuevoEstado], 'id = :id', ['id' => $id]);
+                    $this->setFlash('success', $nuevoEstado ? 'Proveedor activado' : 'Proveedor desactivado');
+                    $this->redirect('financiero/proveedores');
+                }
+            }
+        }
+        
+        $this->view('financiero/proveedores', [
+            'pageTitle' => 'Proveedores',
+            'proveedores' => $proveedores,
+            'total' => $total,
+            'page' => $page,
+            'totalPages' => $totalPages,
+            'buscar' => $buscar,
+            'errors' => $errors,
+            'success' => $success
+        ]);
+    }
+    
+    public function proveedor() {
+        $this->requireRole(['administrador', 'operativo']);
+        
+        $id = isset($this->params['id']) ? (int)$this->params['id'] : 0;
+        $proveedor = null;
+        $errors = [];
+        
+        if ($id) {
+            $proveedor = $this->db->fetch(
+                "SELECT * FROM proveedores WHERE id = :id",
+                ['id' => $id]
+            );
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->validateCsrf();
+            
+            $nombre = $this->sanitize($_POST['nombre'] ?? '');
+            $rfc = $this->sanitize($_POST['rfc'] ?? '');
+            $contacto = $this->sanitize($_POST['contacto'] ?? '');
+            $telefono = $this->sanitize($_POST['telefono'] ?? '');
+            $email = $this->sanitize($_POST['email'] ?? '');
+            $direccion = $this->sanitize($_POST['direccion'] ?? '');
+            $notas = $this->sanitize($_POST['notas'] ?? '');
+            
+            if (empty($nombre)) {
+                $errors[] = 'El nombre es requerido';
+            }
+            
+            if (empty($errors)) {
+                $data = [
+                    'nombre' => $nombre,
+                    'rfc' => $rfc,
+                    'contacto' => $contacto,
+                    'telefono' => $telefono,
+                    'email' => $email,
+                    'direccion' => $direccion,
+                    'notas' => $notas
+                ];
+                
+                if ($id) {
+                    $this->db->update('proveedores', $data, 'id = :id', ['id' => $id]);
+                    $this->logAction('EDITAR_PROVEEDOR', "Se editó proveedor ID: {$id}", 'proveedores', $id);
+                    $this->setFlash('success', 'Proveedor actualizado exitosamente');
+                } else {
+                    $data['activo'] = 1;
+                    $this->db->insert('proveedores', $data);
+                    $newId = $this->db->lastInsertId();
+                    $this->logAction('CREAR_PROVEEDOR', "Se creó proveedor: {$nombre}", 'proveedores', $newId);
+                    $this->setFlash('success', 'Proveedor creado exitosamente');
+                }
+                
+                $this->redirect('financiero/proveedores');
+            }
+        }
+        
+        $this->view('financiero/proveedor', [
+            'pageTitle' => $id ? 'Editar Proveedor' : 'Nuevo Proveedor',
+            'proveedor' => $proveedor,
+            'errors' => $errors
+        ]);
     }
 }
