@@ -42,6 +42,8 @@ class NominaController extends Controller {
         $this->requireRole(['administrador', 'operativo']);
         
         $errors = [];
+        $preview = null;
+        $previewMode = isset($_POST['preview']);
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
@@ -56,7 +58,7 @@ class NominaController extends Controller {
                     $periodo = $this->sanitize($_POST['periodo'] ?? '');
                     $fechaNomina = $_POST['fecha_nomina'] ?? date('Y-m-d');
                     
-                    // Guardar archivo
+                    // Guardar archivo temporalmente para preview
                     $nombreArchivo = 'nomina_' . date('Y-m-d_His') . '.' . $ext;
                     $rutaArchivo = UPLOADS_PATH . '/' . $nombreArchivo;
                     
@@ -64,44 +66,125 @@ class NominaController extends Controller {
                         // Procesar archivo
                         $registros = $this->procesarArchivo($rutaArchivo, $ext);
                         
-                        // Guardar en BD
-                        $archivoId = $this->db->insert('archivos_nomina', [
-                            'nombre_archivo' => $archivo['name'],
-                            'ruta_archivo' => $rutaArchivo,
-                            'periodo' => $periodo,
-                            'fecha_nomina' => $fechaNomina,
-                            'total_registros' => count($registros),
-                            'estatus' => 'cargado',
-                            'usuario_id' => $_SESSION['user_id'],
-                            'fecha_carga' => date('Y-m-d H:i:s')
-                        ]);
-                        
-                        // Guardar registros
-                        foreach ($registros as $reg) {
-                            $this->db->insert('registros_nomina', [
-                                'archivo_id' => $archivoId,
-                                'rfc' => $reg['rfc'] ?? '',
-                                'curp' => $reg['curp'] ?? '',
-                                'nombre_nomina' => $reg['nombre'] ?? '',
-                                'numero_empleado' => $reg['numero_empleado'] ?? '',
-                                'monto_descuento' => $reg['monto'] ?? 0,
-                                'concepto' => $reg['concepto'] ?? '',
-                                'estatus' => 'pendiente'
+                        if ($previewMode) {
+                            // Mode preview - mostrar registros pero no guardar
+                            $preview = [
+                                'nombre_archivo' => $archivo['name'],
+                                'ruta_archivo' => $rutaArchivo,
+                                'periodo' => $periodo,
+                                'fecha_nomina' => $fechaNomina,
+                                'registros' => array_slice($registros, 0, 50), // Limitar a 50 para preview
+                                'total_registros' => count($registros)
+                            ];
+                            
+                            // Store in session for final import
+                            $_SESSION['nomina_preview'] = [
+                                'ruta_archivo' => $rutaArchivo,
+                                'nombre_archivo' => $archivo['name'],
+                                'periodo' => $periodo,
+                                'fecha_nomina' => $fechaNomina,
+                                'registros' => $registros
+                            ];
+                        } else {
+                            // Mode final import - check if we have preview data
+                            if (isset($_POST['confirm_import']) && isset($_SESSION['nomina_preview'])) {
+                                $previewData = $_SESSION['nomina_preview'];
+                                $registros = $previewData['registros'];
+                                $rutaArchivo = $previewData['ruta_archivo'];
+                                $archivo = ['name' => $previewData['nombre_archivo']];
+                                $periodo = $previewData['periodo'];
+                                $fechaNomina = $previewData['fecha_nomina'];
+                                unset($_SESSION['nomina_preview']);
+                                
+                                // Delete temp file from new upload if exists
+                                if (file_exists(UPLOADS_PATH . '/' . $nombreArchivo)) {
+                                    @unlink(UPLOADS_PATH . '/' . $nombreArchivo);
+                                }
+                            }
+                            
+                            // Guardar en BD
+                            $archivoId = $this->db->insert('archivos_nomina', [
+                                'nombre_archivo' => $archivo['name'],
+                                'ruta_archivo' => $rutaArchivo,
+                                'periodo' => $periodo,
+                                'fecha_nomina' => $fechaNomina,
+                                'total_registros' => count($registros),
+                                'estatus' => 'cargado',
+                                'usuario_id' => $_SESSION['user_id'],
+                                'fecha_carga' => date('Y-m-d H:i:s')
                             ]);
+                            
+                            // Guardar registros
+                            foreach ($registros as $reg) {
+                                $this->db->insert('registros_nomina', [
+                                    'archivo_id' => $archivoId,
+                                    'rfc' => $reg['rfc'] ?? '',
+                                    'curp' => $reg['curp'] ?? '',
+                                    'nombre_nomina' => $reg['nombre'] ?? '',
+                                    'numero_empleado' => $reg['numero_empleado'] ?? '',
+                                    'monto_descuento' => $reg['monto'] ?? 0,
+                                    'concepto' => $reg['concepto'] ?? '',
+                                    'estatus' => 'pendiente'
+                                ]);
+                            }
+                            
+                            $this->logAction('CARGAR_NOMINA', 
+                                "Se cargó archivo de nómina: {$archivo['name']} con " . count($registros) . " registros",
+                                'archivos_nomina',
+                                $archivoId
+                            );
+                            
+                            $this->setFlash('success', 'Archivo cargado exitosamente con ' . count($registros) . ' registros');
+                            $this->redirect('nomina/procesar/' . $archivoId);
                         }
-                        
-                        $this->logAction('CARGAR_NOMINA', 
-                            "Se cargó archivo de nómina: {$archivo['name']} con " . count($registros) . " registros",
-                            'archivos_nomina',
-                            $archivoId
-                        );
-                        
-                        $this->setFlash('success', 'Archivo cargado exitosamente con ' . count($registros) . ' registros');
-                        $this->redirect('nomina/procesar/' . $archivoId);
                     } else {
                         $errors[] = 'Error al guardar el archivo';
                     }
                 }
+            } elseif (isset($_POST['confirm_import']) && isset($_SESSION['nomina_preview'])) {
+                // Import from preview without new file upload
+                $previewData = $_SESSION['nomina_preview'];
+                $registros = $previewData['registros'];
+                $rutaArchivo = $previewData['ruta_archivo'];
+                $periodo = $previewData['periodo'];
+                $fechaNomina = $previewData['fecha_nomina'];
+                $nombreArchivo = $previewData['nombre_archivo'];
+                unset($_SESSION['nomina_preview']);
+                
+                // Guardar en BD
+                $archivoId = $this->db->insert('archivos_nomina', [
+                    'nombre_archivo' => $nombreArchivo,
+                    'ruta_archivo' => $rutaArchivo,
+                    'periodo' => $periodo,
+                    'fecha_nomina' => $fechaNomina,
+                    'total_registros' => count($registros),
+                    'estatus' => 'cargado',
+                    'usuario_id' => $_SESSION['user_id'],
+                    'fecha_carga' => date('Y-m-d H:i:s')
+                ]);
+                
+                // Guardar registros
+                foreach ($registros as $reg) {
+                    $this->db->insert('registros_nomina', [
+                        'archivo_id' => $archivoId,
+                        'rfc' => $reg['rfc'] ?? '',
+                        'curp' => $reg['curp'] ?? '',
+                        'nombre_nomina' => $reg['nombre'] ?? '',
+                        'numero_empleado' => $reg['numero_empleado'] ?? '',
+                        'monto_descuento' => $reg['monto'] ?? 0,
+                        'concepto' => $reg['concepto'] ?? '',
+                        'estatus' => 'pendiente'
+                    ]);
+                }
+                
+                $this->logAction('CARGAR_NOMINA', 
+                    "Se cargó archivo de nómina: {$nombreArchivo} con " . count($registros) . " registros",
+                    'archivos_nomina',
+                    $archivoId
+                );
+                
+                $this->setFlash('success', 'Archivo cargado exitosamente con ' . count($registros) . ' registros');
+                $this->redirect('nomina/procesar/' . $archivoId);
             } else {
                 $errors[] = 'Debe seleccionar un archivo';
             }
@@ -109,7 +192,8 @@ class NominaController extends Controller {
         
         $this->view('nomina/cargar', [
             'pageTitle' => 'Cargar Archivo de Nómina',
-            'errors' => $errors
+            'errors' => $errors,
+            'preview' => $preview
         ]);
     }
     

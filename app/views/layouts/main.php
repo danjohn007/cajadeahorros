@@ -231,10 +231,57 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                     
                     <div class="flex items-center space-x-4">
                         <!-- Notifications -->
-                        <button class="relative text-gray-600 hover:text-gray-800">
-                            <i class="fas fa-bell text-xl"></i>
-                            <span class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center">3</span>
-                        </button>
+                        <div class="relative" x-data="notificaciones()">
+                            <button @click="toggle()" class="relative text-gray-600 hover:text-gray-800">
+                                <i class="fas fa-bell text-xl"></i>
+                                <span x-show="noLeidas > 0" x-text="noLeidas" class="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center"></span>
+                            </button>
+                            
+                            <!-- Dropdown de notificaciones -->
+                            <div x-show="open" @click.away="open = false" x-cloak
+                                 class="absolute right-0 mt-2 w-80 bg-white rounded-lg shadow-lg py-2 z-50 max-h-96 overflow-y-auto">
+                                <div class="px-4 py-2 border-b flex justify-between items-center">
+                                    <span class="font-semibold text-gray-700">Notificaciones</span>
+                                    <button @click="marcarTodasLeidas()" x-show="noLeidas > 0" class="text-xs text-blue-600 hover:text-blue-800">
+                                        Marcar todas como leídas
+                                    </button>
+                                </div>
+                                <template x-if="notificaciones.length === 0">
+                                    <div class="px-4 py-8 text-center text-gray-500">
+                                        <i class="fas fa-bell-slash text-3xl mb-2"></i>
+                                        <p>No hay notificaciones</p>
+                                    </div>
+                                </template>
+                                <template x-for="n in notificaciones" :key="n.id">
+                                    <a :href="n.url ? '<?= BASE_URL ?>/' + n.url : '#'" 
+                                       @click="marcarLeida(n.id)"
+                                       :class="{'bg-blue-50': n.leida == 0}"
+                                       class="block px-4 py-3 hover:bg-gray-50 border-b border-gray-100">
+                                        <div class="flex items-start">
+                                            <div :class="{
+                                                'bg-green-100 text-green-600': n.tipo === 'success',
+                                                'bg-yellow-100 text-yellow-600': n.tipo === 'warning',
+                                                'bg-red-100 text-red-600': n.tipo === 'error',
+                                                'bg-blue-100 text-blue-600': n.tipo === 'info' || n.tipo === 'vinculacion'
+                                            }" class="p-2 rounded-full mr-3 flex-shrink-0">
+                                                <i :class="{
+                                                    'fa-check': n.tipo === 'success',
+                                                    'fa-exclamation': n.tipo === 'warning',
+                                                    'fa-times': n.tipo === 'error',
+                                                    'fa-info': n.tipo === 'info',
+                                                    'fa-link': n.tipo === 'vinculacion'
+                                                }" class="fas text-sm"></i>
+                                            </div>
+                                            <div class="flex-1 min-w-0">
+                                                <p class="text-sm font-medium text-gray-800 truncate" x-text="n.titulo"></p>
+                                                <p class="text-xs text-gray-500 truncate" x-text="n.mensaje"></p>
+                                                <p class="text-xs text-gray-400 mt-1" x-text="formatDate(n.created_at)"></p>
+                                            </div>
+                                        </div>
+                                    </a>
+                                </template>
+                            </div>
+                        </div>
                         
                         <!-- User Dropdown -->
                         <div class="relative" x-data="{ open: false }">
@@ -310,6 +357,63 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                 month: 'long',
                 day: 'numeric'
             });
+        }
+        
+        // Componente de notificaciones para Alpine.js
+        function notificaciones() {
+            return {
+                open: false,
+                notificaciones: [],
+                noLeidas: 0,
+                init() {
+                    this.cargarNotificaciones();
+                    // Actualizar cada 2 minutos para reducir carga del servidor
+                    setInterval(() => this.cargarNotificaciones(), 120000);
+                },
+                toggle() {
+                    this.open = !this.open;
+                    if (this.open) {
+                        this.cargarNotificaciones();
+                    }
+                },
+                cargarNotificaciones() {
+                    fetch('<?= BASE_URL ?>/api/notificaciones')
+                        .then(r => r.json())
+                        .then(data => {
+                            if (data.success) {
+                                this.notificaciones = data.notificaciones;
+                                this.noLeidas = data.no_leidas;
+                            }
+                        })
+                        .catch(e => console.error('Error cargando notificaciones:', e));
+                },
+                marcarLeida(id) {
+                    fetch('<?= BASE_URL ?>/api/notificaciones/marcarLeida/' + id)
+                        .then(() => this.cargarNotificaciones())
+                        .catch(e => console.error('Error:', e));
+                },
+                marcarTodasLeidas() {
+                    fetch('<?= BASE_URL ?>/api/notificaciones/marcarTodasLeidas')
+                        .then(() => {
+                            this.cargarNotificaciones();
+                        })
+                        .catch(e => console.error('Error:', e));
+                },
+                formatDate(dateStr) {
+                    const date = new Date(dateStr);
+                    const now = new Date();
+                    const diff = now - date;
+                    const mins = Math.floor(diff / 60000);
+                    const hours = Math.floor(diff / 3600000);
+                    const days = Math.floor(diff / 86400000);
+                    
+                    if (mins < 1) return 'Ahora';
+                    if (mins < 60) return mins + ' min';
+                    if (hours < 24) return hours + 'h';
+                    if (days < 7) return days + 'd';
+                    return date.toLocaleDateString('es-MX');
+                }
+            };
         }
     </script>
 </body>

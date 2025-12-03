@@ -148,4 +148,74 @@ class ApiController extends Controller {
         ]);
         exit;
     }
+    
+    /**
+     * Get notifications for the current user
+     */
+    public function notificaciones() {
+        $this->requireAuth();
+        
+        header('Content-Type: application/json');
+        
+        $notificaciones = $this->db->fetchAll(
+            "SELECT * FROM notificaciones 
+             WHERE usuario_id = :user_id 
+             ORDER BY created_at DESC 
+             LIMIT 20",
+            ['user_id' => $_SESSION['user_id']]
+        );
+        
+        $noLeidas = $this->db->fetch(
+            "SELECT COUNT(*) as total FROM notificaciones 
+             WHERE usuario_id = :user_id AND leida = 0",
+            ['user_id' => $_SESSION['user_id']]
+        )['total'];
+        
+        echo json_encode([
+            'success' => true,
+            'notificaciones' => $notificaciones,
+            'no_leidas' => (int)$noLeidas
+        ]);
+        exit;
+    }
+    
+    /**
+     * Mark a notification as read
+     */
+    public function marcarNotificacionLeida() {
+        $this->requireAuth();
+        
+        header('Content-Type: application/json');
+        
+        $id = $this->params['id'] ?? 0;
+        
+        if ($id) {
+            $this->db->update('notificaciones', 
+                ['leida' => 1],
+                'id = :id AND usuario_id = :user_id',
+                ['id' => $id, 'user_id' => $_SESSION['user_id']]
+            );
+        }
+        
+        echo json_encode(['success' => true]);
+        exit;
+    }
+    
+    /**
+     * Mark all notifications as read
+     */
+    public function marcarTodasNotificacionesLeidas() {
+        $this->requireAuth();
+        
+        header('Content-Type: application/json');
+        
+        $this->db->update('notificaciones', 
+            ['leida' => 1],
+            'usuario_id = :user_id AND leida = 0',
+            ['user_id' => $_SESSION['user_id']]
+        );
+        
+        echo json_encode(['success' => true]);
+        exit;
+    }
 }

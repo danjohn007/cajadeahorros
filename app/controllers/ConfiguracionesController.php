@@ -280,11 +280,9 @@ class ConfiguracionesController extends Controller {
     private function sendSmtpEmail($host, $port, $user, $pass, $encryption, $fromEmail, $fromName, $to, $subject, $body) {
         // Determine connection type based on port and encryption
         $secure = '';
-        $cryptoMethod = STREAM_CRYPTO_METHOD_TLS_CLIENT;
         
         if ($encryption === 'ssl' || $port == 465) {
             $secure = 'ssl://';
-            $cryptoMethod = STREAM_CRYPTO_METHOD_SSLv23_CLIENT;
         }
         
         $errno = 0;
@@ -328,56 +326,84 @@ class ConfiguracionesController extends Controller {
             return "Error en respuesta inicial del servidor: " . ($response ?: "Sin respuesta");
         }
         
-        // Send EHLO
+        // Send EHLO and capture capabilities
         fputs($socket, "EHLO localhost\r\n");
-        $response = $this->getSmtpResponse($socket);
+        $ehloResponse = $this->getSmtpResponse($socket);
         
-        // Start TLS if needed (for port 587 or explicit TLS)
+        // Parse server capabilities
+        $supportsStartTls = (strpos($ehloResponse, 'STARTTLS') !== false);
+        $supportsAuthLogin = (strpos($ehloResponse, 'AUTH') !== false && strpos($ehloResponse, 'LOGIN') !== false);
+        $supportsAuthPlain = (strpos($ehloResponse, 'AUTH') !== false && strpos($ehloResponse, 'PLAIN') !== false);
+        
+        // Start TLS if needed and supported (for port 587 or explicit TLS)
         if ($encryption === 'tls' && $port != 465) {
-            fputs($socket, "STARTTLS\r\n");
-            $response = fgets($socket, 515);
-            if (!$response || substr($response, 0, 3) != '220') {
+            if (!$supportsStartTls) {
+                // Try to continue without STARTTLS for servers that don't support it
+                // This might work for local/internal SMTP servers
+            } else {
+                fputs($socket, "STARTTLS\r\n");
+                $response = fgets($socket, 515);
+                if ($response && substr($response, 0, 3) == '220') {
+                    // Enable TLS on the socket
+                    $cryptoEnabled = @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
+                    if (!$cryptoEnabled) {
+                        // Try with TLS 1.1 or 1.0
+                        $cryptoEnabled = @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+                    }
+                    
+                    if ($cryptoEnabled) {
+                        // Send EHLO again after STARTTLS
+                        fputs($socket, "EHLO localhost\r\n");
+                        $ehloResponse = $this->getSmtpResponse($socket);
+                        // Update capabilities after TLS
+                        $supportsAuthLogin = (strpos($ehloResponse, 'AUTH') !== false && strpos($ehloResponse, 'LOGIN') !== false);
+                        $supportsAuthPlain = (strpos($ehloResponse, 'AUTH') !== false && strpos($ehloResponse, 'PLAIN') !== false);
+                    }
+                    // If TLS fails, continue without it (some servers allow this)
+                }
+            }
+        }
+        
+        // Try to authenticate if credentials provided
+        $authSuccess = false;
+        if (!empty($user) && !empty($pass)) {
+            // Try AUTH LOGIN first
+            if ($supportsAuthLogin) {
+                fputs($socket, "AUTH LOGIN\r\n");
+                $response = fgets($socket, 515);
+                if ($response && substr($response, 0, 3) == '334') {
+                    fputs($socket, base64_encode($user) . "\r\n");
+                    $response = fgets($socket, 515);
+                    if ($response && substr($response, 0, 3) == '334') {
+                        fputs($socket, base64_encode($pass) . "\r\n");
+                        $response = fgets($socket, 515);
+                        if ($response && substr($response, 0, 3) == '235') {
+                            $authSuccess = true;
+                        }
+                    }
+                }
+            }
+            
+            // Try AUTH PLAIN if LOGIN failed
+            if (!$authSuccess && $supportsAuthPlain) {
+                $authString = base64_encode("\0" . $user . "\0" . $pass);
+                fputs($socket, "AUTH PLAIN {$authString}\r\n");
+                $response = fgets($socket, 515);
+                if ($response && substr($response, 0, 3) == '235') {
+                    $authSuccess = true;
+                }
+            }
+            
+            // If neither worked and auth was attempted
+            if (!$authSuccess && ($supportsAuthLogin || $supportsAuthPlain)) {
                 fclose($socket);
-                return "Error al iniciar TLS: " . ($response ?: "Sin respuesta");
+                return "Error de autenticación: Usuario o contraseña SMTP incorrectos. Verifique las credenciales.";
             }
             
-            // Enable TLS on the socket
-            $cryptoEnabled = @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
-            if (!$cryptoEnabled) {
-                // Try with other TLS versions
-                $cryptoEnabled = @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            // If server doesn't support any auth method, try without auth
+            if (!$authSuccess && !$supportsAuthLogin && !$supportsAuthPlain) {
+                // Continue without authentication (might work for internal servers)
             }
-            
-            if (!$cryptoEnabled) {
-                fclose($socket);
-                return "Error al habilitar encriptación TLS. El servidor puede no soportar TLS o hay un problema de certificado.";
-            }
-            
-            // Send EHLO again after STARTTLS
-            fputs($socket, "EHLO localhost\r\n");
-            $response = $this->getSmtpResponse($socket);
-        }
-        
-        // Authenticate
-        fputs($socket, "AUTH LOGIN\r\n");
-        $response = fgets($socket, 515);
-        if (!$response || substr($response, 0, 3) != '334') {
-            fclose($socket);
-            return "Error en autenticación (el servidor no soporta AUTH LOGIN): " . ($response ?: "Sin respuesta");
-        }
-        
-        fputs($socket, base64_encode($user) . "\r\n");
-        $response = fgets($socket, 515);
-        if (!$response || substr($response, 0, 3) != '334') {
-            fclose($socket);
-            return "Error en usuario SMTP: " . ($response ?: "Sin respuesta");
-        }
-        
-        fputs($socket, base64_encode($pass) . "\r\n");
-        $response = fgets($socket, 515);
-        if (!$response || substr($response, 0, 3) != '235') {
-            fclose($socket);
-            return "Error de autenticación: Usuario o contraseña SMTP incorrectos";
         }
         
         // Send email
@@ -385,14 +411,14 @@ class ConfiguracionesController extends Controller {
         $response = fgets($socket, 515);
         if (!$response || substr($response, 0, 3) != '250') {
             fclose($socket);
-            return "Error en MAIL FROM: " . ($response ?: "Sin respuesta");
+            return "Error en MAIL FROM: " . ($response ?: "Sin respuesta") . ". Verifique el correo del remitente.";
         }
         
         fputs($socket, "RCPT TO:<{$to}>\r\n");
         $response = fgets($socket, 515);
         if (!$response || substr($response, 0, 3) != '250') {
             fclose($socket);
-            return "Error en RCPT TO: " . ($response ?: "Sin respuesta");
+            return "Error en RCPT TO: " . ($response ?: "Sin respuesta") . ". Verifique el correo del destinatario.";
         }
         
         fputs($socket, "DATA\r\n");

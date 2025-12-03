@@ -11,6 +11,9 @@
         <p class="text-gray-600">Control de ingresos y egresos</p>
     </div>
     <div class="flex space-x-3">
+        <a href="<?= url('financiero/proveedores') ?>" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
+            <i class="fas fa-truck mr-2"></i>Proveedores
+        </a>
         <a href="<?= url('financiero/categorias') ?>" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50">
             <i class="fas fa-tags mr-2"></i>Categorías
         </a>
@@ -61,6 +64,41 @@
                 <i class="fas fa-balance-scale text-2xl"></i>
             </div>
         </div>
+    </div>
+</div>
+
+<!-- Gráficas -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
+    <!-- Gráfica 1: Evolución Diaria -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-line mr-2 text-blue-500"></i>Evolución Diaria
+        </h3>
+        <canvas id="chartEvolucion" height="200"></canvas>
+    </div>
+    
+    <!-- Gráfica 2: Distribución por Categoría -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-pie mr-2 text-purple-500"></i>Distribución por Categoría
+        </h3>
+        <canvas id="chartDistribucion" height="200"></canvas>
+    </div>
+    
+    <!-- Gráfica 3: Top Egresos -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-bar mr-2 text-red-500"></i>Top 5 Egresos por Categoría
+        </h3>
+        <canvas id="chartTopEgresos" height="200"></canvas>
+    </div>
+    
+    <!-- Gráfica 4: Comparación Mensual -->
+    <div class="bg-white rounded-lg shadow-md p-6">
+        <h3 class="text-lg font-semibold text-gray-800 mb-4">
+            <i class="fas fa-chart-area mr-2 text-green-500"></i>Comparación Mensual
+        </h3>
+        <canvas id="chartMensual" height="200"></canvas>
     </div>
 </div>
 
@@ -177,3 +215,149 @@
         </div>
     <?php endif; ?>
 </div>
+
+<script>
+// Chart data from PHP (properly encoded for JavaScript)
+const chartData = <?= json_encode($chartData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
+
+// Chart 1: Daily Evolution
+const ctxEvolucion = document.getElementById('chartEvolucion').getContext('2d');
+new Chart(ctxEvolucion, {
+    type: 'line',
+    data: {
+        labels: chartData.evolucion_diaria.map(d => d.fecha),
+        datasets: [
+            {
+                label: 'Ingresos',
+                data: chartData.evolucion_diaria.map(d => parseFloat(d.ingresos)),
+                borderColor: '#10b981',
+                backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                fill: true,
+                tension: 0.3
+            },
+            {
+                label: 'Egresos',
+                data: chartData.evolucion_diaria.map(d => parseFloat(d.egresos)),
+                borderColor: '#ef4444',
+                backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                fill: true,
+                tension: 0.3
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom' }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Chart 2: Category Distribution (Pie)
+const ctxDistribucion = document.getElementById('chartDistribucion').getContext('2d');
+const categoriaData = chartData.distribucion_categorias.filter(d => d.nombre);
+new Chart(ctxDistribucion, {
+    type: 'doughnut',
+    data: {
+        labels: categoriaData.map(d => d.nombre + ' (' + d.tipo + ')'),
+        datasets: [{
+            data: categoriaData.map(d => parseFloat(d.total)),
+            backgroundColor: categoriaData.map(d => d.color || '#6b7280'),
+            borderWidth: 2,
+            borderColor: '#fff'
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'right', labels: { boxWidth: 12 } }
+        }
+    }
+});
+
+// Chart 3: Top Expenses (Bar)
+const ctxTopEgresos = document.getElementById('chartTopEgresos').getContext('2d');
+new Chart(ctxTopEgresos, {
+    type: 'bar',
+    data: {
+        labels: chartData.top_egresos.map(d => d.nombre),
+        datasets: [{
+            label: 'Egresos',
+            data: chartData.top_egresos.map(d => parseFloat(d.total)),
+            backgroundColor: chartData.top_egresos.map(d => d.color || '#ef4444'),
+            borderRadius: 4
+        }]
+    },
+    options: {
+        indexAxis: 'y',
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { display: false }
+        },
+        scales: {
+            x: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+
+// Chart 4: Monthly Comparison (Area)
+const ctxMensual = document.getElementById('chartMensual').getContext('2d');
+new Chart(ctxMensual, {
+    type: 'bar',
+    data: {
+        labels: chartData.comparacion_mensual.map(d => {
+            const [year, month] = d.mes.split('-');
+            return new Date(year, month - 1).toLocaleDateString('es-MX', { month: 'short', year: '2-digit' });
+        }),
+        datasets: [
+            {
+                label: 'Ingresos',
+                data: chartData.comparacion_mensual.map(d => parseFloat(d.ingresos)),
+                backgroundColor: '#10b981'
+            },
+            {
+                label: 'Egresos',
+                data: chartData.comparacion_mensual.map(d => parseFloat(d.egresos)),
+                backgroundColor: '#ef4444'
+            }
+        ]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: { position: 'bottom' }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return '$' + value.toLocaleString();
+                    }
+                }
+            }
+        }
+    }
+});
+</script>

@@ -34,15 +34,31 @@
                     <label for="socio_id" class="block text-sm font-medium text-gray-700 mb-1">
                         Socio <span class="text-red-500">*</span>
                     </label>
-                    <select id="socio_id" name="socio_id" required
-                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border">
-                        <option value="">Seleccionar socio...</option>
-                        <?php foreach ($socios as $socio): ?>
-                            <option value="<?= $socio['id'] ?>">
-                                <?= htmlspecialchars($socio['numero_socio'] . ' - ' . $socio['nombre_completo']) ?>
-                            </option>
-                        <?php endforeach; ?>
-                    </select>
+                    <div class="relative">
+                        <input type="hidden" name="socio_id" id="socio_id_hidden" required>
+                        <div class="relative">
+                            <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-gray-400">
+                                <i class="fas fa-search"></i>
+                            </span>
+                            <input type="text" id="socio_search" 
+                                   placeholder="Buscar por nombre, número de socio, RFC..."
+                                   autocomplete="off"
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        </div>
+                        <div id="socio_results" class="absolute z-10 w-full bg-white border border-gray-300 rounded-lg shadow-lg mt-1 max-h-60 overflow-y-auto hidden"></div>
+                        <div id="socio_selected" class="mt-2 p-3 bg-blue-50 rounded-lg hidden">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <p class="font-medium text-blue-800" id="socio_nombre"></p>
+                                    <p class="text-sm text-blue-600" id="socio_info"></p>
+                                </div>
+                                <button type="button" onclick="clearSocio()" class="text-red-500 hover:text-red-700">
+                                    <i class="fas fa-times"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <p class="text-sm text-gray-500 mt-1">Escribe para buscar por nombre, número de socio o RFC</p>
                 </div>
                 
                 <!-- Tipo de Membresía -->
@@ -135,5 +151,77 @@ function updatePrice() {
     } else {
         resumen.classList.add('hidden');
     }
+}
+
+// Socio search functionality
+const socioSearch = document.getElementById('socio_search');
+const socioResults = document.getElementById('socio_results');
+const socioIdHidden = document.getElementById('socio_id_hidden');
+const socioSelected = document.getElementById('socio_selected');
+
+if (socioSearch) {
+    let searchTimeout;
+    
+    socioSearch.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        const query = this.value.trim();
+        
+        if (query.length < 2) {
+            socioResults.classList.add('hidden');
+            return;
+        }
+        
+        searchTimeout = setTimeout(() => {
+            fetch('<?= url('socios/buscar') ?>?q=' + encodeURIComponent(query))
+                .then(response => response.json())
+                .then(data => {
+                    if (data.results && data.results.length > 0) {
+                        socioResults.innerHTML = data.results.map(socio => `
+                            <div class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100" 
+                                 onclick="selectSocio(${socio.id}, '${escapeHtml(socio.nombre)} ${escapeHtml(socio.apellido_paterno)} ${escapeHtml(socio.apellido_materno || '')}', '${escapeHtml(socio.numero_socio)}')">
+                                <div class="font-medium">${escapeHtml(socio.nombre)} ${escapeHtml(socio.apellido_paterno)} ${escapeHtml(socio.apellido_materno || '')}</div>
+                                <div class="text-sm text-gray-500">${escapeHtml(socio.numero_socio)} | RFC: ${escapeHtml(socio.rfc || 'N/A')}</div>
+                            </div>
+                        `).join('');
+                        socioResults.classList.remove('hidden');
+                    } else {
+                        socioResults.innerHTML = '<div class="px-4 py-3 text-gray-500">No se encontraron socios</div>';
+                        socioResults.classList.remove('hidden');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error buscando socios:', error);
+                });
+        }, 300);
+    });
+    
+    // Close results when clicking outside
+    document.addEventListener('click', function(e) {
+        if (!socioSearch.contains(e.target) && !socioResults.contains(e.target)) {
+            socioResults.classList.add('hidden');
+        }
+    });
+}
+
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function selectSocio(id, nombre, numeroSocio) {
+    document.getElementById('socio_id_hidden').value = id;
+    document.getElementById('socio_nombre').textContent = nombre;
+    document.getElementById('socio_info').textContent = numeroSocio;
+    document.getElementById('socio_selected').classList.remove('hidden');
+    document.getElementById('socio_search').value = '';
+    document.getElementById('socio_results').classList.add('hidden');
+}
+
+function clearSocio() {
+    document.getElementById('socio_id_hidden').value = '';
+    document.getElementById('socio_selected').classList.add('hidden');
+    document.getElementById('socio_search').focus();
 }
 </script>
