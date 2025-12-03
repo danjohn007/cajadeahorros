@@ -424,4 +424,103 @@ class SociosController extends Controller {
         
         $this->json(['results' => $results]);
     }
+    
+    public function estadoCuenta() {
+        $this->requireAuth();
+        
+        $id = $this->params['id'] ?? 0;
+        
+        // Get month and year from query params or use current
+        $mes = isset($_GET['mes']) ? (int)$_GET['mes'] : (int)date('m');
+        $anio = isset($_GET['anio']) ? (int)$_GET['anio'] : (int)date('Y');
+        
+        // Validate ranges
+        if ($mes < 1 || $mes > 12) $mes = (int)date('m');
+        if ($anio < 2000 || $anio > (int)date('Y') + 1) $anio = (int)date('Y');
+        
+        $socio = $this->db->fetch(
+            "SELECT s.*, ut.nombre as unidad_trabajo
+             FROM socios s
+             LEFT JOIN unidades_trabajo ut ON s.unidad_trabajo_id = ut.id
+             WHERE s.id = :id",
+            ['id' => $id]
+        );
+        
+        if (!$socio) {
+            $this->setFlash('error', 'Socio no encontrado');
+            $this->redirect('socios');
+        }
+        
+        // Get savings account
+        $cuentaAhorro = $this->db->fetch(
+            "SELECT * FROM cuentas_ahorro WHERE socio_id = :id",
+            ['id' => $id]
+        );
+        
+        // Get movements for the selected month
+        $movimientosAhorro = [];
+        if ($cuentaAhorro) {
+            $movimientosAhorro = $this->db->fetchAll(
+                "SELECT * FROM movimientos_ahorro 
+                 WHERE cuenta_id = :cuenta_id 
+                 AND MONTH(fecha) = :mes AND YEAR(fecha) = :anio
+                 ORDER BY fecha ASC",
+                ['cuenta_id' => $cuentaAhorro['id'], 'mes' => $mes, 'anio' => $anio]
+            );
+        }
+        
+        // Get credits
+        $creditos = $this->db->fetchAll(
+            "SELECT c.*, tc.nombre as tipo_credito
+             FROM creditos c
+             JOIN tipos_credito tc ON c.tipo_credito_id = tc.id
+             WHERE c.socio_id = :id AND c.estatus IN ('activo', 'formalizado')
+             ORDER BY c.created_at DESC",
+            ['id' => $id]
+        );
+        
+        // Get credit payments for the month
+        $pagosCredito = [];
+        foreach ($creditos as $credito) {
+            $pagos = $this->db->fetchAll(
+                "SELECT pc.*, a.numero_pago 
+                 FROM pagos_credito pc
+                 LEFT JOIN amortizacion a ON pc.amortizacion_id = a.id
+                 WHERE pc.credito_id = :credito_id
+                 AND MONTH(pc.fecha_pago) = :mes AND YEAR(pc.fecha_pago) = :anio
+                 ORDER BY pc.fecha_pago ASC",
+                ['credito_id' => $credito['id'], 'mes' => $mes, 'anio' => $anio]
+            );
+            if (!empty($pagos)) {
+                $pagosCredito[$credito['id']] = $pagos;
+            }
+        }
+        
+        // Get amortization pending for credits
+        $amortizacionPendiente = [];
+        foreach ($creditos as $credito) {
+            $pendientes = $this->db->fetchAll(
+                "SELECT * FROM amortizacion 
+                 WHERE credito_id = :credito_id 
+                 AND estatus IN ('pendiente', 'vencido')
+                 ORDER BY numero_pago LIMIT 3",
+                ['credito_id' => $credito['id']]
+            );
+            if (!empty($pendientes)) {
+                $amortizacionPendiente[$credito['id']] = $pendientes;
+            }
+        }
+        
+        $this->view('socios/estado_cuenta', [
+            'pageTitle' => 'Estado de Cuenta',
+            'socio' => $socio,
+            'cuentaAhorro' => $cuentaAhorro,
+            'movimientosAhorro' => $movimientosAhorro,
+            'creditos' => $creditos,
+            'pagosCredito' => $pagosCredito,
+            'amortizacionPendiente' => $amortizacionPendiente,
+            'mes' => $mes,
+            'anio' => $anio
+        ]);
+    }
 }

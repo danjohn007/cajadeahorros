@@ -32,12 +32,28 @@ class ImportarController extends Controller {
         $errors = [];
         $success = '';
         $importacionId = null;
+        $previewData = null;
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             
+            $action = $_POST['action'] ?? 'preview';
+            
             if (!isset($_FILES['archivo']) || $_FILES['archivo']['error'] !== UPLOAD_ERR_OK) {
-                $errors[] = 'Error al subir el archivo';
+                // Check if we're confirming a preview
+                if ($action === 'import' && isset($_SESSION['import_preview_data'])) {
+                    $resultado = $this->procesarDatosPreview($_SESSION['import_preview_data']);
+                    unset($_SESSION['import_preview_data']);
+                    
+                    if (isset($resultado['error'])) {
+                        $errors[] = $resultado['error'];
+                    } else {
+                        $importacionId = $resultado['importacion_id'];
+                        $success = "Archivo procesado: {$resultado['total']} registros encontrados, {$resultado['exitosos']} importados, {$resultado['errores']} con errores";
+                    }
+                } else {
+                    $errors[] = 'Error al subir el archivo';
+                }
             } else {
                 $archivo = $_FILES['archivo'];
                 $extension = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
@@ -47,14 +63,29 @@ class ImportarController extends Controller {
                 } elseif ($archivo['size'] > 5 * 1024 * 1024) {
                     $errors[] = 'El archivo es demasiado grande. Máximo 5MB';
                 } else {
-                    // Procesar archivo
-                    $resultado = $this->procesarArchivo($archivo);
-                    
-                    if (isset($resultado['error'])) {
-                        $errors[] = $resultado['error'];
+                    if ($action === 'preview') {
+                        // Preview mode - just read the data
+                        $previewData = $this->previewArchivo($archivo);
+                        if (isset($previewData['error'])) {
+                            $errors[] = $previewData['error'];
+                            $previewData = null;
+                        } else {
+                            // Store preview data in session for confirmation
+                            $_SESSION['import_preview_data'] = [
+                                'datos' => $previewData['datos'],
+                                'nombre_archivo' => $archivo['name']
+                            ];
+                        }
                     } else {
-                        $importacionId = $resultado['importacion_id'];
-                        $success = "Archivo procesado: {$resultado['total']} registros encontrados, {$resultado['exitosos']} importados, {$resultado['errores']} con errores";
+                        // Procesar archivo directamente
+                        $resultado = $this->procesarArchivo($archivo);
+                        
+                        if (isset($resultado['error'])) {
+                            $errors[] = $resultado['error'];
+                        } else {
+                            $importacionId = $resultado['importacion_id'];
+                            $success = "Archivo procesado: {$resultado['total']} registros encontrados, {$resultado['exitosos']} importados, {$resultado['errores']} con errores";
+                        }
                     }
                 }
             }
@@ -64,8 +95,80 @@ class ImportarController extends Controller {
             'pageTitle' => 'Importar Clientes desde Excel',
             'errors' => $errors,
             'success' => $success,
-            'importacionId' => $importacionId
+            'importacionId' => $importacionId,
+            'previewData' => $previewData
         ]);
+    }
+    
+    private function previewArchivo($archivo) {
+        $extension = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
+        
+        try {
+            if ($extension === 'csv') {
+                $datos = $this->leerCSV($archivo['tmp_name']);
+            } else {
+                $datos = $this->leerExcel($archivo['tmp_name']);
+            }
+            
+            if (empty($datos)) {
+                return ['error' => 'El archivo está vacío o no tiene el formato correcto'];
+            }
+            
+            // Return first 10 rows for preview
+            return [
+                'datos' => array_slice($datos, 0, 10),
+                'total' => count($datos),
+                'columnas' => !empty($datos) ? array_keys($datos[0]) : []
+            ];
+            
+        } catch (Exception $e) {
+            return ['error' => 'Error al leer el archivo: ' . $e->getMessage()];
+        }
+    }
+    
+    private function procesarDatosPreview($previewData) {
+        // Create import record
+        $this->db->insert('importaciones', [
+            'nombre_archivo' => $previewData['nombre_archivo'],
+            'tipo' => 'socios',
+            'estatus' => 'procesando',
+            'usuario_id' => $_SESSION['user_id']
+        ]);
+        $importacionId = $this->db->lastInsertId();
+        
+        $datos = $previewData['datos'];
+        $total = count($datos);
+        $exitosos = 0;
+        $errores = 0;
+        
+        foreach ($datos as $fila => $registro) {
+            $resultado = $this->procesarRegistro($registro, $importacionId, $fila + 2);
+            
+            if ($resultado === true) {
+                $exitosos++;
+            } else {
+                $errores++;
+            }
+        }
+        
+        // Update import record
+        $estatus = ($errores === 0) ? 'completado' : (($exitosos > 0) ? 'parcial' : 'error');
+        $this->db->update('importaciones', [
+            'total_registros' => $total,
+            'registros_exitosos' => $exitosos,
+            'registros_error' => $errores,
+            'estatus' => $estatus,
+            'fecha_fin' => date('Y-m-d H:i:s')
+        ], 'id = :id', ['id' => $importacionId]);
+        
+        $this->logAction('IMPORTAR_CLIENTES', "Importación completada: {$exitosos}/{$total} registros", 'importaciones', $importacionId);
+        
+        return [
+            'importacion_id' => $importacionId,
+            'total' => $total,
+            'exitosos' => $exitosos,
+            'errores' => $errores
+        ];
     }
     
     public function historial() {

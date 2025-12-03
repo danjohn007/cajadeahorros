@@ -178,12 +178,6 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                         <i class="fas fa-cog w-6"></i>
                         <span class="ml-3" x-show="sidebarOpen">Configuraciones</span>
                     </a>
-                    
-                    <a href="<?= BASE_URL ?>/bitacora" 
-                       class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'bitacora') !== false ? 'active' : '' ?>">
-                        <i class="fas fa-history w-6"></i>
-                        <span class="ml-3" x-show="sidebarOpen">Bitácora</span>
-                    </a>
                 </div>
                 <?php endif; ?>
             </nav>

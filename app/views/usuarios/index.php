@@ -69,6 +69,9 @@
                             <?= $u['ultimo_acceso'] ? date('d/m/Y H:i', strtotime($u['ultimo_acceso'])) : 'Nunca' ?>
                         </td>
                         <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            <a href="<?= url('auditoria?usuario_id=' . $u['id']) ?>" class="text-gray-600 hover:text-gray-900 mr-3" title="Ver Logs">
+                                <i class="fas fa-history"></i>
+                            </a>
                             <a href="<?= url('usuarios/editar/' . $u['id']) ?>" class="text-blue-600 hover:text-blue-900 mr-3">
                                 <i class="fas fa-edit"></i> Editar
                             </a>

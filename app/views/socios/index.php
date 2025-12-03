@@ -112,6 +112,10 @@
                                class="p-2 text-blue-600 hover:bg-blue-50 rounded-lg" title="Ver detalle">
                                 <i class="fas fa-eye"></i>
                             </a>
+                            <a href="<?= BASE_URL ?>/socios/estado-cuenta/<?= $socio['id'] ?>" 
+                               class="p-2 text-green-600 hover:bg-green-50 rounded-lg" title="Estado de Cuenta">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                            </a>
                             <?php if (in_array($_SESSION['user_role'], ['administrador', 'operativo'])): ?>
                             <a href="<?= BASE_URL ?>/socios/editar/<?= $socio['id'] ?>" 
                                class="p-2 text-yellow-600 hover:bg-yellow-50 rounded-lg" title="Editar">

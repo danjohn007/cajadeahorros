@@ -23,12 +23,14 @@ $router->add('socios/ver/{id}', ['controller' => 'socios', 'action' => 'ver']);
 $router->add('socios/eliminar/{id}', ['controller' => 'socios', 'action' => 'eliminar']);
 $router->add('socios/historial/{id}', ['controller' => 'socios', 'action' => 'historial']);
 $router->add('socios/buscar', ['controller' => 'socios', 'action' => 'buscar']);
+$router->add('socios/estado-cuenta/{id}', ['controller' => 'socios', 'action' => 'estadoCuenta']);
 
 // Gestión de Ahorro
 $router->add('ahorro', ['controller' => 'ahorro', 'action' => 'index']);
 $router->add('ahorro/socio/{id}', ['controller' => 'ahorro', 'action' => 'socio']);
 $router->add('ahorro/movimiento', ['controller' => 'ahorro', 'action' => 'movimiento']);
 $router->add('ahorro/historial/{id}', ['controller' => 'ahorro', 'action' => 'historial']);
+$router->add('ahorro/cardex/{id}', ['controller' => 'ahorro', 'action' => 'cardex']);
 
 // Gestión de Créditos
 $router->add('creditos', ['controller' => 'creditos', 'action' => 'index']);
@@ -104,6 +106,7 @@ $router->add('importar/clientes', ['controller' => 'importar', 'action' => 'clie
 $router->add('importar/procesar/{id}', ['controller' => 'importar', 'action' => 'procesar']);
 $router->add('importar/historial', ['controller' => 'importar', 'action' => 'historial']);
 $router->add('importar/detalle/{id}', ['controller' => 'importar', 'action' => 'detalle']);
+$router->add('importar/plantilla', ['controller' => 'importar', 'action' => 'plantilla']);
 
 // Auditoría (Logs extendidos)
 $router->add('auditoria', ['controller' => 'auditoria', 'action' => 'index']);
@@ -116,6 +119,7 @@ $router->add('crm', ['controller' => 'crm', 'action' => 'index']);
 $router->add('crm/segmentos', ['controller' => 'crm', 'action' => 'segmentos']);
 $router->add('crm/metricas', ['controller' => 'crm', 'action' => 'metricas']);
 $router->add('crm/interacciones', ['controller' => 'crm', 'action' => 'interacciones']);
+$router->add('crm/interaccion', ['controller' => 'crm', 'action' => 'interaccion']);
 $router->add('crm/interaccion/{id}', ['controller' => 'crm', 'action' => 'interaccion']);
 
 // Dispositivos IoT (Shelly Cloud y HikVision)
@@ -129,6 +133,14 @@ $router->add('dispositivos/hikvision', ['controller' => 'dispositivos', 'action'
 $router->add('dispositivos/hikvision/{id}', ['controller' => 'dispositivos', 'action' => 'hikvisionConfig']);
 $router->add('dispositivos/eventos', ['controller' => 'dispositivos', 'action' => 'eventos']);
 $router->add('dispositivos/programacion', ['controller' => 'dispositivos', 'action' => 'programacion']);
+
+// Pagos Online (PayPal)
+$router->add('pago/enlace/{id}', ['controller' => 'pago', 'action' => 'enlace']);
+$router->add('pago/cuota/{id}', ['controller' => 'pago', 'action' => 'cuota']);
+$router->add('pago/publico/{token}', ['controller' => 'pago', 'action' => 'publico']);
+$router->add('pago/procesar', ['controller' => 'pago', 'action' => 'procesar']);
+$router->add('pago/exito', ['controller' => 'pago', 'action' => 'exito']);
+$router->add('pago/cancelado', ['controller' => 'pago', 'action' => 'cancelado']);
 
 // API endpoints
 $router->add('api/socios/buscar', ['controller' => 'api', 'action' => 'buscarSocios']);

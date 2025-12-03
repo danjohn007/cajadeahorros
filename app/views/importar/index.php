@@ -38,7 +38,7 @@
         <div class="mt-6 p-4 bg-gray-50 rounded-lg">
             <h3 class="text-sm font-medium text-gray-700 mb-2">Formato del archivo</h3>
             <p class="text-sm text-gray-600 mb-2">El archivo debe contener las siguientes columnas:</p>
-            <ul class="text-sm text-gray-600 list-disc list-inside">
+            <ul class="text-sm text-gray-600 list-disc list-inside mb-4">
                 <li><strong>nombre</strong> (requerido)</li>
                 <li><strong>apellido_paterno</strong> o <strong>apellidos</strong> (requerido)</li>
                 <li>apellido_materno</li>
@@ -48,6 +48,9 @@
                 <li>rfc</li>
                 <li>curp</li>
             </ul>
+            <a href="<?= url('importar/plantilla') ?>" class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700">
+                <i class="fas fa-download mr-2"></i>Descargar Plantilla
+            </a>
         </div>
     </div>
     

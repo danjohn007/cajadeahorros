@@ -57,6 +57,7 @@
                     <th class="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase">Saldo</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Fecha Pago</th>
                     <th class="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase">Estatus</th>
+                    <th class="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase no-print">Acciones</th>
                 </tr>
             </thead>
             <tbody class="divide-y divide-gray-200">
@@ -98,6 +99,16 @@
                             <?= ucfirst($pago['estatus']) ?>
                         </span>
                     </td>
+                    <td class="px-4 py-3 text-center no-print">
+                        <?php if ($pago['estatus'] !== 'pagado'): ?>
+                        <a href="<?= BASE_URL ?>/pago/cuota/<?= $pago['id'] ?>" 
+                           class="text-green-600 hover:text-green-800" title="Pagar con PayPal">
+                            <i class="fab fa-paypal"></i>
+                        </a>
+                        <?php else: ?>
+                        <span class="text-gray-400"><i class="fas fa-check"></i></span>
+                        <?php endif; ?>
+                    </td>
                 </tr>
                 <?php endforeach; ?>
             </tbody>
@@ -107,7 +118,7 @@
                     <td class="px-4 py-3 text-sm text-right">$<?= number_format($totalCapital, 2) ?></td>
                     <td class="px-4 py-3 text-sm text-right">$<?= number_format($totalInteres, 2) ?></td>
                     <td class="px-4 py-3 text-sm text-right">$<?= number_format($totalCuota, 2) ?></td>
-                    <td class="px-4 py-3 text-sm text-right" colspan="3">-</td>
+                    <td class="px-4 py-3 text-sm text-right" colspan="4">-</td>
                 </tr>
             </tfoot>
         </table>
