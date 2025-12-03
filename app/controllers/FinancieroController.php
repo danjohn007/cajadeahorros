@@ -248,9 +248,9 @@ class FinancieroController extends Controller {
         // Totales por tipo
         $totales = $this->db->fetch(
             "SELECT 
-                COALESCE(SUM(CASE WHEN tipo = 'ingreso' THEN monto ELSE 0 END), 0) as ingresos,
-                COALESCE(SUM(CASE WHEN tipo = 'egreso' THEN monto ELSE 0 END), 0) as egresos
-             FROM transacciones_financieras
+                COALESCE(SUM(CASE WHEN t.tipo = 'ingreso' THEN t.monto ELSE 0 END), 0) as ingresos,
+                COALESCE(SUM(CASE WHEN t.tipo = 'egreso' THEN t.monto ELSE 0 END), 0) as egresos
+             FROM transacciones_financieras t
              WHERE {$conditions}",
             $params
         );

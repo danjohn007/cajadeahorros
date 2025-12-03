@@ -86,6 +86,41 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
             
             <!-- Navigation -->
             <nav class="mt-4">
+                <?php if ($_SESSION['user_role'] === 'cliente'): ?>
+                <!-- Menú para CLIENTE - Solo acceso a su portal -->
+                <a href="<?= BASE_URL ?>/cliente" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'cliente') !== false && strpos($_SERVER['REQUEST_URI'], 'cliente/') === false ? 'active' : '' ?>">
+                    <i class="fas fa-tachometer-alt w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Mi Portal</span>
+                </a>
+                
+                <a href="<?= BASE_URL ?>/cliente/cuenta" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'cliente/cuenta') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-wallet w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Mi Cuenta de Ahorro</span>
+                </a>
+                
+                <a href="<?= BASE_URL ?>/cliente/creditos" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'cliente/credito') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-credit-card w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Mis Créditos</span>
+                </a>
+                
+                <a href="<?= BASE_URL ?>/cliente/pagar" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'cliente/pagar') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-money-bill-wave w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Realizar Pago</span>
+                </a>
+                
+                <div class="border-t border-primary-700 mt-4 pt-4">
+                    <a href="<?= BASE_URL ?>/usuarios/perfil" 
+                       class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'usuarios/perfil') !== false ? 'active' : '' ?>">
+                        <i class="fas fa-user-cog w-6"></i>
+                        <span class="ml-3" x-show="sidebarOpen">Mi Perfil</span>
+                    </a>
+                </div>
+                <?php else: ?>
+                <!-- Menú para usuarios administrativos (administrador, operativo, consulta) -->
                 <a href="<?= BASE_URL ?>/dashboard" 
                    class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'dashboard') !== false ? 'active' : '' ?>">
                     <i class="fas fa-tachometer-alt w-6"></i>
@@ -179,6 +214,7 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                         <span class="ml-3" x-show="sidebarOpen">Configuraciones</span>
                     </a>
                 </div>
+                <?php endif; ?>
                 <?php endif; ?>
             </nav>
         </aside>

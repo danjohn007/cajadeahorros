@@ -229,12 +229,63 @@ class MembresiasController extends Controller {
                     $this->logAction('CREAR_TIPO_MEMBRESIA', "Se creó tipo de membresía: {$nombre}", 'tipos_membresia', $this->db->lastInsertId());
                     $success = 'Tipo de membresía creado exitosamente';
                 }
+            } elseif ($action === 'actualizar') {
+                $id = (int)($_POST['id'] ?? 0);
+                $nombre = $this->sanitize($_POST['nombre'] ?? '');
+                $descripcion = $this->sanitize($_POST['descripcion'] ?? '');
+                $precio = (float)($_POST['precio'] ?? 0);
+                $duracionDias = (int)($_POST['duracion_dias'] ?? 30);
+                $beneficios = $this->sanitize($_POST['beneficios'] ?? '');
+                
+                if (!$id) {
+                    $errors[] = 'ID de tipo inválido';
+                } elseif (empty($nombre)) {
+                    $errors[] = 'El nombre es requerido';
+                } elseif ($precio <= 0) {
+                    $errors[] = 'El precio debe ser mayor a cero';
+                } else {
+                    $this->db->update('tipos_membresia', [
+                        'nombre' => $nombre,
+                        'descripcion' => $descripcion,
+                        'precio' => $precio,
+                        'duracion_dias' => $duracionDias,
+                        'beneficios' => $beneficios
+                    ], 'id = :id', ['id' => $id]);
+                    
+                    $this->logAction('EDITAR_TIPO_MEMBRESIA', "Se editó tipo de membresía ID: {$id}", 'tipos_membresia', $id);
+                    $success = 'Tipo de membresía actualizado exitosamente';
+                }
+            } elseif ($action === 'toggle') {
+                $id = (int)($_POST['id'] ?? 0);
+                $tipo = $this->db->fetch("SELECT activo FROM tipos_membresia WHERE id = :id", ['id' => $id]);
+                if ($tipo) {
+                    $nuevoEstado = $tipo['activo'] ? 0 : 1;
+                    $this->db->update('tipos_membresia', ['activo' => $nuevoEstado], 'id = :id', ['id' => $id]);
+                    $this->logAction('TOGGLE_TIPO_MEMBRESIA', "Se cambió estado de tipo membresía ID: {$id}", 'tipos_membresia', $id);
+                    $success = $nuevoEstado ? 'Tipo de membresía activado' : 'Tipo de membresía desactivado';
+                }
+            } elseif ($action === 'eliminar') {
+                $id = (int)($_POST['id'] ?? 0);
+                // Verificar que no tenga membresías asignadas
+                $membresiasAsignadas = $this->db->fetch(
+                    "SELECT COUNT(*) as total FROM membresias WHERE tipo_membresia_id = :id",
+                    ['id' => $id]
+                )['total'];
+                
+                if ($membresiasAsignadas > 0) {
+                    $errors[] = "No se puede eliminar el tipo porque tiene {$membresiasAsignadas} membresía(s) asociada(s)";
+                } else {
+                    $this->db->delete('tipos_membresia', 'id = :id', ['id' => $id]);
+                    $this->logAction('ELIMINAR_TIPO_MEMBRESIA', "Se eliminó tipo de membresía ID: {$id}", 'tipos_membresia', $id);
+                    $success = 'Tipo de membresía eliminado exitosamente';
+                }
             }
         }
         
         $tipos = $this->db->fetchAll(
             "SELECT tm.*, 
-                    (SELECT COUNT(*) FROM membresias m WHERE m.tipo_membresia_id = tm.id AND m.estatus = 'activa') as membresias_activas
+                    (SELECT COUNT(*) FROM membresias m WHERE m.tipo_membresia_id = tm.id AND m.estatus = 'activa') as membresias_activas,
+                    (SELECT COUNT(*) FROM membresias m WHERE m.tipo_membresia_id = tm.id) as total_membresias
              FROM tipos_membresia tm 
              ORDER BY tm.precio"
         );

@@ -36,8 +36,15 @@ class ClienteController extends Controller {
     
     public function index() {
         if (!$this->socioId) {
+            // Verificar si hay solicitud de vinculación pendiente
+            $solicitudPendiente = $this->db->fetch(
+                "SELECT * FROM solicitudes_vinculacion WHERE usuario_id = :user_id AND estatus IN ('pendiente', 'en_revision') ORDER BY created_at DESC LIMIT 1",
+                ['user_id' => $_SESSION['user_id']]
+            );
+            
             $this->view('cliente/sin_vinculo', [
-                'pageTitle' => 'Portal del Cliente'
+                'pageTitle' => 'Portal del Cliente',
+                'solicitudPendiente' => $solicitudPendiente
             ]);
             return;
         }
@@ -287,5 +294,78 @@ class ClienteController extends Controller {
             'pagosVencidosPorCredito' => $pagosVencidosPorCredito,
             'paypalEnabled' => $paypalEnabled && !empty($paypalClientId)
         ]);
+    }
+    
+    /**
+     * Solicitar vinculación de cuenta con socio
+     */
+    public function solicitarVinculacion() {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->redirect('cliente');
+        }
+        
+        $this->validateCsrf();
+        
+        // Verificar que no esté ya vinculado
+        if ($this->socioId) {
+            $this->setFlash('error', 'Tu cuenta ya está vinculada a un socio');
+            $this->redirect('cliente');
+        }
+        
+        // Verificar que no tenga solicitud pendiente
+        $solicitudExistente = $this->db->fetch(
+            "SELECT id FROM solicitudes_vinculacion WHERE usuario_id = :user_id AND estatus IN ('pendiente', 'en_revision')",
+            ['user_id' => $_SESSION['user_id']]
+        );
+        
+        if ($solicitudExistente) {
+            $this->setFlash('warning', 'Ya tienes una solicitud de vinculación pendiente');
+            $this->redirect('cliente');
+        }
+        
+        $telefono = $this->sanitize($_POST['telefono'] ?? '');
+        $celular = $this->sanitize($_POST['celular'] ?? '');
+        $mensaje = $this->sanitize($_POST['mensaje'] ?? '');
+        
+        if (empty($celular)) {
+            $this->setFlash('error', 'El celular/WhatsApp es requerido');
+            $this->redirect('cliente');
+        }
+        
+        // Crear solicitud de vinculación
+        $solicitudId = $this->db->insert('solicitudes_vinculacion', [
+            'usuario_id' => $_SESSION['user_id'],
+            'nombre' => $_SESSION['user_nombre'],
+            'email' => $_SESSION['user_email'],
+            'telefono' => $telefono,
+            'celular' => $celular,
+            'whatsapp' => $celular,
+            'mensaje' => $mensaje,
+            'estatus' => 'pendiente'
+        ]);
+        
+        // Crear notificaciones para administradores
+        $admins = $this->db->fetchAll(
+            "SELECT id FROM usuarios WHERE rol IN ('administrador', 'operativo') AND activo = 1"
+        );
+        
+        foreach ($admins as $admin) {
+            $this->db->insert('notificaciones', [
+                'usuario_id' => $admin['id'],
+                'tipo' => 'vinculacion',
+                'titulo' => 'Nueva solicitud de vinculación',
+                'mensaje' => "El usuario {$_SESSION['user_nombre']} ({$_SESSION['user_email']}) ha solicitado vincular su cuenta.",
+                'url' => 'crm/customerjourney'
+            ]);
+        }
+        
+        $this->logAction('SOLICITUD_VINCULACION', 
+            "El usuario solicitó vincular su cuenta. Celular: {$celular}", 
+            'solicitudes_vinculacion', 
+            $solicitudId
+        );
+        
+        $this->setFlash('success', 'Tu solicitud de vinculación ha sido enviada. Te notificaremos cuando sea procesada.');
+        $this->redirect('cliente');
     }
 }

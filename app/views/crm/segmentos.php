@@ -102,6 +102,7 @@
                         <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Descripción</th>
                         <th class="px-4 py-3 text-center text-sm font-medium text-gray-700">Clientes</th>
                         <th class="px-4 py-3 text-center text-sm font-medium text-gray-700">Estado</th>
+                        <th class="px-4 py-3 text-center text-sm font-medium text-gray-700">Acciones</th>
                     </tr>
                 </thead>
                 <tbody class="divide-y divide-gray-200">
@@ -128,6 +129,40 @@
                                 <span class="px-2 py-1 bg-gray-100 text-gray-800 rounded-full text-xs">Inactivo</span>
                             <?php endif; ?>
                         </td>
+                        <td class="px-4 py-3 text-center">
+                            <div class="flex justify-center space-x-2">
+                                <!-- Editar -->
+                                <button onclick="editarSegmento(<?= $segmento['id'] ?>, '<?= htmlspecialchars(addslashes($segmento['nombre'])) ?>', '<?= htmlspecialchars(addslashes($segmento['descripcion'] ?? '')) ?>', '<?= htmlspecialchars($segmento['color']) ?>')" 
+                                        class="text-blue-600 hover:text-blue-800" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <!-- Toggle estado -->
+                                <form method="POST" class="inline">
+                                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                    <input type="hidden" name="action" value="toggle">
+                                    <input type="hidden" name="id" value="<?= $segmento['id'] ?>">
+                                    <button type="submit" class="<?= $segmento['activo'] ? 'text-orange-600 hover:text-orange-800' : 'text-green-600 hover:text-green-800' ?>" 
+                                            title="<?= $segmento['activo'] ? 'Desactivar' : 'Activar' ?>">
+                                        <i class="fas <?= $segmento['activo'] ? 'fa-toggle-on' : 'fa-toggle-off' ?>"></i>
+                                    </button>
+                                </form>
+                                <!-- Eliminar -->
+                                <?php if ($segmento['num_clientes'] == 0): ?>
+                                <form method="POST" class="inline" onsubmit="return confirm('¿Está seguro de eliminar este segmento?')">
+                                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                    <input type="hidden" name="action" value="eliminar">
+                                    <input type="hidden" name="id" value="<?= $segmento['id'] ?>">
+                                    <button type="submit" class="text-red-600 hover:text-red-800" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                                <?php else: ?>
+                                <span class="text-gray-300" title="No se puede eliminar, tiene clientes asignados">
+                                    <i class="fas fa-trash"></i>
+                                </span>
+                                <?php endif; ?>
+                            </div>
+                        </td>
                     </tr>
                     <?php endforeach; ?>
                 </tbody>
@@ -136,3 +171,67 @@
         <?php endif; ?>
     </div>
 </div>
+
+<!-- Modal de Edición -->
+<div id="modalEditar" class="fixed inset-0 bg-black bg-opacity-50 hidden z-50 flex items-center justify-center">
+    <div class="bg-white rounded-lg shadow-xl w-full max-w-md mx-4">
+        <div class="px-6 py-4 border-b">
+            <h3 class="text-lg font-semibold text-gray-800">Editar Segmento</h3>
+        </div>
+        <form method="POST" id="formEditar">
+            <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+            <input type="hidden" name="action" value="actualizar">
+            <input type="hidden" name="id" id="edit_id">
+            
+            <div class="p-6 space-y-4">
+                <div>
+                    <label for="edit_nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
+                    <input type="text" name="nombre" id="edit_nombre" required
+                           class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label for="edit_descripcion" class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+                    <textarea name="descripcion" id="edit_descripcion" rows="3"
+                              class="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                
+                <div>
+                    <label for="edit_color" class="block text-sm font-medium text-gray-700 mb-1">Color</label>
+                    <input type="color" name="color" id="edit_color"
+                           class="w-full h-10 border border-gray-300 rounded-md cursor-pointer">
+                </div>
+            </div>
+            
+            <div class="px-6 py-4 bg-gray-50 flex justify-end space-x-3">
+                <button type="button" onclick="cerrarModal()" class="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-100">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                    <i class="fas fa-save mr-2"></i>Guardar
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<script>
+function editarSegmento(id, nombre, descripcion, color) {
+    document.getElementById('edit_id').value = id;
+    document.getElementById('edit_nombre').value = nombre;
+    document.getElementById('edit_descripcion').value = descripcion;
+    document.getElementById('edit_color').value = color;
+    document.getElementById('modalEditar').classList.remove('hidden');
+}
+
+function cerrarModal() {
+    document.getElementById('modalEditar').classList.add('hidden');
+}
+
+// Cerrar modal al hacer clic fuera
+document.getElementById('modalEditar').addEventListener('click', function(e) {
+    if (e.target === this) {
+        cerrarModal();
+    }
+});
+</script>
