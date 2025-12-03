@@ -20,8 +20,13 @@ class SociosController extends Controller {
         $params = [];
         
         if ($search) {
-            $conditions .= " AND (nombre LIKE :search OR apellido_paterno LIKE :search OR rfc LIKE :search OR curp LIKE :search OR numero_socio LIKE :search)";
-            $params['search'] = "%{$search}%";
+            $conditions .= " AND (nombre LIKE :search1 OR apellido_paterno LIKE :search2 OR rfc LIKE :search3 OR curp LIKE :search4 OR numero_socio LIKE :search5)";
+            $searchTerm = "%{$search}%";
+            $params['search1'] = $searchTerm;
+            $params['search2'] = $searchTerm;
+            $params['search3'] = $searchTerm;
+            $params['search4'] = $searchTerm;
+            $params['search5'] = $searchTerm;
         }
         
         if ($estatus) {
@@ -408,18 +413,19 @@ class SociosController extends Controller {
             $this->json(['results' => []]);
         }
         
+        $searchTerm = "%{$q}%";
         $results = $this->db->fetchAll(
             "SELECT id, numero_socio, nombre, apellido_paterno, apellido_materno, rfc, curp
              FROM socios
              WHERE estatus = 'activo' AND (
-                nombre LIKE :q OR 
-                apellido_paterno LIKE :q OR 
-                rfc LIKE :q OR 
-                curp LIKE :q OR 
-                numero_socio LIKE :q
+                nombre LIKE :q1 OR 
+                apellido_paterno LIKE :q2 OR 
+                rfc LIKE :q3 OR 
+                curp LIKE :q4 OR 
+                numero_socio LIKE :q5
              )
              LIMIT 10",
-            ['q' => "%{$q}%"]
+            ['q1' => $searchTerm, 'q2' => $searchTerm, 'q3' => $searchTerm, 'q4' => $searchTerm, 'q5' => $searchTerm]
         );
         
         $this->json(['results' => $results]);

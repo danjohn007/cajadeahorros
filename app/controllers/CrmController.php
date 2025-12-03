@@ -116,13 +116,64 @@ class CrmController extends Controller {
                     $this->logAction('CREAR_SEGMENTO', "Se creó segmento: {$nombre}", 'segmentos_clientes', $this->db->lastInsertId());
                     $success = 'Segmento creado exitosamente';
                 }
+            } elseif ($action === 'actualizar') {
+                $id = (int)($_POST['id'] ?? 0);
+                $nombre = $this->sanitize($_POST['nombre'] ?? '');
+                $descripcion = $this->sanitize($_POST['descripcion'] ?? '');
+                $color = $this->sanitize($_POST['color'] ?? '#3b82f6');
+                
+                if (!$id) {
+                    $errors[] = 'ID de segmento inválido';
+                } elseif (empty($nombre)) {
+                    $errors[] = 'El nombre es requerido';
+                } else {
+                    $this->db->update('segmentos_clientes', [
+                        'nombre' => $nombre,
+                        'descripcion' => $descripcion,
+                        'color' => $color
+                    ], 'id = :id', ['id' => $id]);
+                    
+                    $this->logAction('EDITAR_SEGMENTO', "Se editó segmento ID: {$id}", 'segmentos_clientes', $id);
+                    $success = 'Segmento actualizado exitosamente';
+                }
+            } elseif ($action === 'toggle') {
+                $id = (int)($_POST['id'] ?? 0);
+                $segmento = $this->db->fetch("SELECT activo FROM segmentos_clientes WHERE id = :id", ['id' => $id]);
+                if ($segmento) {
+                    $nuevoEstado = $segmento['activo'] ? 0 : 1;
+                    $this->db->update('segmentos_clientes', ['activo' => $nuevoEstado], 'id = :id', ['id' => $id]);
+                    $this->logAction('TOGGLE_SEGMENTO', "Se cambió estado de segmento ID: {$id}", 'segmentos_clientes', $id);
+                    $success = $nuevoEstado ? 'Segmento activado' : 'Segmento desactivado';
+                }
+            } elseif ($action === 'eliminar') {
+                $id = (int)($_POST['id'] ?? 0);
+                // Verificar que no tenga clientes asignados
+                $clientesAsignados = $this->db->fetch(
+                    "SELECT COUNT(*) as total FROM socios_segmentos WHERE segmento_id = :id",
+                    ['id' => $id]
+                )['total'];
+                
+                if ($clientesAsignados > 0) {
+                    $errors[] = "No se puede eliminar el segmento porque tiene {$clientesAsignados} cliente(s) asignado(s)";
+                } else {
+                    $this->db->delete('segmentos_clientes', 'id = :id', ['id' => $id]);
+                    $this->logAction('ELIMINAR_SEGMENTO', "Se eliminó segmento ID: {$id}", 'segmentos_clientes', $id);
+                    $success = 'Segmento eliminado exitosamente';
+                }
             } elseif ($action === 'actualizar_clientes') {
                 // Actualizar métricas CRM para todos los socios activos
                 $socios = $this->db->fetchAll("SELECT id FROM socios WHERE estatus = 'activo'");
+                $actualizados = 0;
                 foreach ($socios as $socio) {
-                    $this->db->execute("CALL sp_actualizar_metricas_crm(:id)", ['id' => $socio['id']]);
+                    try {
+                        $this->db->execute("CALL sp_actualizar_metricas_crm(:id)", ['id' => $socio['id']]);
+                        $actualizados++;
+                    } catch (Exception $e) {
+                        // Log error but continue
+                        error_log("Error actualizando métricas para socio {$socio['id']}: " . $e->getMessage());
+                    }
                 }
-                $success = 'Métricas CRM actualizadas para ' . count($socios) . ' clientes';
+                $success = "Métricas CRM actualizadas para {$actualizados} de " . count($socios) . ' clientes';
             }
         }
         

@@ -280,19 +280,42 @@ class ConfiguracionesController extends Controller {
     private function sendSmtpEmail($host, $port, $user, $pass, $encryption, $fromEmail, $fromName, $to, $subject, $body) {
         // Determine connection type based on port and encryption
         $secure = '';
+        $cryptoMethod = STREAM_CRYPTO_METHOD_TLS_CLIENT;
+        
         if ($encryption === 'ssl' || $port == 465) {
             $secure = 'ssl://';
+            $cryptoMethod = STREAM_CRYPTO_METHOD_SSLv23_CLIENT;
         }
         
         $errno = 0;
         $errstr = '';
         $timeout = 30;
         
+        // Create stream context for SSL/TLS
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ]);
+        
         // Connect to SMTP server
-        $socket = @fsockopen($secure . $host, $port, $errno, $errstr, $timeout);
+        $socket = @stream_socket_client(
+            $secure . $host . ':' . $port,
+            $errno,
+            $errstr,
+            $timeout,
+            STREAM_CLIENT_CONNECT,
+            $context
+        );
         
         if (!$socket) {
-            return "No se pudo conectar al servidor SMTP: {$errstr} ({$errno})";
+            // Provide more helpful error messages
+            if ($errno === 0) {
+                return "No se pudo conectar al servidor SMTP '{$host}:{$port}'. Verifique que el servidor y puerto sean correctos y que el firewall permita la conexión.";
+            }
+            return "No se pudo conectar al servidor SMTP: {$errstr} (Error {$errno})";
         }
         
         // Set socket timeout
@@ -300,77 +323,83 @@ class ConfiguracionesController extends Controller {
         
         // Read greeting
         $response = fgets($socket, 515);
-        if (substr($response, 0, 3) != '220') {
+        if (!$response || substr($response, 0, 3) != '220') {
             fclose($socket);
-            return "Error en respuesta inicial del servidor: {$response}";
+            return "Error en respuesta inicial del servidor: " . ($response ?: "Sin respuesta");
         }
         
         // Send EHLO
-        fputs($socket, "EHLO {$host}\r\n");
+        fputs($socket, "EHLO localhost\r\n");
         $response = $this->getSmtpResponse($socket);
         
         // Start TLS if needed (for port 587 or explicit TLS)
         if ($encryption === 'tls' && $port != 465) {
             fputs($socket, "STARTTLS\r\n");
             $response = fgets($socket, 515);
-            if (substr($response, 0, 3) != '220') {
+            if (!$response || substr($response, 0, 3) != '220') {
                 fclose($socket);
-                return "Error al iniciar TLS: {$response}";
+                return "Error al iniciar TLS: " . ($response ?: "Sin respuesta");
             }
             
             // Enable TLS on the socket
-            if (!stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT)) {
+            $cryptoEnabled = @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
+            if (!$cryptoEnabled) {
+                // Try with other TLS versions
+                $cryptoEnabled = @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+            }
+            
+            if (!$cryptoEnabled) {
                 fclose($socket);
-                return "Error al habilitar encriptación TLS";
+                return "Error al habilitar encriptación TLS. El servidor puede no soportar TLS o hay un problema de certificado.";
             }
             
             // Send EHLO again after STARTTLS
-            fputs($socket, "EHLO {$host}\r\n");
+            fputs($socket, "EHLO localhost\r\n");
             $response = $this->getSmtpResponse($socket);
         }
         
         // Authenticate
         fputs($socket, "AUTH LOGIN\r\n");
         $response = fgets($socket, 515);
-        if (substr($response, 0, 3) != '334') {
+        if (!$response || substr($response, 0, 3) != '334') {
             fclose($socket);
-            return "Error en autenticación: {$response}";
+            return "Error en autenticación (el servidor no soporta AUTH LOGIN): " . ($response ?: "Sin respuesta");
         }
         
         fputs($socket, base64_encode($user) . "\r\n");
         $response = fgets($socket, 515);
-        if (substr($response, 0, 3) != '334') {
+        if (!$response || substr($response, 0, 3) != '334') {
             fclose($socket);
-            return "Error en usuario: {$response}";
+            return "Error en usuario SMTP: " . ($response ?: "Sin respuesta");
         }
         
         fputs($socket, base64_encode($pass) . "\r\n");
         $response = fgets($socket, 515);
-        if (substr($response, 0, 3) != '235') {
+        if (!$response || substr($response, 0, 3) != '235') {
             fclose($socket);
-            return "Error en contraseña: {$response}";
+            return "Error de autenticación: Usuario o contraseña SMTP incorrectos";
         }
         
         // Send email
         fputs($socket, "MAIL FROM:<{$fromEmail}>\r\n");
         $response = fgets($socket, 515);
-        if (substr($response, 0, 3) != '250') {
+        if (!$response || substr($response, 0, 3) != '250') {
             fclose($socket);
-            return "Error en MAIL FROM: {$response}";
+            return "Error en MAIL FROM: " . ($response ?: "Sin respuesta");
         }
         
         fputs($socket, "RCPT TO:<{$to}>\r\n");
         $response = fgets($socket, 515);
-        if (substr($response, 0, 3) != '250') {
+        if (!$response || substr($response, 0, 3) != '250') {
             fclose($socket);
-            return "Error en RCPT TO: {$response}";
+            return "Error en RCPT TO: " . ($response ?: "Sin respuesta");
         }
         
         fputs($socket, "DATA\r\n");
         $response = fgets($socket, 515);
-        if (substr($response, 0, 3) != '354') {
+        if (!$response || substr($response, 0, 3) != '354') {
             fclose($socket);
-            return "Error en DATA: {$response}";
+            return "Error en DATA: " . ($response ?: "Sin respuesta");
         }
         
         // Build email message
@@ -383,9 +412,9 @@ class ConfiguracionesController extends Controller {
         
         fputs($socket, $headers . "\r\n" . $body . "\r\n.\r\n");
         $response = fgets($socket, 515);
-        if (substr($response, 0, 3) != '250') {
+        if (!$response || substr($response, 0, 3) != '250') {
             fclose($socket);
-            return "Error al enviar mensaje: {$response}";
+            return "Error al enviar mensaje: " . ($response ?: "Sin respuesta");
         }
         
         // Quit

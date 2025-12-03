@@ -152,6 +152,7 @@ class AuthController extends Controller {
         $errors = [];
         $success = '';
         $data = [];
+        $socioEncontrado = null;
         
         // Generar captcha
         if (!isset($_SESSION['captcha_num1']) || !isset($_SESSION['captcha_num2'])) {
@@ -219,16 +220,15 @@ class AuthController extends Controller {
                         'nombre' => $data['nombre'],
                         'email' => $data['email'],
                         'password' => password_hash($data['password'], PASSWORD_DEFAULT),
+                        'telefono' => $data['telefono'] ?? null,
+                        'celular' => $data['celular'] ?? null,
                         'rol' => 'cliente',
                         'activo' => 1,
                         'requiere_cambio_password' => 0
                     ]);
                     
-                    // Buscar si existe un socio con este email y vincularlo
-                    $socio = $this->db->fetch(
-                        "SELECT id FROM socios WHERE email = :email AND estatus = 'activo'",
-                        ['email' => $data['email']]
-                    );
+                    // Buscar si existe un socio con este email, teléfono o celular y vincularlo
+                    $socio = $this->buscarSocioParaVincular($data);
                     
                     if ($socio) {
                         // Vincular usuario con socio existente
@@ -242,13 +242,16 @@ class AuthController extends Controller {
                     $this->db->insert('bitacora', [
                         'usuario_id' => $userId,
                         'accion' => 'REGISTRO_CLIENTE',
-                        'descripcion' => 'Registro de cliente: ' . $data['nombre'],
+                        'descripcion' => 'Registro de cliente: ' . $data['nombre'] . ($socio ? ' - Vinculado a socio ' . $socio['numero_socio'] : ' - Cuenta no vinculada'),
                         'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
                         'user_agent' => $_SERVER['HTTP_USER_AGENT'] ?? '',
                         'fecha' => date('Y-m-d H:i:s')
                     ]);
                     
                     $success = '¡Registro exitoso! Ahora puedes iniciar sesión con tus credenciales.';
+                    if (!$socio) {
+                        $success .= ' Tu cuenta aún no está vinculada a un socio. Podrás solicitar la vinculación desde tu portal.';
+                    }
                     $data = []; // Limpiar datos
                     
                     // Regenerar captcha
@@ -272,5 +275,92 @@ class AuthController extends Controller {
             'captcha_num2' => $_SESSION['captcha_num2'],
             'csrf_token' => $this->csrf_token()
         ]);
+    }
+    
+    /**
+     * Buscar socio existente en la DB por email, teléfono o celular para vincular
+     */
+    private function buscarSocioParaVincular($data) {
+        // Buscar por email
+        if (!empty($data['email'])) {
+            $socio = $this->db->fetch(
+                "SELECT id, numero_socio FROM socios WHERE email = :email AND estatus = 'activo'",
+                ['email' => $data['email']]
+            );
+            if ($socio) return $socio;
+        }
+        
+        // Buscar por celular
+        if (!empty($data['celular'])) {
+            $celular = preg_replace('/[^0-9]/', '', $data['celular']);
+            $socio = $this->db->fetch(
+                "SELECT id, numero_socio FROM socios WHERE (celular = :celular OR celular = :celular2) AND estatus = 'activo'",
+                ['celular' => $celular, 'celular2' => $data['celular']]
+            );
+            if ($socio) return $socio;
+        }
+        
+        // Buscar por teléfono
+        if (!empty($data['telefono'])) {
+            $telefono = preg_replace('/[^0-9]/', '', $data['telefono']);
+            $socio = $this->db->fetch(
+                "SELECT id, numero_socio FROM socios WHERE (telefono = :telefono OR telefono = :telefono2) AND estatus = 'activo'",
+                ['telefono' => $telefono, 'telefono2' => $data['telefono']]
+            );
+            if ($socio) return $socio;
+        }
+        
+        return null;
+    }
+    
+    /**
+     * API para buscar socios por teléfono, email o WhatsApp en el registro público
+     */
+    public function buscarSocio() {
+        header('Content-Type: application/json');
+        
+        $query = $_GET['q'] ?? '';
+        if (strlen($query) < 3) {
+            echo json_encode(['found' => false, 'socio' => null]);
+            exit;
+        }
+        
+        // Limpiar solo dígitos si parece un teléfono
+        $queryDigits = preg_replace('/[^0-9]/', '', $query);
+        
+        // Buscar por email, teléfono o celular
+        $socio = $this->db->fetch(
+            "SELECT id, nombre, apellido_paterno, apellido_materno, email, telefono, celular, numero_socio
+             FROM socios 
+             WHERE estatus = 'activo' AND (
+                 email = :email OR 
+                 telefono = :tel1 OR telefono = :tel2 OR
+                 celular = :cel1 OR celular = :cel2
+             )
+             LIMIT 1",
+            [
+                'email' => $query,
+                'tel1' => $query,
+                'tel2' => strlen($queryDigits) >= 10 ? $queryDigits : '',
+                'cel1' => $query,
+                'cel2' => strlen($queryDigits) >= 10 ? $queryDigits : ''
+            ]
+        );
+        
+        if ($socio) {
+            echo json_encode([
+                'found' => true,
+                'socio' => [
+                    'nombre' => $socio['nombre'] . ' ' . $socio['apellido_paterno'] . ' ' . ($socio['apellido_materno'] ?? ''),
+                    'email' => $socio['email'] ? substr($socio['email'], 0, 3) . '***@***' . substr($socio['email'], strrpos($socio['email'], '.')) : '',
+                    'telefono' => $socio['telefono'] ? '****' . substr($socio['telefono'], -4) : '',
+                    'celular' => $socio['celular'] ? '****' . substr($socio['celular'], -4) : '',
+                    'numero_socio' => $socio['numero_socio']
+                ]
+            ]);
+        } else {
+            echo json_encode(['found' => false, 'socio' => null]);
+        }
+        exit;
     }
 }
