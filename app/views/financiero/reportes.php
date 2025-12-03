@@ -26,7 +26,7 @@ $meses = [
     <form method="GET" action="<?= url('financiero/reportes') ?>" class="flex flex-wrap gap-4 items-end">
         <div class="w-32">
             <label class="block text-sm font-medium text-gray-700 mb-1">Año</label>
-            <select name="año" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border">
+            <select name="anio" class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border">
                 <?php for ($y = date('Y'); $y >= date('Y') - 5; $y--): ?>
                     <option value="<?= $y ?>" <?= $año == $y ? 'selected' : '' ?>><?= $y ?></option>
                 <?php endfor; ?>

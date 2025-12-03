@@ -223,7 +223,7 @@ class FinancieroController extends Controller {
     public function reportes() {
         $this->requireRole(['administrador', 'operativo']);
         
-        $anio = (int)($_GET['año'] ?? date('Y'));
+        $anio = (int)($_GET['anio'] ?? $_GET['año'] ?? date('Y'));
         $mes = (int)($_GET['mes'] ?? 0);
         
         // Resumen por categoría
@@ -281,7 +281,7 @@ class FinancieroController extends Controller {
     public function presupuestos() {
         $this->requireRole(['administrador']);
         
-        $anio = (int)($_GET['año'] ?? date('Y'));
+        $anio = (int)($_GET['anio'] ?? $_GET['año'] ?? date('Y'));
         $errors = [];
         $success = '';
         
