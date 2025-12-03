@@ -11,6 +11,15 @@ $router->add('', ['controller' => 'auth', 'action' => 'login']);
 $router->add('auth/login', ['controller' => 'auth', 'action' => 'login']);
 $router->add('auth/logout', ['controller' => 'auth', 'action' => 'logout']);
 $router->add('auth/forgot-password', ['controller' => 'auth', 'action' => 'forgotPassword']);
+$router->add('auth/registro', ['controller' => 'auth', 'action' => 'registro']);
+
+// Portal del Cliente
+$router->add('cliente', ['controller' => 'cliente', 'action' => 'index']);
+$router->add('cliente/cuenta', ['controller' => 'cliente', 'action' => 'cuenta']);
+$router->add('cliente/creditos', ['controller' => 'cliente', 'action' => 'creditos']);
+$router->add('cliente/credito/{id}', ['controller' => 'cliente', 'action' => 'credito']);
+$router->add('cliente/amortizacion/{id}', ['controller' => 'cliente', 'action' => 'amortizacion']);
+$router->add('cliente/pagar', ['controller' => 'cliente', 'action' => 'pagar']);
 
 // Dashboard
 $router->add('dashboard', ['controller' => 'dashboard', 'action' => 'index']);
@@ -73,6 +82,7 @@ $router->add('configuraciones/correo', ['controller' => 'configuraciones', 'acti
 $router->add('configuraciones/estilos', ['controller' => 'configuraciones', 'action' => 'estilos']);
 $router->add('configuraciones/paypal', ['controller' => 'configuraciones', 'action' => 'paypal']);
 $router->add('configuraciones/qr', ['controller' => 'configuraciones', 'action' => 'qr']);
+$router->add('configuraciones/testEmail', ['controller' => 'configuraciones', 'action' => 'testEmail']);
 
 // Gestión de Usuarios
 $router->add('usuarios', ['controller' => 'usuarios', 'action' => 'index']);

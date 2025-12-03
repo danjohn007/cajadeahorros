@@ -107,6 +107,13 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                     <i class="fas fa-sign-in-alt mr-2"></i> Iniciar Sesión
                 </button>
             </form>
+            
+            <div class="mt-4 pt-4 border-t text-center">
+                <span class="text-gray-600">¿Eres socio y no tienes cuenta?</span>
+                <a href="<?= BASE_URL ?>/auth/registro" class="text-blue-600 hover:text-blue-800 font-medium ml-1">
+                    Regístrate aquí
+                </a>
+            </div>
         </div>
         
         <div class="text-center mt-6 text-blue-200 text-sm">
