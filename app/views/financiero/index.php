@@ -217,8 +217,8 @@
 </div>
 
 <script>
-// Chart data from PHP
-const chartData = <?= json_encode($chartData) ?>;
+// Chart data from PHP (properly encoded for JavaScript)
+const chartData = <?= json_encode($chartData, JSON_HEX_TAG | JSON_HEX_APOS | JSON_HEX_QUOT | JSON_HEX_AMP) ?>;
 
 // Chart 1: Daily Evolution
 const ctxEvolucion = document.getElementById('chartEvolucion').getContext('2d');

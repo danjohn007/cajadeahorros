@@ -367,8 +367,8 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                 noLeidas: 0,
                 init() {
                     this.cargarNotificaciones();
-                    // Actualizar cada 60 segundos
-                    setInterval(() => this.cargarNotificaciones(), 60000);
+                    // Actualizar cada 2 minutos para reducir carga del servidor
+                    setInterval(() => this.cargarNotificaciones(), 120000);
                 },
                 toggle() {
                     this.open = !this.open;
