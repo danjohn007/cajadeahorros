@@ -24,8 +24,10 @@ class CreditosController extends Controller {
         $params = [];
         
         if ($search) {
-            $conditions .= " AND (s.nombre LIKE :search OR s.apellido_paterno LIKE :search OR c.numero_credito LIKE :search)";
-            $params['search'] = "%{$search}%";
+            $conditions .= " AND (s.nombre LIKE :search1 OR s.apellido_paterno LIKE :search2 OR c.numero_credito LIKE :search3)";
+            $params['search1'] = "%{$search}%";
+            $params['search2'] = "%{$search}%";
+            $params['search3'] = "%{$search}%";
         }
         if ($estatus) {
             $conditions .= " AND c.estatus = :estatus";

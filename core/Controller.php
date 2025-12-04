@@ -47,7 +47,7 @@ abstract class Controller {
         $allowedPrefixes = ['dashboard', 'socios', 'ahorro', 'creditos', 'nomina', 
                            'cartera', 'reportes', 'configuraciones', 'usuarios', 
                            'bitacora', 'auth', 'api', 'membresias', 'crm', 'importar',
-                           'financiero', 'auditoria', 'dispositivos', 'pago', 'cliente'];
+                           'financiero', 'auditoria', 'dispositivos', 'pago', 'cliente', 'kyc'];
         
         $isAllowed = false;
         foreach ($allowedPrefixes as $prefix) {
