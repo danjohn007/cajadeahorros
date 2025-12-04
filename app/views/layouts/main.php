@@ -188,6 +188,12 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                     <span class="ml-3" x-show="sidebarOpen">Sistema KYC</span>
                 </a>
                 
+                <a href="<?= BASE_URL ?>/escrow" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'escrow') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-handshake w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Sistema ESCROW</span>
+                </a>
+                
                 <?php if ($_SESSION['user_role'] === 'administrador'): ?>
                 <div class="border-t border-primary-700 mt-4 pt-4">
                     <a href="<?= BASE_URL ?>/importar" 

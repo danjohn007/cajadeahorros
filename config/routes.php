@@ -168,6 +168,27 @@ $router->add('kyc/documentos/{id}', ['controller' => 'kyc', 'action' => 'documen
 $router->add('kyc/descargar/{id}', ['controller' => 'kyc', 'action' => 'descargar']);
 $router->add('kyc/reportes', ['controller' => 'kyc', 'action' => 'reportes']);
 
+// Sistema ESCROW
+$router->add('escrow', ['controller' => 'escrow', 'action' => 'index']);
+$router->add('escrow/crear', ['controller' => 'escrow', 'action' => 'crear']);
+$router->add('escrow/editar/{id}', ['controller' => 'escrow', 'action' => 'editar']);
+$router->add('escrow/ver/{id}', ['controller' => 'escrow', 'action' => 'ver']);
+$router->add('escrow/deposito/{id}', ['controller' => 'escrow', 'action' => 'deposito']);
+$router->add('escrow/liberar/{id}', ['controller' => 'escrow', 'action' => 'liberar']);
+$router->add('escrow/disputa/{id}', ['controller' => 'escrow', 'action' => 'disputa']);
+$router->add('escrow/cancelar/{id}', ['controller' => 'escrow', 'action' => 'cancelar']);
+$router->add('escrow/documentos/{id}', ['controller' => 'escrow', 'action' => 'documentos']);
+$router->add('escrow/hitos/{id}', ['controller' => 'escrow', 'action' => 'hitos']);
+
+// Api Buró de Crédito - Configuración
+$router->add('configuraciones/buro', ['controller' => 'configuraciones', 'action' => 'buro']);
+
+// Consulta Pública Buró de Crédito
+$router->add('buro/consulta', ['controller' => 'buro', 'action' => 'consulta']);
+$router->add('buro/pagar', ['controller' => 'buro', 'action' => 'pagar']);
+$router->add('buro/procesar', ['controller' => 'buro', 'action' => 'procesar']);
+$router->add('buro/resultado/{token}', ['controller' => 'buro', 'action' => 'resultado']);
+
 // API endpoints
 $router->add('api/socios/buscar', ['controller' => 'api', 'action' => 'buscarSocios']);
 $router->add('api/dashboard/stats', ['controller' => 'api', 'action' => 'dashboardStats']);

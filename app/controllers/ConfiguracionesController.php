@@ -213,6 +213,55 @@ class ConfiguracionesController extends Controller {
         ]);
     }
     
+    public function buro() {
+        $this->requireRole(['administrador']);
+        
+        $success = '';
+        $errors = [];
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->validateCsrf();
+            
+            // Validar costo
+            $costoConsulta = floatval($_POST['buro_costo_consulta'] ?? 0);
+            if ($costoConsulta < 0) {
+                $errors[] = 'El costo de consulta no puede ser negativo';
+            }
+            
+            if (empty($errors)) {
+                // Guardar configuraciones
+                $this->guardarConfiguracion('buro_api_enabled', isset($_POST['buro_api_enabled']) ? '1' : '0');
+                $this->guardarConfiguracion('buro_api_url', $this->sanitize($_POST['buro_api_url'] ?? 'https://apif.burodecredito.com.mx'));
+                $this->guardarConfiguracion('buro_api_username', $this->sanitize($_POST['buro_api_username'] ?? ''));
+                $this->guardarConfiguracion('buro_api_key', $this->sanitize($_POST['buro_api_key'] ?? ''));
+                $this->guardarConfiguracion('buro_costo_consulta', number_format($costoConsulta, 2, '.', ''));
+                
+                // Solo actualizar contraseña si se proporciona
+                if (!empty($_POST['buro_api_password'])) {
+                    $this->guardarConfiguracion('buro_api_password', $this->sanitize($_POST['buro_api_password']));
+                }
+                
+                // Clear config cache
+                clearConfigCache();
+                
+                $this->logAction('ACTUALIZAR_CONFIG', 'Se actualizó configuración de API Buró de Crédito', 'configuraciones', null);
+                $success = 'Configuración de Buró de Crédito guardada exitosamente';
+            }
+        }
+        
+        $config = $this->getConfiguraciones([
+            'buro_api_enabled', 'buro_api_url', 'buro_api_username', 
+            'buro_api_password', 'buro_api_key', 'buro_costo_consulta'
+        ]);
+        
+        $this->view('configuraciones/buro', [
+            'pageTitle' => 'API Buró de Crédito',
+            'config' => $config,
+            'success' => $success,
+            'errors' => $errors
+        ]);
+    }
+    
     public function testEmail() {
         $this->requireRole(['administrador']);
         

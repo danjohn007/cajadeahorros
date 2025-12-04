@@ -55,6 +55,17 @@
         <p class="text-gray-600 text-sm">Configurar la cuenta de PayPal para pagos</p>
     </a>
     
+    <!-- API Buró de Crédito -->
+    <a href="<?= url('configuraciones/buro') ?>" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+        <div class="flex items-center mb-4">
+            <div class="p-3 rounded-full bg-teal-100 text-teal-600">
+                <i class="fas fa-search-dollar text-2xl"></i>
+            </div>
+        </div>
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">API Buró de Crédito</h2>
+        <p class="text-gray-600 text-sm">Configurar credenciales y costos de consulta al Buró</p>
+    </a>
+    
     <!-- Generador QR -->
     <a href="<?= url('configuraciones/qr') ?>" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
         <div class="flex items-center mb-4">
