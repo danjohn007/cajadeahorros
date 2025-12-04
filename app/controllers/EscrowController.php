@@ -842,7 +842,7 @@ class EscrowController extends Controller {
                     $this->setFlash('error', 'El archivo es demasiado grande (máximo 10MB)');
                 } else {
                     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
-                    $nombreArchivo = 'escrow_' . $id . '_' . time() . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+                    $nombreArchivo = 'escrow_' . bin2hex(random_bytes(16)) . '.' . $ext;
                     
                     $uploadDir = UPLOAD_PATH . '/escrow';
                     if (!is_dir($uploadDir)) {

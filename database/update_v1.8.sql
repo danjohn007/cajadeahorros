@@ -254,6 +254,19 @@ LEFT JOIN escrow_hitos eh ON et.id = eh.transaccion_id
 GROUP BY et.id;
 
 -- =====================================================
+-- TABLA DE SECUENCIA PARA NÚMEROS DE TRANSACCIÓN ESCROW
+-- =====================================================
+
+CREATE TABLE IF NOT EXISTS escrow_secuencia (
+    id INT PRIMARY KEY,
+    ultimo_numero INT NOT NULL DEFAULT 0
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- Inicializar la secuencia
+INSERT INTO escrow_secuencia (id, ultimo_numero) VALUES (1, 0)
+ON DUPLICATE KEY UPDATE id = id;
+
+-- =====================================================
 -- TRIGGER PARA GENERAR NÚMERO DE TRANSACCIÓN ESCROW
 -- =====================================================
 
@@ -266,9 +279,9 @@ BEGIN
     DECLARE next_num INT;
     
     IF NEW.numero_transaccion IS NULL OR NEW.numero_transaccion = '' THEN
-        SELECT COALESCE(MAX(CAST(SUBSTRING(numero_transaccion, 5) AS UNSIGNED)), 0) + 1 
-        INTO next_num
-        FROM escrow_transacciones;
+        -- Usar secuencia para mejor rendimiento
+        UPDATE escrow_secuencia SET ultimo_numero = ultimo_numero + 1 WHERE id = 1;
+        SELECT ultimo_numero INTO next_num FROM escrow_secuencia WHERE id = 1;
         
         SET NEW.numero_transaccion = CONCAT('ESC-', LPAD(next_num, 6, '0'));
     END IF;
