@@ -421,6 +421,13 @@ class KycController extends Controller {
         
         $id = $this->params['id'] ?? 0;
         
+        // Validate ID is a positive integer to prevent path traversal
+        if (!is_numeric($id) || (int)$id <= 0) {
+            $this->setFlash('error', 'ID de verificación inválido');
+            $this->redirect('kyc');
+        }
+        $id = (int)$id;
+        
         $verificacion = $this->db->fetch(
             "SELECT k.*, s.nombre, s.apellido_paterno
              FROM kyc_verificaciones k
@@ -461,23 +468,24 @@ class KycController extends Controller {
                 $this->redirect('kyc/ver/' . $id);
             }
             
-            // Crear directorio si no existe
+            // Crear directorio si no existe - use verified ID
             $uploadDir = UPLOADS_PATH . '/kyc/' . $id;
             if (!is_dir($uploadDir)) {
                 mkdir($uploadDir, 0755, true);
             }
             
             // Generar nombre único con extensión correcta basada en mime type
+            // Using uniqid with more entropy and timestamp for uniqueness
             $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'application/pdf' => 'pdf'];
             $ext = $extensions[$mimeType] ?? 'bin';
-            $fileName = uniqid() . '_' . preg_replace('/[^a-zA-Z0-9_-]/', '_', pathinfo($file['name'], PATHINFO_FILENAME)) . '.' . $ext;
+            $fileName = uniqid('kyc_', true) . '_' . time() . '.' . $ext;
             $filePath = $uploadDir . '/' . $fileName;
             
             if (move_uploaded_file($file['tmp_name'], $filePath)) {
                 $this->db->insert('kyc_documentos', [
                     'verificacion_id' => $id,
                     'tipo_documento' => $tipoDocumento,
-                    'nombre_archivo' => $file['name'],
+                    'nombre_archivo' => basename($file['name']), // Use basename for security
                     'ruta_archivo' => 'uploads/kyc/' . $id . '/' . $fileName,
                     'usuario_id' => $_SESSION['user_id']
                 ]);
@@ -495,6 +503,77 @@ class KycController extends Controller {
         }
         
         $this->redirect('kyc/ver/' . $id);
+    }
+    
+    public function descargar() {
+        $this->requireRole(['administrador', 'operativo', 'consulta']);
+        
+        $docId = $this->params['id'] ?? 0;
+        
+        // Validate ID is a positive integer
+        if (!is_numeric($docId) || (int)$docId <= 0) {
+            $this->setFlash('error', 'ID de documento inválido');
+            $this->redirect('kyc');
+        }
+        $docId = (int)$docId;
+        
+        // Verify document exists and get its info
+        $documento = $this->db->fetch(
+            "SELECT d.*, k.socio_id 
+             FROM kyc_documentos d
+             JOIN kyc_verificaciones k ON d.verificacion_id = k.id
+             WHERE d.id = :id",
+            ['id' => $docId]
+        );
+        
+        if (!$documento) {
+            $this->setFlash('error', 'Documento no encontrado');
+            $this->redirect('kyc');
+        }
+        
+        // Build secure file path using only the filename from database
+        $filePath = ROOT_PATH . '/' . $documento['ruta_archivo'];
+        
+        // Verify path is within uploads directory (prevent directory traversal)
+        $realPath = realpath($filePath);
+        $uploadsDir = realpath(UPLOADS_PATH);
+        
+        if ($realPath === false || strpos($realPath, $uploadsDir) !== 0) {
+            $this->setFlash('error', 'Archivo no accesible');
+            $this->redirect('kyc/ver/' . $documento['verificacion_id']);
+        }
+        
+        if (!file_exists($realPath)) {
+            $this->setFlash('error', 'Archivo no encontrado');
+            $this->redirect('kyc/ver/' . $documento['verificacion_id']);
+        }
+        
+        // Determine MIME type
+        $finfo = new finfo(FILEINFO_MIME_TYPE);
+        $mimeType = $finfo->file($realPath);
+        
+        // Only allow safe file types
+        $allowedMimes = ['image/jpeg', 'image/png', 'application/pdf'];
+        if (!in_array($mimeType, $allowedMimes)) {
+            $this->setFlash('error', 'Tipo de archivo no permitido');
+            $this->redirect('kyc/ver/' . $documento['verificacion_id']);
+        }
+        
+        // Log the download
+        $this->logAction('DESCARGAR_DOC_KYC', 
+            "Se descargó documento ID {$docId} de verificación KYC",
+            'kyc_documentos',
+            $docId
+        );
+        
+        // Serve the file securely
+        header('Content-Type: ' . $mimeType);
+        header('Content-Disposition: inline; filename="' . basename($documento['nombre_archivo']) . '"');
+        header('Content-Length: ' . filesize($realPath));
+        header('Cache-Control: private, max-age=0, must-revalidate');
+        header('X-Content-Type-Options: nosniff');
+        readfile($realPath);
+        exit;
     }
     
     public function reportes() {

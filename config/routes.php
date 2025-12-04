@@ -165,6 +165,7 @@ $router->add('kyc/ver/{id}', ['controller' => 'kyc', 'action' => 'ver']);
 $router->add('kyc/aprobar/{id}', ['controller' => 'kyc', 'action' => 'aprobar']);
 $router->add('kyc/rechazar/{id}', ['controller' => 'kyc', 'action' => 'rechazar']);
 $router->add('kyc/documentos/{id}', ['controller' => 'kyc', 'action' => 'documentos']);
+$router->add('kyc/descargar/{id}', ['controller' => 'kyc', 'action' => 'descargar']);
 $router->add('kyc/reportes', ['controller' => 'kyc', 'action' => 'reportes']);
 
 // API endpoints

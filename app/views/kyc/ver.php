@@ -238,8 +238,8 @@
                         <p class="text-sm font-medium text-gray-900 truncate"><?= htmlspecialchars($doc['nombre_archivo']) ?></p>
                         <p class="text-xs text-gray-500"><?= htmlspecialchars($doc['tipo_documento']) ?> | <?= date('d/m/Y', strtotime($doc['fecha_subida'])) ?></p>
                     </div>
-                    <a href="<?= BASE_URL ?>/<?= htmlspecialchars($doc['ruta_archivo']) ?>" target="_blank"
-                       class="text-primary-600 hover:text-primary-800">
+                    <a href="<?= BASE_URL ?>/kyc/descargar/<?= (int)$doc['id'] ?>" target="_blank"
+                       class="text-primary-600 hover:text-primary-800" title="Descargar">
                         <i class="fas fa-download"></i>
                     </a>
                 </div>
