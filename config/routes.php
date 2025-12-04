@@ -157,6 +157,17 @@ $router->add('pago/procesar', ['controller' => 'pago', 'action' => 'procesar']);
 $router->add('pago/exito', ['controller' => 'pago', 'action' => 'exito']);
 $router->add('pago/cancelado', ['controller' => 'pago', 'action' => 'cancelado']);
 
+// Sistema KYC (Know Your Customer)
+$router->add('kyc', ['controller' => 'kyc', 'action' => 'index']);
+$router->add('kyc/crear', ['controller' => 'kyc', 'action' => 'crear']);
+$router->add('kyc/editar/{id}', ['controller' => 'kyc', 'action' => 'editar']);
+$router->add('kyc/ver/{id}', ['controller' => 'kyc', 'action' => 'ver']);
+$router->add('kyc/aprobar/{id}', ['controller' => 'kyc', 'action' => 'aprobar']);
+$router->add('kyc/rechazar/{id}', ['controller' => 'kyc', 'action' => 'rechazar']);
+$router->add('kyc/documentos/{id}', ['controller' => 'kyc', 'action' => 'documentos']);
+$router->add('kyc/descargar/{id}', ['controller' => 'kyc', 'action' => 'descargar']);
+$router->add('kyc/reportes', ['controller' => 'kyc', 'action' => 'reportes']);
+
 // API endpoints
 $router->add('api/socios/buscar', ['controller' => 'api', 'action' => 'buscarSocios']);
 $router->add('api/dashboard/stats', ['controller' => 'api', 'action' => 'dashboardStats']);
