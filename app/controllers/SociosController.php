@@ -20,7 +20,7 @@ class SociosController extends Controller {
         $params = [];
         
         if ($search) {
-            $conditions .= " AND (nombre LIKE :search1 OR apellido_paterno LIKE :search2 OR rfc LIKE :search3 OR curp LIKE :search4 OR numero_socio LIKE :search5)";
+            $conditions .= " AND (s.nombre LIKE :search1 OR s.apellido_paterno LIKE :search2 OR s.rfc LIKE :search3 OR s.curp LIKE :search4 OR s.numero_socio LIKE :search5)";
             $searchTerm = "%{$search}%";
             $params['search1'] = $searchTerm;
             $params['search2'] = $searchTerm;
@@ -30,13 +30,13 @@ class SociosController extends Controller {
         }
         
         if ($estatus) {
-            $conditions .= " AND estatus = :estatus";
+            $conditions .= " AND s.estatus = :estatus";
             $params['estatus'] = $estatus;
         }
         
         // Count total
         $total = $this->db->fetch(
-            "SELECT COUNT(*) as total FROM socios WHERE {$conditions}",
+            "SELECT COUNT(*) as total FROM socios s WHERE {$conditions}",
             $params
         )['total'];
         
