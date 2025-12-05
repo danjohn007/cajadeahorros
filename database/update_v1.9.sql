@@ -15,9 +15,7 @@ USE caja_ahorros;
 ALTER TABLE pagos_credito 
 MODIFY COLUMN origen ENUM('efectivo', 'transferencia', 'cheque', 'tarjeta_debito', 'tarjeta_credito', 'deposito', 'nomina', 'oxxo', 'spei', 'paypal', 'ventanilla', 'otro') DEFAULT 'efectivo';
 
--- Agregar campo de observaciones si no existe
-ALTER TABLE pagos_credito 
-ADD COLUMN IF NOT EXISTS observaciones TEXT AFTER referencia;
+-- La columna observaciones ya existe en pagos_credito, no es necesario agregarla.
 
 -- =====================================================
 -- TABLA DE CATÁLOGO DE MÉTODOS DE PAGO
