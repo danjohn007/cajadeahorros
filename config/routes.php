@@ -22,6 +22,7 @@ $router->add('cliente/amortizacion/{id}', ['controller' => 'cliente', 'action' =
 $router->add('cliente/pagar', ['controller' => 'cliente', 'action' => 'pagar']);
 $router->add('cliente/procesarPago', ['controller' => 'cliente', 'action' => 'procesarPago']);
 $router->add('cliente/solicitarVinculacion', ['controller' => 'cliente', 'action' => 'solicitarVinculacion']);
+$router->add('cliente/estado-cuenta', ['controller' => 'cliente', 'action' => 'estadoCuenta']);
 
 // Dashboard
 $router->add('dashboard', ['controller' => 'dashboard', 'action' => 'index']);
@@ -189,6 +190,14 @@ $router->add('buro/consulta', ['controller' => 'buro', 'action' => 'consulta']);
 $router->add('buro/pagar', ['controller' => 'buro', 'action' => 'pagar']);
 $router->add('buro/procesar', ['controller' => 'buro', 'action' => 'procesar']);
 $router->add('buro/resultado/{token}', ['controller' => 'buro', 'action' => 'resultado']);
+
+// Inversionistas
+$router->add('inversionistas', ['controller' => 'inversionistas', 'action' => 'index']);
+$router->add('inversionistas/crear', ['controller' => 'inversionistas', 'action' => 'crear']);
+$router->add('inversionistas/editar/{id}', ['controller' => 'inversionistas', 'action' => 'editar']);
+$router->add('inversionistas/ver/{id}', ['controller' => 'inversionistas', 'action' => 'ver']);
+$router->add('inversionistas/inversion/{id}', ['controller' => 'inversionistas', 'action' => 'inversion']);
+$router->add('inversionistas/buscar', ['controller' => 'inversionistas', 'action' => 'buscar']);
 
 // API endpoints
 $router->add('api/socios/buscar', ['controller' => 'api', 'action' => 'buscarSocios']);

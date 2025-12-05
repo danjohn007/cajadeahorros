@@ -32,21 +32,31 @@
 <?php endif; ?>
 
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-    <!-- Formulario de nueva categoría -->
+    <!-- Formulario de nueva/editar categoría -->
     <div class="bg-white rounded-lg shadow-md p-6">
         <h2 class="text-lg font-semibold text-gray-800 mb-4">
-            <i class="fas fa-plus-circle mr-2 text-blue-600"></i>Nueva Categoría
+            <?php if (isset($editCategoria) && $editCategoria): ?>
+                <i class="fas fa-edit mr-2 text-blue-600"></i>Editar Categoría
+            <?php else: ?>
+                <i class="fas fa-plus-circle mr-2 text-blue-600"></i>Nueva Categoría
+            <?php endif; ?>
         </h2>
         
         <form method="POST" action="<?= url('financiero/categorias') ?>">
             <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
-            <input type="hidden" name="action" value="crear">
+            <?php if (isset($editCategoria) && $editCategoria): ?>
+                <input type="hidden" name="action" value="editar">
+                <input type="hidden" name="id" value="<?= $editCategoria['id'] ?>">
+            <?php else: ?>
+                <input type="hidden" name="action" value="crear">
+            <?php endif; ?>
             
             <div class="space-y-4">
                 <div>
                     <label for="nombre" class="block text-sm font-medium text-gray-700 mb-1">Nombre *</label>
                     <input type="text" id="nombre" name="nombre" required
                            placeholder="Nombre de la categoría"
+                           value="<?= htmlspecialchars($editCategoria['nombre'] ?? '') ?>"
                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border">
                 </div>
                 
@@ -55,8 +65,8 @@
                     <select id="tipo" name="tipo" required
                             class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border">
                         <option value="">Seleccionar...</option>
-                        <option value="ingreso">Ingreso</option>
-                        <option value="egreso">Egreso</option>
+                        <option value="ingreso" <?= (($editCategoria['tipo'] ?? '') === 'ingreso') ? 'selected' : '' ?>>Ingreso</option>
+                        <option value="egreso" <?= (($editCategoria['tipo'] ?? '') === 'egreso') ? 'selected' : '' ?>>Egreso</option>
                     </select>
                 </div>
                 
@@ -64,25 +74,36 @@
                     <label for="descripcion" class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
                     <textarea id="descripcion" name="descripcion" rows="2"
                               placeholder="Descripción de la categoría"
-                              class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border"></textarea>
+                              class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border"><?= htmlspecialchars($editCategoria['descripcion'] ?? '') ?></textarea>
                 </div>
                 
                 <div>
                     <label for="color" class="block text-sm font-medium text-gray-700 mb-1">Color</label>
-                    <input type="color" id="color" name="color" value="#3b82f6"
+                    <input type="color" id="color" name="color" value="<?= htmlspecialchars($editCategoria['color'] ?? '#3b82f6') ?>"
                            class="w-full h-10 rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 border">
                 </div>
                 
                 <div>
                     <label for="icono" class="block text-sm font-medium text-gray-700 mb-1">Icono (Font Awesome)</label>
-                    <input type="text" id="icono" name="icono" value="fas fa-tag"
+                    <input type="text" id="icono" name="icono" value="<?= htmlspecialchars($editCategoria['icono'] ?? 'fas fa-tag') ?>"
                            placeholder="fas fa-tag"
                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 px-4 py-2 border">
                 </div>
                 
-                <button type="submit" class="w-full px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
-                    <i class="fas fa-plus mr-2"></i>Crear Categoría
-                </button>
+                <div class="flex space-x-2">
+                    <button type="submit" class="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700">
+                        <?php if (isset($editCategoria) && $editCategoria): ?>
+                            <i class="fas fa-save mr-2"></i>Guardar Cambios
+                        <?php else: ?>
+                            <i class="fas fa-plus mr-2"></i>Crear Categoría
+                        <?php endif; ?>
+                    </button>
+                    <?php if (isset($editCategoria) && $editCategoria): ?>
+                        <a href="<?= url('financiero/categorias') ?>" class="px-4 py-2 bg-gray-300 text-gray-700 rounded-md hover:bg-gray-400">
+                            Cancelar
+                        </a>
+                    <?php endif; ?>
+                </div>
             </div>
         </form>
     </div>
@@ -116,17 +137,38 @@
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-2">
                                 <span class="text-sm text-gray-500"><?= $cat['num_transacciones'] ?? 0 ?> transacciones</span>
+                                
+                                <!-- Edit Button -->
+                                <a href="<?= url('financiero/categorias?editar=' . $cat['id']) ?>" 
+                                   class="text-blue-600 hover:text-blue-800 p-1" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <!-- Toggle Button -->
                                 <form method="POST" action="<?= url('financiero/categorias') ?>" class="inline">
                                     <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                                     <input type="hidden" name="action" value="toggle">
                                     <input type="hidden" name="id" value="<?= $cat['id'] ?>">
-                                    <button type="submit" class="<?= $cat['activo'] ? 'text-green-600' : 'text-gray-400' ?> hover:text-gray-600"
+                                    <button type="submit" class="<?= $cat['activo'] ? 'text-green-600' : 'text-gray-400' ?> hover:text-gray-600 p-1"
                                             title="<?= $cat['activo'] ? 'Desactivar' : 'Activar' ?>">
                                         <i class="fas <?= $cat['activo'] ? 'fa-toggle-on' : 'fa-toggle-off' ?>"></i>
                                     </button>
                                 </form>
+                                
+                                <!-- Delete Button -->
+                                <?php if (($cat['num_transacciones'] ?? 0) == 0): ?>
+                                <form method="POST" action="<?= url('financiero/categorias') ?>" class="inline" 
+                                      onsubmit="return confirm('¿Está seguro de eliminar esta categoría?')">
+                                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                    <input type="hidden" name="action" value="eliminar">
+                                    <input type="hidden" name="id" value="<?= $cat['id'] ?>">
+                                    <button type="submit" class="text-red-600 hover:text-red-800 p-1" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php 
@@ -161,17 +203,38 @@
                                     <?php endif; ?>
                                 </div>
                             </div>
-                            <div class="flex items-center space-x-3">
+                            <div class="flex items-center space-x-2">
                                 <span class="text-sm text-gray-500"><?= $cat['num_transacciones'] ?? 0 ?> transacciones</span>
+                                
+                                <!-- Edit Button -->
+                                <a href="<?= url('financiero/categorias?editar=' . $cat['id']) ?>" 
+                                   class="text-blue-600 hover:text-blue-800 p-1" title="Editar">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                                
+                                <!-- Toggle Button -->
                                 <form method="POST" action="<?= url('financiero/categorias') ?>" class="inline">
                                     <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
                                     <input type="hidden" name="action" value="toggle">
                                     <input type="hidden" name="id" value="<?= $cat['id'] ?>">
-                                    <button type="submit" class="<?= $cat['activo'] ? 'text-green-600' : 'text-gray-400' ?> hover:text-gray-600"
+                                    <button type="submit" class="<?= $cat['activo'] ? 'text-green-600' : 'text-gray-400' ?> hover:text-gray-600 p-1"
                                             title="<?= $cat['activo'] ? 'Desactivar' : 'Activar' ?>">
                                         <i class="fas <?= $cat['activo'] ? 'fa-toggle-on' : 'fa-toggle-off' ?>"></i>
                                     </button>
                                 </form>
+                                
+                                <!-- Delete Button -->
+                                <?php if (($cat['num_transacciones'] ?? 0) == 0): ?>
+                                <form method="POST" action="<?= url('financiero/categorias') ?>" class="inline"
+                                      onsubmit="return confirm('¿Está seguro de eliminar esta categoría?')">
+                                    <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
+                                    <input type="hidden" name="action" value="eliminar">
+                                    <input type="hidden" name="id" value="<?= $cat['id'] ?>">
+                                    <button type="submit" class="text-red-600 hover:text-red-800 p-1" title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </form>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php 

@@ -78,7 +78,13 @@
 </div>
 
 <!-- Acciones Rápidas -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
+    <a href="<?= url('cliente/estado-cuenta') ?>" class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition text-center border-2 border-blue-200">
+        <i class="fas fa-file-invoice text-3xl text-blue-600 mb-2"></i>
+        <p class="font-medium">Estado de Cuenta</p>
+        <p class="text-sm text-gray-500">Ver resumen</p>
+    </a>
+    
     <a href="<?= url('cliente/cuenta') ?>" class="bg-white rounded-lg shadow-md p-4 hover:shadow-lg transition text-center">
         <i class="fas fa-wallet text-3xl text-blue-600 mb-2"></i>
         <p class="font-medium">Mi Cuenta</p>
