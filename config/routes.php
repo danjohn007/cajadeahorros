@@ -22,6 +22,7 @@ $router->add('cliente/amortizacion/{id}', ['controller' => 'cliente', 'action' =
 $router->add('cliente/pagar', ['controller' => 'cliente', 'action' => 'pagar']);
 $router->add('cliente/procesarPago', ['controller' => 'cliente', 'action' => 'procesarPago']);
 $router->add('cliente/solicitarVinculacion', ['controller' => 'cliente', 'action' => 'solicitarVinculacion']);
+$router->add('cliente/estado-cuenta', ['controller' => 'cliente', 'action' => 'estadoCuenta']);
 
 // Dashboard
 $router->add('dashboard', ['controller' => 'dashboard', 'action' => 'index']);

@@ -94,6 +94,12 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                     <span class="ml-3" x-show="sidebarOpen">Mi Portal</span>
                 </a>
                 
+                <a href="<?= BASE_URL ?>/cliente/estado-cuenta" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'cliente/estado-cuenta') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-file-invoice w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Estado de Cuenta</span>
+                </a>
+                
                 <a href="<?= BASE_URL ?>/cliente/cuenta" 
                    class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'cliente/cuenta') !== false ? 'active' : '' ?>">
                     <i class="fas fa-wallet w-6"></i>
