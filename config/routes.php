@@ -191,6 +191,14 @@ $router->add('buro/pagar', ['controller' => 'buro', 'action' => 'pagar']);
 $router->add('buro/procesar', ['controller' => 'buro', 'action' => 'procesar']);
 $router->add('buro/resultado/{token}', ['controller' => 'buro', 'action' => 'resultado']);
 
+// Inversionistas
+$router->add('inversionistas', ['controller' => 'inversionistas', 'action' => 'index']);
+$router->add('inversionistas/crear', ['controller' => 'inversionistas', 'action' => 'crear']);
+$router->add('inversionistas/editar/{id}', ['controller' => 'inversionistas', 'action' => 'editar']);
+$router->add('inversionistas/ver/{id}', ['controller' => 'inversionistas', 'action' => 'ver']);
+$router->add('inversionistas/inversion/{id}', ['controller' => 'inversionistas', 'action' => 'inversion']);
+$router->add('inversionistas/buscar', ['controller' => 'inversionistas', 'action' => 'buscar']);
+
 // API endpoints
 $router->add('api/socios/buscar', ['controller' => 'api', 'action' => 'buscarSocios']);
 $router->add('api/dashboard/stats', ['controller' => 'api', 'action' => 'dashboardStats']);
