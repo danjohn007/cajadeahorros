@@ -183,6 +183,13 @@ class FinancieroController extends Controller {
         
         $errors = [];
         $success = '';
+        $editCategoria = null;
+        
+        // Check if editing
+        if (isset($_GET['editar'])) {
+            $editId = (int)$_GET['editar'];
+            $editCategoria = $this->db->fetch("SELECT * FROM categorias_financieras WHERE id = :id", ['id' => $editId]);
+        }
         
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
@@ -213,6 +220,30 @@ class FinancieroController extends Controller {
                     $this->logAction('CREAR_CATEGORIA', "Se creó categoría financiera: {$nombre}", 'categorias_financieras', $this->db->lastInsertId());
                     $success = 'Categoría creada exitosamente';
                 }
+            } elseif ($action === 'editar') {
+                $id = (int)($_POST['id'] ?? 0);
+                $nombre = $this->sanitize($_POST['nombre'] ?? '');
+                $tipo = $this->sanitize($_POST['tipo'] ?? '');
+                $descripcion = $this->sanitize($_POST['descripcion'] ?? '');
+                $color = $this->sanitize($_POST['color'] ?? '#000000');
+                $icono = $this->sanitize($_POST['icono'] ?? 'fas fa-tag');
+                
+                if (empty($nombre)) {
+                    $errors[] = 'El nombre es requerido';
+                } elseif (!in_array($tipo, ['ingreso', 'egreso'])) {
+                    $errors[] = 'Tipo de categoría inválido';
+                } else {
+                    $this->db->update('categorias_financieras', [
+                        'nombre' => $nombre,
+                        'tipo' => $tipo,
+                        'descripcion' => $descripcion,
+                        'color' => $color,
+                        'icono' => $icono
+                    ], 'id = :id', ['id' => $id]);
+                    
+                    $this->logAction('EDITAR_CATEGORIA', "Se editó categoría financiera: {$nombre}", 'categorias_financieras', $id);
+                    $success = 'Categoría actualizada exitosamente';
+                }
             } elseif ($action === 'toggle') {
                 $id = (int)($_POST['id'] ?? 0);
                 $categoria = $this->db->fetch("SELECT activo FROM categorias_financieras WHERE id = :id", ['id' => $id]);
@@ -220,6 +251,25 @@ class FinancieroController extends Controller {
                     $nuevoEstado = $categoria['activo'] ? 0 : 1;
                     $this->db->update('categorias_financieras', ['activo' => $nuevoEstado], 'id = :id', ['id' => $id]);
                     $success = $nuevoEstado ? 'Categoría activada' : 'Categoría desactivada';
+                }
+            } elseif ($action === 'eliminar') {
+                $id = (int)($_POST['id'] ?? 0);
+                
+                // Check if category has transactions
+                $numTransacciones = $this->db->fetch(
+                    "SELECT COUNT(*) as total FROM transacciones_financieras WHERE categoria_id = :id",
+                    ['id' => $id]
+                )['total'];
+                
+                if ($numTransacciones > 0) {
+                    $errors[] = 'No se puede eliminar una categoría que tiene transacciones asociadas. Desactívela en su lugar.';
+                } else {
+                    $categoria = $this->db->fetch("SELECT nombre FROM categorias_financieras WHERE id = :id", ['id' => $id]);
+                    if ($categoria) {
+                        $this->db->delete('categorias_financieras', 'id = :id', ['id' => $id]);
+                        $this->logAction('ELIMINAR_CATEGORIA', "Se eliminó categoría financiera: {$categoria['nombre']}", 'categorias_financieras', $id);
+                        $success = 'Categoría eliminada exitosamente';
+                    }
                 }
             }
         }
@@ -234,6 +284,7 @@ class FinancieroController extends Controller {
         $this->view('financiero/categorias', [
             'pageTitle' => 'Categorías Financieras',
             'categorias' => $categorias,
+            'editCategoria' => $editCategoria,
             'errors' => $errors,
             'success' => $success
         ]);

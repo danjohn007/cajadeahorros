@@ -146,6 +146,31 @@ class SociosController extends Controller {
                         'observaciones' => $data['observaciones'] ?? ''
                     ]);
                     
+                    // Handle file upload for identificacion_oficial
+                    if (isset($_FILES['identificacion_oficial']) && $_FILES['identificacion_oficial']['error'] === UPLOAD_ERR_OK) {
+                        $file = $_FILES['identificacion_oficial'];
+                        $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                        $maxSize = 5 * 1024 * 1024; // 5MB
+                        
+                        $fileType = mime_content_type($file['tmp_name']);
+                        if (in_array($fileType, $allowedTypes) && $file['size'] <= $maxSize) {
+                            $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                            $nombreArchivo = 'id_' . $socioId . '_' . time() . '.' . $ext;
+                            
+                            $uploadDir = UPLOADS_PATH . '/identificaciones';
+                            if (!is_dir($uploadDir)) {
+                                mkdir($uploadDir, 0755, true);
+                            }
+                            
+                            $ruta = $uploadDir . '/' . $nombreArchivo;
+                            if (move_uploaded_file($file['tmp_name'], $ruta)) {
+                                $this->db->update('socios', [
+                                    'identificacion_oficial' => $nombreArchivo
+                                ], 'id = :id', ['id' => $socioId]);
+                            }
+                        }
+                    }
+                    
                     // Crear cuenta de ahorro automáticamente
                     $lastCuenta = $this->db->fetch("SELECT numero_cuenta FROM cuentas_ahorro ORDER BY id DESC LIMIT 1");
                     $nextCuentaNum = 1;
@@ -229,16 +254,44 @@ class SociosController extends Controller {
             
             if (empty($errors)) {
                 // Registrar cambios en historial
-                $campos = ['nombre', 'apellido_paterno', 'apellido_materno', 'rfc', 'curp', 'telefono', 'email', 'direccion', 'estatus'];
+                $campos = ['nombre', 'apellido_paterno', 'apellido_materno', 'rfc', 'curp', 'telefono', 'email', 'direccion', 'estatus', 'observaciones'];
                 foreach ($campos as $campo) {
-                    if (isset($data[$campo]) && $data[$campo] !== $socio[$campo]) {
+                    if (isset($data[$campo]) && $data[$campo] !== ($socio[$campo] ?? '')) {
                         $this->db->insert('socios_historial', [
                             'socio_id' => $id,
                             'usuario_id' => $_SESSION['user_id'],
                             'campo_modificado' => $campo,
-                            'valor_anterior' => $socio[$campo],
+                            'valor_anterior' => $socio[$campo] ?? '',
                             'valor_nuevo' => $data[$campo]
                         ]);
+                    }
+                }
+                
+                // Handle file upload for identificacion_oficial
+                $identificacionOficial = $socio['identificacion_oficial'] ?? '';
+                if (isset($_FILES['identificacion_oficial']) && $_FILES['identificacion_oficial']['error'] === UPLOAD_ERR_OK) {
+                    $file = $_FILES['identificacion_oficial'];
+                    $allowedTypes = ['image/jpeg', 'image/png', 'image/jpg'];
+                    $maxSize = 5 * 1024 * 1024; // 5MB
+                    
+                    $fileType = mime_content_type($file['tmp_name']);
+                    if (in_array($fileType, $allowedTypes) && $file['size'] <= $maxSize) {
+                        $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
+                        $nombreArchivo = 'id_' . $id . '_' . time() . '.' . $ext;
+                        
+                        $uploadDir = UPLOADS_PATH . '/identificaciones';
+                        if (!is_dir($uploadDir)) {
+                            mkdir($uploadDir, 0755, true);
+                        }
+                        
+                        $ruta = $uploadDir . '/' . $nombreArchivo;
+                        if (move_uploaded_file($file['tmp_name'], $ruta)) {
+                            // Delete old file if exists
+                            if ($identificacionOficial && file_exists(UPLOADS_PATH . '/identificaciones/' . $identificacionOficial)) {
+                                unlink(UPLOADS_PATH . '/identificaciones/' . $identificacionOficial);
+                            }
+                            $identificacionOficial = $nombreArchivo;
+                        }
                     }
                 }
                 
@@ -267,7 +320,9 @@ class SociosController extends Controller {
                     'estatus' => $data['estatus'] ?? 'activo',
                     'beneficiario_nombre' => $data['beneficiario_nombre'] ?? '',
                     'beneficiario_parentesco' => $data['beneficiario_parentesco'] ?? '',
-                    'beneficiario_telefono' => $data['beneficiario_telefono'] ?? ''
+                    'beneficiario_telefono' => $data['beneficiario_telefono'] ?? '',
+                    'observaciones' => $data['observaciones'] ?? '',
+                    'identificacion_oficial' => $identificacionOficial
                 ], 'id = :id', ['id' => $id]);
                 
                 $this->logAction('EDITAR_SOCIO', "Se editó el socio {$data['nombre']} {$data['apellido_paterno']}", 'socios', $id);

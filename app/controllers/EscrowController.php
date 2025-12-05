@@ -844,7 +844,7 @@ class EscrowController extends Controller {
                     $ext = strtolower(pathinfo($file['name'], PATHINFO_EXTENSION));
                     $nombreArchivo = 'escrow_' . bin2hex(random_bytes(16)) . '.' . $ext;
                     
-                    $uploadDir = UPLOAD_PATH . '/escrow';
+                    $uploadDir = UPLOADS_PATH . '/escrow';
                     if (!is_dir($uploadDir)) {
                         mkdir($uploadDir, 0755, true);
                     }
