@@ -297,6 +297,197 @@ class ClienteController extends Controller {
     }
     
     /**
+     * Procesar pago PayPal desde el portal del cliente
+     */
+    public function procesarPago() {
+        if (!$this->socioId) {
+            $this->json(['success' => false, 'message' => 'No autorizado'], 401);
+            return;
+        }
+        
+        // Only accept POST AJAX requests
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            $this->json(['success' => false, 'message' => 'Método no permitido'], 405);
+            return;
+        }
+        
+        // Get and validate JSON input
+        $rawInput = file_get_contents('php://input');
+        $data = json_decode($rawInput, true);
+        
+        if (json_last_error() !== JSON_ERROR_NONE || !is_array($data)) {
+            $this->json(['success' => false, 'message' => 'Datos JSON inválidos']);
+            return;
+        }
+        
+        // Validate CSRF token
+        $csrfToken = $data['csrf_token'] ?? '';
+        if (empty($csrfToken) || !$this->verifyCsrfToken($csrfToken)) {
+            $this->json(['success' => false, 'message' => 'Token de seguridad inválido'], 403);
+            return;
+        }
+        
+        $numeroCredito = $this->sanitize($data['credito'] ?? '');
+        $monto = (float)($data['monto'] ?? 0);
+        $tipo = $this->sanitize($data['tipo'] ?? '');
+        $paypalOrderId = $this->sanitize($data['paypal_order_id'] ?? '');
+        $payerEmail = filter_var($data['payer_email'] ?? '', FILTER_SANITIZE_EMAIL);
+        $transactionId = $this->sanitize($data['transaction_id'] ?? '');
+        
+        // Validate required fields
+        if (empty($numeroCredito) || $monto <= 0 || empty($paypalOrderId) || empty($transactionId)) {
+            $this->json(['success' => false, 'message' => 'Datos incompletos']);
+            return;
+        }
+        
+        // Validate tipo
+        if (!in_array($tipo, ['vencido', 'total'])) {
+            $this->json(['success' => false, 'message' => 'Tipo de pago inválido']);
+            return;
+        }
+        
+        // Verify the credit belongs to the current socio
+        $credito = $this->db->fetch(
+            "SELECT * FROM creditos WHERE numero_credito = :numero AND socio_id = :socio_id AND estatus = 'activo'",
+            ['numero' => $numeroCredito, 'socio_id' => $this->socioId]
+        );
+        
+        if (!$credito) {
+            $this->json(['success' => false, 'message' => 'Crédito no encontrado']);
+            return;
+        }
+        
+        try {
+            $this->db->beginTransaction();
+            
+            // Get pending/overdue payments for this credit
+            $pagosVencidos = $this->db->fetchAll(
+                "SELECT * FROM amortizacion 
+                 WHERE credito_id = :credito_id 
+                 AND (estatus = 'vencido' OR (estatus = 'pendiente' AND fecha_vencimiento <= CURDATE()))
+                 ORDER BY numero_pago ASC",
+                ['credito_id' => $credito['id']]
+            );
+            
+            $montoRestante = $monto;
+            $pagosRealizados = 0;
+            $capitalPagado = 0;
+            
+            // Process payments in order
+            if ($tipo === 'vencido') {
+                // Pay only overdue payments
+                foreach ($pagosVencidos as $pago) {
+                    if ($montoRestante >= $pago['monto_total']) {
+                        // Full payment for this installment
+                        $this->db->insert('pagos_credito', [
+                            'credito_id' => $credito['id'],
+                            'amortizacion_id' => $pago['id'],
+                            'monto' => $pago['monto_total'],
+                            'monto_capital' => $pago['monto_capital'],
+                            'monto_interes' => $pago['monto_interes'],
+                            'fecha_pago' => date('Y-m-d H:i:s'),
+                            'origen' => 'paypal',
+                            'referencia' => $transactionId
+                        ]);
+                        
+                        $this->db->update('amortizacion', [
+                            'fecha_pago' => date('Y-m-d'),
+                            'monto_pagado' => $pago['monto_total'],
+                            'estatus' => 'pagado'
+                        ], 'id = :id', ['id' => $pago['id']]);
+                        
+                        $montoRestante -= $pago['monto_total'];
+                        $capitalPagado += $pago['monto_capital'];
+                        $pagosRealizados++;
+                    }
+                }
+            } else {
+                // Total liquidation - pay all pending
+                $todosPendientes = $this->db->fetchAll(
+                    "SELECT * FROM amortizacion 
+                     WHERE credito_id = :credito_id 
+                     AND estatus IN ('pendiente', 'vencido')
+                     ORDER BY numero_pago ASC",
+                    ['credito_id' => $credito['id']]
+                );
+                
+                foreach ($todosPendientes as $pago) {
+                    if ($montoRestante >= $pago['monto_total']) {
+                        $this->db->insert('pagos_credito', [
+                            'credito_id' => $credito['id'],
+                            'amortizacion_id' => $pago['id'],
+                            'monto' => $pago['monto_total'],
+                            'monto_capital' => $pago['monto_capital'],
+                            'monto_interes' => $pago['monto_interes'],
+                            'fecha_pago' => date('Y-m-d H:i:s'),
+                            'origen' => 'paypal',
+                            'referencia' => $transactionId
+                        ]);
+                        
+                        $this->db->update('amortizacion', [
+                            'fecha_pago' => date('Y-m-d'),
+                            'monto_pagado' => $pago['monto_total'],
+                            'estatus' => 'pagado'
+                        ], 'id = :id', ['id' => $pago['id']]);
+                        
+                        $montoRestante -= $pago['monto_total'];
+                        $capitalPagado += $pago['monto_capital'];
+                        $pagosRealizados++;
+                    }
+                }
+            }
+            
+            // Update credit balance
+            $nuevoSaldo = $credito['saldo_actual'] - $capitalPagado;
+            $nuevoPagosRealizados = $credito['pagos_realizados'] + $pagosRealizados;
+            $nuevoEstatus = $nuevoSaldo <= 0 ? 'liquidado' : 'activo';
+            
+            $this->db->update('creditos', [
+                'saldo_actual' => max(0, $nuevoSaldo),
+                'pagos_realizados' => $nuevoPagosRealizados,
+                'estatus' => $nuevoEstatus
+            ], 'id = :id', ['id' => $credito['id']]);
+            
+            // Register PayPal payment record with all fields
+            $this->db->insert('pagos_online', [
+                'credito_id' => $credito['id'],
+                'monto' => $monto,
+                'paypal_order_id' => $paypalOrderId,
+                'paypal_transaction_id' => $transactionId,
+                'payer_email' => $payerEmail,
+                'estatus' => 'completado',
+                'fecha_pago' => date('Y-m-d H:i:s'),
+                'datos_respuesta' => json_encode([
+                    'tipo' => $tipo,
+                    'pagos_procesados' => $pagosRealizados,
+                    'capital_pagado' => $capitalPagado
+                ])
+            ]);
+            
+            $this->db->commit();
+            
+            $this->logAction('PAGO_PAYPAL_CLIENTE', 
+                "Pago PayPal de \${$monto} para crédito {$numeroCredito}. Transacción: {$transactionId}",
+                'creditos',
+                $credito['id']
+            );
+            
+            $this->json(['success' => true, 'message' => 'Pago procesado exitosamente']);
+            
+        } catch (Exception $e) {
+            $this->db->rollBack();
+            $this->json(['success' => false, 'message' => 'Error al procesar el pago: ' . $e->getMessage()]);
+        }
+    }
+    
+    /**
+     * Verify CSRF token for AJAX requests
+     */
+    private function verifyCsrfToken($token) {
+        return isset($_SESSION['csrf_token']) && hash_equals($_SESSION['csrf_token'], $token);
+    }
+    
+    /**
      * Solicitar vinculación de cuenta con socio
      */
     public function solicitarVinculacion() {

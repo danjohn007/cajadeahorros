@@ -354,6 +354,13 @@ class CreditosController extends Controller {
         
         $id = $this->params['id'] ?? 0;
         
+        // Validate ID is a positive integer
+        if (!is_numeric($id) || (int)$id <= 0) {
+            $this->setFlash('error', 'ID de crédito inválido');
+            $this->redirect('creditos');
+        }
+        $id = (int)$id;
+        
         $credito = $this->db->fetch(
             "SELECT c.*, s.numero_socio, s.nombre, s.apellido_paterno
              FROM creditos c
@@ -382,27 +389,91 @@ class CreditosController extends Controller {
             
             $monto = (float)($_POST['monto'] ?? 0);
             $referencia = $this->sanitize($_POST['referencia'] ?? '');
+            $metodoPago = $this->sanitize($_POST['metodo_pago'] ?? 'efectivo');
+            $observaciones = $this->sanitize($_POST['observaciones'] ?? '');
+            
+            // Validate payment method
+            $metodosValidos = ['efectivo', 'transferencia', 'cheque', 'tarjeta_debito', 'tarjeta_credito', 'deposito', 'nomina', 'oxxo', 'spei', 'otro'];
+            if (!in_array($metodoPago, $metodosValidos)) {
+                $metodoPago = 'efectivo';
+            }
             
             if ($monto <= 0) {
                 $errors[] = 'El monto debe ser mayor a 0';
+            }
+            
+            // Handle file upload
+            $rutaComprobante = null;
+            if (isset($_FILES['comprobante']) && $_FILES['comprobante']['error'] === UPLOAD_ERR_OK) {
+                $file = $_FILES['comprobante'];
+                
+                // Validate file type using finfo extension
+                $allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
+                
+                // Check if finfo extension is available
+                if (!extension_loaded('fileinfo')) {
+                    $errors[] = 'La extensión fileinfo no está disponible en el servidor';
+                } else {
+                    $finfo = new finfo(FILEINFO_MIME_TYPE);
+                    $mimeType = $finfo->file($file['tmp_name']);
+                    
+                    if (!in_array($mimeType, $allowedTypes)) {
+                        $errors[] = 'Tipo de archivo no permitido. Solo se permiten JPG, PNG y PDF';
+                    } elseif ($file['size'] > 5 * 1024 * 1024) {
+                        $errors[] = 'El archivo es demasiado grande. Máximo 5MB';
+                    } else {
+                        // Create directory if not exists - using already validated $id
+                        $uploadDir = UPLOADS_PATH . '/comprobantes/' . $id;
+                        if (!is_dir($uploadDir)) {
+                            mkdir($uploadDir, 0755, true);
+                        }
+                        
+                        // Generate unique filename based on validated mime type
+                        $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'application/pdf' => 'pdf'];
+                        $ext = $extensions[$mimeType] ?? 'bin';
+                        $fileName = 'pago_' . date('Ymd_His') . '_' . uniqid('', true) . '.' . $ext;
+                        $filePath = $uploadDir . '/' . $fileName;
+                        
+                        if (move_uploaded_file($file['tmp_name'], $filePath)) {
+                            $rutaComprobante = 'uploads/comprobantes/' . $id . '/' . $fileName;
+                        } else {
+                            $errors[] = 'Error al guardar el comprobante';
+                        }
+                    }
+                }
             }
             
             if (empty($errors) && $proximoPago) {
                 try {
                     $this->db->beginTransaction();
                     
-                    // Registrar pago
-                    $this->db->insert('pagos_credito', [
+                    // Registrar pago with new fields
+                    $pagoData = [
                         'credito_id' => $id,
                         'amortizacion_id' => $proximoPago['id'],
                         'monto' => $monto,
                         'monto_capital' => $proximoPago['monto_capital'],
                         'monto_interes' => $proximoPago['monto_interes'],
                         'fecha_pago' => date('Y-m-d H:i:s'),
-                        'origen' => 'ventanilla',
+                        'origen' => $metodoPago,
                         'referencia' => $referencia,
-                        'usuario_id' => $_SESSION['user_id']
-                    ]);
+                        'usuario_id' => $_SESSION['user_id'],
+                        'observaciones' => $observaciones
+                    ];
+                    
+                    $pagoId = $this->db->insert('pagos_credito', $pagoData);
+                    
+                    // Save receipt file path if uploaded
+                    if ($rutaComprobante) {
+                        $this->db->insert('documentos_credito', [
+                            'credito_id' => $id,
+                            'tipo' => 'comprobante_pago',
+                            'nombre_archivo' => basename($_FILES['comprobante']['name']),
+                            'ruta_archivo' => $rutaComprobante,
+                            'fecha_subida' => date('Y-m-d H:i:s'),
+                            'usuario_id' => $_SESSION['user_id']
+                        ]);
+                    }
                     
                     // Actualizar amortización
                     $this->db->update('amortizacion', [
@@ -430,7 +501,7 @@ class CreditosController extends Controller {
                     $this->db->commit();
                     
                     $this->logAction('PAGO_CREDITO', 
-                        "Se registró pago de $" . number_format($monto, 2) . " en crédito {$credito['numero_credito']}",
+                        "Se registró pago de $" . number_format($monto, 2) . " ({$metodoPago}) en crédito {$credito['numero_credito']}",
                         'creditos',
                         $id
                     );

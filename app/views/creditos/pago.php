@@ -24,7 +24,7 @@
     <!-- Form -->
     <div class="lg:col-span-2">
         <?php if ($proximoPago): ?>
-        <form method="POST" action="<?= BASE_URL ?>/creditos/pago/<?= $credito['id'] ?>" class="bg-white rounded-xl shadow-sm">
+        <form method="POST" action="<?= BASE_URL ?>/creditos/pago/<?= $credito['id'] ?>" class="bg-white rounded-xl shadow-sm" enctype="multipart/form-data">
             <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
             
             <div class="p-6 border-b border-gray-200">
@@ -66,10 +66,55 @@
                     </div>
                     
                     <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Método de Pago *</label>
+                        <select name="metodo_pago" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                            <option value="">Seleccionar método...</option>
+                            <option value="efectivo">Efectivo</option>
+                            <option value="transferencia">Transferencia Bancaria</option>
+                            <option value="cheque">Cheque</option>
+                            <option value="tarjeta_debito">Tarjeta de Débito</option>
+                            <option value="tarjeta_credito">Tarjeta de Crédito</option>
+                            <option value="deposito">Depósito en Cuenta</option>
+                            <option value="nomina">Descuento Vía Nómina</option>
+                            <option value="oxxo">Pago en OXXO</option>
+                            <option value="spei">SPEI</option>
+                            <option value="otro">Otro</option>
+                        </select>
+                    </div>
+                    
+                    <div>
                         <label class="block text-sm font-medium text-gray-700 mb-1">Referencia / Folio</label>
                         <input type="text" name="referencia"
-                               placeholder="Número de recibo, folio, etc."
+                               placeholder="Número de recibo, folio, autorización, etc."
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Comprobante de Pago</label>
+                        <div class="mt-1 flex justify-center px-6 pt-5 pb-6 border-2 border-gray-300 border-dashed rounded-lg hover:border-purple-500 transition-colors">
+                            <div class="space-y-1 text-center">
+                                <i class="fas fa-cloud-upload-alt text-3xl text-gray-400 mb-2"></i>
+                                <div class="flex text-sm text-gray-600">
+                                    <label for="comprobante" class="relative cursor-pointer rounded-md font-medium text-purple-600 hover:text-purple-500 focus-within:outline-none">
+                                        <span>Subir archivo</span>
+                                        <input id="comprobante" name="comprobante" type="file" class="sr-only" 
+                                               accept=".jpg,.jpeg,.png,.pdf"
+                                               onchange="mostrarNombreArchivo(this)">
+                                    </label>
+                                    <p class="pl-1">o arrastrar aquí</p>
+                                </div>
+                                <p class="text-xs text-gray-500">JPG, PNG o PDF hasta 5MB</p>
+                                <p id="nombre-archivo" class="text-sm text-purple-600 font-medium hidden"></p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Observaciones</label>
+                        <textarea name="observaciones" rows="2"
+                                  placeholder="Notas adicionales sobre el pago..."
+                                  class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500"></textarea>
                     </div>
                 </div>
             </div>
@@ -126,3 +171,15 @@
         </div>
     </div>
 </div>
+
+<script>
+function mostrarNombreArchivo(input) {
+    const nombreArchivo = document.getElementById('nombre-archivo');
+    if (input.files && input.files[0]) {
+        nombreArchivo.textContent = input.files[0].name;
+        nombreArchivo.classList.remove('hidden');
+    } else {
+        nombreArchivo.classList.add('hidden');
+    }
+}
+</script>

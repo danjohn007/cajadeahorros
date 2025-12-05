@@ -20,6 +20,7 @@ $router->add('cliente/creditos', ['controller' => 'cliente', 'action' => 'credit
 $router->add('cliente/credito/{id}', ['controller' => 'cliente', 'action' => 'credito']);
 $router->add('cliente/amortizacion/{id}', ['controller' => 'cliente', 'action' => 'amortizacion']);
 $router->add('cliente/pagar', ['controller' => 'cliente', 'action' => 'pagar']);
+$router->add('cliente/procesarPago', ['controller' => 'cliente', 'action' => 'procesarPago']);
 $router->add('cliente/solicitarVinculacion', ['controller' => 'cliente', 'action' => 'solicitarVinculacion']);
 
 // Dashboard

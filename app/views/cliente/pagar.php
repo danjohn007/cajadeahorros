@@ -169,6 +169,9 @@
 
 <!-- Modal de Pago (solo si PayPal está habilitado) -->
 <?php if ($paypalEnabled): ?>
+<?php 
+    $paypalClientId = getConfig('paypal_client_id', '');
+?>
 <div id="modalPago" class="fixed inset-0 bg-black bg-opacity-50 hidden items-center justify-center z-50">
     <div class="bg-white rounded-lg shadow-xl max-w-md w-full mx-4">
         <div class="px-6 py-4 border-b flex justify-between items-center">
@@ -181,28 +184,58 @@
             <div id="infoPago" class="mb-6">
                 <!-- Se llena dinámicamente -->
             </div>
-            <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                <p class="text-sm text-yellow-800">
-                    <i class="fas fa-info-circle mr-2"></i>
-                    Serás redirigido a PayPal para completar el pago de forma segura.
-                </p>
+            <div id="paypal-container">
+                <div class="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
+                    <p class="text-sm text-yellow-800">
+                        <i class="fas fa-info-circle mr-2"></i>
+                        Tu pago será procesado de forma segura a través de PayPal.
+                    </p>
+                </div>
+                <div id="paypal-button-container"></div>
+                <div id="loading-spinner" class="hidden text-center py-4">
+                    <i class="fas fa-spinner fa-spin text-3xl text-blue-600"></i>
+                    <p class="text-gray-600 mt-2">Procesando pago...</p>
+                </div>
             </div>
-            <div class="flex justify-end space-x-3">
-                <button onclick="cerrarModalPago()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
-                    Cancelar
+            <div id="success-message" class="hidden text-center py-8">
+                <i class="fas fa-check-circle text-5xl text-green-500 mb-4"></i>
+                <h3 class="text-xl font-bold text-green-800">¡Pago Exitoso!</h3>
+                <p class="text-green-600 mb-4">Tu pago ha sido procesado correctamente.</p>
+                <button onclick="location.reload()" class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700">
+                    <i class="fas fa-redo mr-2"></i>Actualizar Página
                 </button>
-                <button id="btnConfirmarPago" class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700">
-                    <i class="fab fa-paypal mr-2"></i>Pagar con PayPal
+            </div>
+            <div id="error-message" class="hidden text-center py-8">
+                <i class="fas fa-times-circle text-5xl text-red-500 mb-4"></i>
+                <h3 class="text-xl font-bold text-red-800">Error en el Pago</h3>
+                <p class="text-red-600 mb-4" id="error-text"></p>
+                <button onclick="reiniciarPago()" class="px-4 py-2 bg-gray-600 text-white rounded-lg hover:bg-gray-700">
+                    <i class="fas fa-redo mr-2"></i>Intentar de nuevo
+                </button>
+            </div>
+            <div class="flex justify-end mt-4">
+                <button id="btnCancelar" onclick="cerrarModalPago()" class="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50">
+                    Cancelar
                 </button>
             </div>
         </div>
     </div>
 </div>
 
+<script src="https://www.paypal.com/sdk/js?client-id=<?= htmlspecialchars($paypalClientId) ?>&currency=MXN"></script>
 <script>
+let currentCredito = null;
+let currentMonto = 0;
+let currentTipo = null;
+let paypalButtonsRendered = false;
+
 function mostrarModalPago(credito, monto, tipo) {
     const modal = document.getElementById('modalPago');
     const infoPago = document.getElementById('infoPago');
+    
+    currentCredito = credito;
+    currentMonto = monto;
+    currentTipo = tipo;
     
     let tipoTexto = tipo === 'total' ? 'Liquidación Total' : 'Pagos Vencidos';
     
@@ -218,13 +251,101 @@ function mostrarModalPago(credito, monto, tipo) {
             </div>
             <div class="flex justify-between text-lg">
                 <span class="text-gray-600">Monto a Pagar:</span>
-                <span class="font-bold text-green-600">$${monto.toFixed(2).replace(/\\B(?=(\\d{3})+(?!\\d))/g, ",")}</span>
+                <span class="font-bold text-green-600">$${monto.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
         </div>
     `;
     
+    // Reset visibility
+    document.getElementById('paypal-container').classList.remove('hidden');
+    document.getElementById('success-message').classList.add('hidden');
+    document.getElementById('error-message').classList.add('hidden');
+    document.getElementById('btnCancelar').classList.remove('hidden');
+    document.getElementById('loading-spinner').classList.add('hidden');
+    
     modal.classList.remove('hidden');
     modal.classList.add('flex');
+    
+    // Render PayPal buttons
+    renderPayPalButtons();
+}
+
+function renderPayPalButtons() {
+    const container = document.getElementById('paypal-button-container');
+    container.innerHTML = '';
+    
+    paypal.Buttons({
+        createOrder: function(data, actions) {
+            return actions.order.create({
+                purchase_units: [{
+                    amount: {
+                        value: currentMonto.toFixed(2),
+                        currency_code: 'MXN'
+                    },
+                    description: 'Pago de crédito ' + currentCredito + ' - ' + (currentTipo === 'total' ? 'Liquidación Total' : 'Pagos Vencidos')
+                }]
+            });
+        },
+        onApprove: function(data, actions) {
+            document.getElementById('paypal-button-container').classList.add('hidden');
+            document.getElementById('loading-spinner').classList.remove('hidden');
+            document.getElementById('btnCancelar').classList.add('hidden');
+            
+            return actions.order.capture().then(function(details) {
+                // Process payment on server
+                fetch('<?= BASE_URL ?>/cliente/procesarPago', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-Token': '<?= csrf_token() ?>'
+                    },
+                    body: JSON.stringify({
+                        csrf_token: '<?= csrf_token() ?>',
+                        credito: currentCredito,
+                        monto: currentMonto,
+                        tipo: currentTipo,
+                        paypal_order_id: data.orderID,
+                        payer_email: details.payer.email_address,
+                        transaction_id: details.purchase_units[0].payments.captures[0].id
+                    })
+                })
+                .then(response => response.json())
+                .then(result => {
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                    document.getElementById('paypal-container').classList.add('hidden');
+                    if (result.success) {
+                        document.getElementById('success-message').classList.remove('hidden');
+                    } else {
+                        document.getElementById('error-message').classList.remove('hidden');
+                        document.getElementById('error-text').textContent = result.message || 'Error al procesar el pago';
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('loading-spinner').classList.add('hidden');
+                    document.getElementById('paypal-container').classList.add('hidden');
+                    document.getElementById('error-message').classList.remove('hidden');
+                    document.getElementById('error-text').textContent = 'Error de conexión. Por favor intenta de nuevo.';
+                });
+            });
+        },
+        onCancel: function(data) {
+            // User cancelled, no action needed
+        },
+        onError: function(err) {
+            document.getElementById('paypal-container').classList.add('hidden');
+            document.getElementById('error-message').classList.remove('hidden');
+            document.getElementById('error-text').textContent = 'Error al inicializar PayPal. Por favor intenta de nuevo.';
+        }
+    }).render('#paypal-button-container');
+}
+
+function reiniciarPago() {
+    document.getElementById('paypal-container').classList.remove('hidden');
+    document.getElementById('success-message').classList.add('hidden');
+    document.getElementById('error-message').classList.add('hidden');
+    document.getElementById('btnCancelar').classList.remove('hidden');
+    renderPayPalButtons();
 }
 
 function cerrarModalPago() {
@@ -237,11 +358,6 @@ document.getElementById('modalPago').addEventListener('click', function(e) {
     if (e.target === this) {
         cerrarModalPago();
     }
-});
-
-document.getElementById('btnConfirmarPago').addEventListener('click', function() {
-    // Aquí se integraría con PayPal
-    alert('La integración con PayPal se procesaría aquí. Por favor contacta a soporte para completar el pago.');
 });
 </script>
 <?php endif; ?>
