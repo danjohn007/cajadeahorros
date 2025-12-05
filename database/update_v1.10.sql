@@ -90,8 +90,11 @@ CREATE TABLE IF NOT EXISTS rendimientos_inversiones (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- Add identificacion_oficial column to socios table if not exists
+-- For MySQL < 8.0.12, run this manually if needed:
+-- First check: SHOW COLUMNS FROM socios LIKE 'identificacion_oficial';
+-- If not exists: ALTER TABLE socios ADD COLUMN identificacion_oficial VARCHAR(255) DEFAULT NULL AFTER observaciones;
 ALTER TABLE socios 
-    ADD COLUMN IF NOT EXISTS identificacion_oficial VARCHAR(255) DEFAULT NULL AFTER observaciones;
+    ADD COLUMN identificacion_oficial VARCHAR(255) DEFAULT NULL AFTER observaciones;
 
 -- Create solicitudes_actualizacion_perfil table for client profile update requests
 CREATE TABLE IF NOT EXISTS solicitudes_actualizacion_perfil (

@@ -141,7 +141,7 @@ class InversionistasController extends Controller {
                     
                     // Create user account for investor if requested
                     if (!empty($data['crear_usuario'])) {
-                        $tempPassword = bin2hex(random_bytes(4));
+                        $tempPassword = bin2hex(random_bytes(6)); // 12 characters
                         $this->db->insert('usuarios', [
                             'nombre' => $data['nombre'] . ' ' . $data['apellido_paterno'],
                             'email' => $data['email'],

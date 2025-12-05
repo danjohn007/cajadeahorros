@@ -231,21 +231,28 @@ $isCliente = ($_SESSION['user_role'] ?? '') === 'cliente';
 function previewAvatar(input) {
     const preview = document.getElementById('avatar-preview');
     if (input.files && input.files[0]) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            if (preview.tagName === 'IMG') {
-                preview.src = e.target.result;
-            } else {
-                // Replace div with img
-                const img = document.createElement('img');
-                img.id = 'avatar-preview';
-                img.src = e.target.result;
-                img.alt = 'Preview';
-                img.className = 'h-20 w-20 rounded-full object-cover border-2 border-gray-200';
-                preview.replaceWith(img);
-            }
-        };
-        reader.readAsDataURL(input.files[0]);
+        try {
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                if (preview.tagName === 'IMG') {
+                    preview.src = e.target.result;
+                } else {
+                    // Replace div with img
+                    const img = document.createElement('img');
+                    img.id = 'avatar-preview';
+                    img.src = e.target.result;
+                    img.alt = 'Preview';
+                    img.className = 'h-20 w-20 rounded-full object-cover border-2 border-gray-200';
+                    preview.replaceWith(img);
+                }
+            };
+            reader.onerror = function() {
+                console.error('Error reading file');
+            };
+            reader.readAsDataURL(input.files[0]);
+        } catch (e) {
+            console.error('Error loading preview:', e);
+        }
     }
 }
 </script>

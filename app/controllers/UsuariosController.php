@@ -248,7 +248,7 @@ class UsuariosController extends Controller {
                             $avatarFileName = $nombreArchivo;
                         }
                     } else {
-                        $errors[] = 'El archivo de imagen debe ser JPG, PNG o GIF y no exceder 2MB';
+                        $errors[] = 'El archivo de imagen debe ser JPEG, PNG o GIF y no exceder 2MB';
                     }
                 }
                 

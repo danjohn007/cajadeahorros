@@ -38,7 +38,7 @@
     </div>
     <div class="bg-white rounded-lg shadow-md p-4">
         <p class="text-sm text-gray-500">Inversiones Activas</p>
-        <p class="text-2xl font-bold text-purple-600"><?= count(array_filter($inversiones, fn($i) => $i['estatus'] === 'activa')) ?></p>
+        <p class="text-2xl font-bold text-purple-600"><?= count(array_filter($inversiones, function($i) { return $i['estatus'] === 'activa'; })) ?></p>
     </div>
     <div class="bg-white rounded-lg shadow-md p-4">
         <p class="text-sm text-gray-500">Estatus</p>
