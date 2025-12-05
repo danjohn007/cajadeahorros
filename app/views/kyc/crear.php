@@ -249,13 +249,30 @@ document.addEventListener('DOMContentLoaded', function() {
                 .then(data => {
                     if (data.results && data.results.length > 0) {
                         resultadosDiv.innerHTML = data.results.map(socio => {
-                            const nombreCompleto = socio.nombre + ' ' + socio.apellido_paterno + ' ' + (socio.apellido_materno || '');
-                            return `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" 
-                                  onclick="seleccionarSocio(${socio.id}, '${socio.numero_socio}', '${nombreCompleto.trim().replace(/'/g, "\\'")}', '${socio.rfc || 'N/A'}')">
-                                <div class="font-medium">${nombreCompleto.trim()}</div>
-                                <div class="text-sm text-gray-500">${socio.numero_socio} | RFC: ${socio.rfc || 'N/A'}</div>
-                            </div>`;
+                            const nombreCompleto = (socio.nombre + ' ' + socio.apellido_paterno + ' ' + (socio.apellido_materno || '')).trim();
+                            const div = document.createElement('div');
+                            div.className = 'px-4 py-2 hover:bg-gray-100 cursor-pointer socio-result';
+                            div.setAttribute('data-id', socio.id);
+                            div.setAttribute('data-numero', socio.numero_socio || '');
+                            div.setAttribute('data-nombre', nombreCompleto);
+                            div.setAttribute('data-rfc', socio.rfc || 'N/A');
+                            div.innerHTML = `<div class="font-medium">${escapeHtml(nombreCompleto)}</div>
+                                <div class="text-sm text-gray-500">${escapeHtml(socio.numero_socio || '')} | RFC: ${escapeHtml(socio.rfc || 'N/A')}</div>`;
+                            return div.outerHTML;
                         }).join('');
+                        
+                        // Add event listeners to results
+                        resultadosDiv.querySelectorAll('.socio-result').forEach(el => {
+                            el.addEventListener('click', function() {
+                                seleccionarSocio(
+                                    this.getAttribute('data-id'),
+                                    this.getAttribute('data-numero'),
+                                    this.getAttribute('data-nombre'),
+                                    this.getAttribute('data-rfc')
+                                );
+                            });
+                        });
+                        
                         resultadosDiv.classList.remove('hidden');
                     } else {
                         resultadosDiv.innerHTML = '<div class="px-4 py-2 text-gray-500">No se encontraron socios</div>';
@@ -276,11 +293,19 @@ document.addEventListener('DOMContentLoaded', function() {
     });
 });
 
+// Escape HTML to prevent XSS
+function escapeHtml(text) {
+    if (!text) return '';
+    const div = document.createElement('div');
+    div.textContent = text;
+    return div.innerHTML;
+}
+
 function seleccionarSocio(id, numeroSocio, nombre, rfc) {
     document.getElementById('socio_id').value = id;
     document.getElementById('buscarSocio').value = '';
     document.getElementById('resultadosSocio').classList.add('hidden');
-    document.getElementById('socioInfo').textContent = `${nombre} (${numeroSocio}) - RFC: ${rfc}`;
+    document.getElementById('socioInfo').textContent = nombre + ' (' + numeroSocio + ') - RFC: ' + rfc;
     document.getElementById('socioSeleccionado').classList.remove('hidden');
     document.getElementById('buscarSocio').classList.add('hidden');
 }

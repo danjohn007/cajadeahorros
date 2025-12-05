@@ -407,32 +407,38 @@ class CreditosController extends Controller {
             if (isset($_FILES['comprobante']) && $_FILES['comprobante']['error'] === UPLOAD_ERR_OK) {
                 $file = $_FILES['comprobante'];
                 
-                // Validate file type
+                // Validate file type using finfo extension
                 $allowedTypes = ['image/jpeg', 'image/png', 'application/pdf'];
-                $finfo = new finfo(FILEINFO_MIME_TYPE);
-                $mimeType = $finfo->file($file['tmp_name']);
                 
-                if (!in_array($mimeType, $allowedTypes)) {
-                    $errors[] = 'Tipo de archivo no permitido. Solo se permiten JPG, PNG y PDF';
-                } elseif ($file['size'] > 5 * 1024 * 1024) {
-                    $errors[] = 'El archivo es demasiado grande. Máximo 5MB';
+                // Check if finfo extension is available
+                if (!extension_loaded('fileinfo')) {
+                    $errors[] = 'La extensión fileinfo no está disponible en el servidor';
                 } else {
-                    // Create directory if not exists
-                    $uploadDir = UPLOADS_PATH . '/comprobantes/' . $id;
-                    if (!is_dir($uploadDir)) {
-                        mkdir($uploadDir, 0755, true);
-                    }
+                    $finfo = new finfo(FILEINFO_MIME_TYPE);
+                    $mimeType = $finfo->file($file['tmp_name']);
                     
-                    // Generate unique filename
-                    $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'application/pdf' => 'pdf'];
-                    $ext = $extensions[$mimeType] ?? 'bin';
-                    $fileName = 'pago_' . date('Ymd_His') . '_' . uniqid() . '.' . $ext;
-                    $filePath = $uploadDir . '/' . $fileName;
-                    
-                    if (move_uploaded_file($file['tmp_name'], $filePath)) {
-                        $rutaComprobante = 'uploads/comprobantes/' . $id . '/' . $fileName;
+                    if (!in_array($mimeType, $allowedTypes)) {
+                        $errors[] = 'Tipo de archivo no permitido. Solo se permiten JPG, PNG y PDF';
+                    } elseif ($file['size'] > 5 * 1024 * 1024) {
+                        $errors[] = 'El archivo es demasiado grande. Máximo 5MB';
                     } else {
-                        $errors[] = 'Error al guardar el comprobante';
+                        // Create directory if not exists - using already validated $id
+                        $uploadDir = UPLOADS_PATH . '/comprobantes/' . $id;
+                        if (!is_dir($uploadDir)) {
+                            mkdir($uploadDir, 0755, true);
+                        }
+                        
+                        // Generate unique filename based on validated mime type
+                        $extensions = ['image/jpeg' => 'jpg', 'image/png' => 'png', 'application/pdf' => 'pdf'];
+                        $ext = $extensions[$mimeType] ?? 'bin';
+                        $fileName = 'pago_' . date('Ymd_His') . '_' . uniqid('', true) . '.' . $ext;
+                        $filePath = $uploadDir . '/' . $fileName;
+                        
+                        if (move_uploaded_file($file['tmp_name'], $filePath)) {
+                            $rutaComprobante = 'uploads/comprobantes/' . $id . '/' . $fileName;
+                        } else {
+                            $errors[] = 'Error al guardar el comprobante';
+                        }
                     }
                 }
             }

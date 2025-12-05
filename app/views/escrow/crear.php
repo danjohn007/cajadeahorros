@@ -318,13 +318,31 @@ if (compradorSearch) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.results && data.results.length > 0) {
-                        compradorResults.innerHTML = data.results.map(socio => `
-                            <div class="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100" 
-                                 onclick="selectComprador(${socio.id}, '${escapeHtml(socio.nombre)} ${escapeHtml(socio.apellido_paterno)} ${escapeHtml(socio.apellido_materno || '')}', '${escapeHtml(socio.numero_socio)}', '${escapeHtml(socio.rfc || 'N/A')}')">
-                                <div class="font-medium">${escapeHtml(socio.nombre)} ${escapeHtml(socio.apellido_paterno)} ${escapeHtml(socio.apellido_materno || '')}</div>
-                                <div class="text-sm text-gray-500">${escapeHtml(socio.numero_socio)} | RFC: ${escapeHtml(socio.rfc || 'N/A')}</div>
-                            </div>
-                        `).join('');
+                        compradorResults.innerHTML = data.results.map(socio => {
+                            const nombreCompleto = (socio.nombre + ' ' + socio.apellido_paterno + ' ' + (socio.apellido_materno || '')).trim();
+                            const div = document.createElement('div');
+                            div.className = 'px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 comprador-result';
+                            div.setAttribute('data-id', socio.id);
+                            div.setAttribute('data-numero', socio.numero_socio || '');
+                            div.setAttribute('data-nombre', nombreCompleto);
+                            div.setAttribute('data-rfc', socio.rfc || 'N/A');
+                            div.innerHTML = `<div class="font-medium">${escapeHtml(nombreCompleto)}</div>
+                                <div class="text-sm text-gray-500">${escapeHtml(socio.numero_socio || '')} | RFC: ${escapeHtml(socio.rfc || 'N/A')}</div>`;
+                            return div.outerHTML;
+                        }).join('');
+                        
+                        // Add event listeners to results
+                        compradorResults.querySelectorAll('.comprador-result').forEach(el => {
+                            el.addEventListener('click', function() {
+                                selectComprador(
+                                    this.getAttribute('data-id'),
+                                    this.getAttribute('data-nombre'),
+                                    this.getAttribute('data-numero'),
+                                    this.getAttribute('data-rfc')
+                                );
+                            });
+                        });
+                        
                         compradorResults.classList.remove('hidden');
                     } else {
                         compradorResults.innerHTML = '<div class="px-4 py-3 text-gray-500">No se encontraron socios</div>';
@@ -344,7 +362,7 @@ if (compradorSearch) {
 
 function selectComprador(id, nombre, numeroSocio, rfc) {
     compradorId.value = id;
-    compradorNombreDisplay.textContent = nombre.trim();
+    compradorNombreDisplay.textContent = nombre;
     compradorInfo.textContent = numeroSocio + ' | RFC: ' + rfc;
     compradorSelected.classList.remove('hidden');
     compradorSearch.value = '';
@@ -384,13 +402,31 @@ if (vendedorSearch) {
                 .then(response => response.json())
                 .then(data => {
                     if (data.results && data.results.length > 0) {
-                        vendedorResults.innerHTML = data.results.map(socio => `
-                            <div class="px-4 py-3 hover:bg-green-50 cursor-pointer border-b border-gray-100" 
-                                 onclick="selectVendedor(${socio.id}, '${escapeHtml(socio.nombre)} ${escapeHtml(socio.apellido_paterno)} ${escapeHtml(socio.apellido_materno || '')}', '${escapeHtml(socio.numero_socio)}', '${escapeHtml(socio.rfc || 'N/A')}')">
-                                <div class="font-medium">${escapeHtml(socio.nombre)} ${escapeHtml(socio.apellido_paterno)} ${escapeHtml(socio.apellido_materno || '')}</div>
-                                <div class="text-sm text-gray-500">${escapeHtml(socio.numero_socio)} | RFC: ${escapeHtml(socio.rfc || 'N/A')}</div>
-                            </div>
-                        `).join('');
+                        vendedorResults.innerHTML = data.results.map(socio => {
+                            const nombreCompleto = (socio.nombre + ' ' + socio.apellido_paterno + ' ' + (socio.apellido_materno || '')).trim();
+                            const div = document.createElement('div');
+                            div.className = 'px-4 py-3 hover:bg-green-50 cursor-pointer border-b border-gray-100 vendedor-result';
+                            div.setAttribute('data-id', socio.id);
+                            div.setAttribute('data-numero', socio.numero_socio || '');
+                            div.setAttribute('data-nombre', nombreCompleto);
+                            div.setAttribute('data-rfc', socio.rfc || 'N/A');
+                            div.innerHTML = `<div class="font-medium">${escapeHtml(nombreCompleto)}</div>
+                                <div class="text-sm text-gray-500">${escapeHtml(socio.numero_socio || '')} | RFC: ${escapeHtml(socio.rfc || 'N/A')}</div>`;
+                            return div.outerHTML;
+                        }).join('');
+                        
+                        // Add event listeners to results
+                        vendedorResults.querySelectorAll('.vendedor-result').forEach(el => {
+                            el.addEventListener('click', function() {
+                                selectVendedor(
+                                    this.getAttribute('data-id'),
+                                    this.getAttribute('data-nombre'),
+                                    this.getAttribute('data-numero'),
+                                    this.getAttribute('data-rfc')
+                                );
+                            });
+                        });
+                        
                         vendedorResults.classList.remove('hidden');
                     } else {
                         vendedorResults.innerHTML = '<div class="px-4 py-3 text-gray-500">No se encontraron socios</div>';
@@ -410,7 +446,7 @@ if (vendedorSearch) {
 
 function selectVendedor(id, nombre, numeroSocio, rfc) {
     vendedorId.value = id;
-    vendedorNombreDisplay.textContent = nombre.trim();
+    vendedorNombreDisplay.textContent = nombre;
     vendedorInfo.textContent = numeroSocio + ' | RFC: ' + rfc;
     vendedorSelected.classList.remove('hidden');
     vendedorSearch.value = '';

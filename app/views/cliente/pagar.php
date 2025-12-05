@@ -251,7 +251,7 @@ function mostrarModalPago(credito, monto, tipo) {
             </div>
             <div class="flex justify-between text-lg">
                 <span class="text-gray-600">Monto a Pagar:</span>
-                <span class="font-bold text-green-600">$${monto.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",")}</span>
+                <span class="font-bold text-green-600">$${monto.toLocaleString('es-MX', {minimumFractionDigits: 2, maximumFractionDigits: 2})}</span>
             </div>
         </div>
     `;
@@ -297,9 +297,11 @@ function renderPayPalButtons() {
                     method: 'POST',
                     headers: {
                         'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
+                        'X-Requested-With': 'XMLHttpRequest',
+                        'X-CSRF-Token': '<?= csrf_token() ?>'
                     },
                     body: JSON.stringify({
+                        csrf_token: '<?= csrf_token() ?>',
                         credito: currentCredito,
                         monto: currentMonto,
                         tipo: currentTipo,

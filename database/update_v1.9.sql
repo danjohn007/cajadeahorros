@@ -21,6 +21,10 @@ ADD COLUMN IF NOT EXISTS observaciones TEXT AFTER referencia;
 
 -- =====================================================
 -- TABLA DE CATÁLOGO DE MÉTODOS DE PAGO
+-- Esta tabla almacena los diferentes métodos de pago disponibles
+-- para registrar pagos de créditos. Se relaciona con la tabla
+-- pagos_credito a través del campo 'origen' que debe coincidir
+-- con el campo 'codigo' de esta tabla.
 -- =====================================================
 
 CREATE TABLE IF NOT EXISTS metodos_pago (
