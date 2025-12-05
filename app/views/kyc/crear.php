@@ -244,17 +244,18 @@ document.addEventListener('DOMContentLoaded', function() {
         }
         
         timeout = setTimeout(function() {
-            fetch('<?= BASE_URL ?>/api/socios/buscar?q=' + encodeURIComponent(query))
+            fetch('<?= BASE_URL ?>/socios/buscar?q=' + encodeURIComponent(query))
                 .then(response => response.json())
                 .then(data => {
-                    if (data.success && data.socios.length > 0) {
-                        resultadosDiv.innerHTML = data.socios.map(socio => 
-                            `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" 
-                                  onclick="seleccionarSocio(${socio.id}, '${socio.numero_socio}', '${socio.nombre_completo}', '${socio.rfc || 'N/A'}')">
-                                <div class="font-medium">${socio.nombre_completo}</div>
+                    if (data.results && data.results.length > 0) {
+                        resultadosDiv.innerHTML = data.results.map(socio => {
+                            const nombreCompleto = socio.nombre + ' ' + socio.apellido_paterno + ' ' + (socio.apellido_materno || '');
+                            return `<div class="px-4 py-2 hover:bg-gray-100 cursor-pointer" 
+                                  onclick="seleccionarSocio(${socio.id}, '${socio.numero_socio}', '${nombreCompleto.trim().replace(/'/g, "\\'")}', '${socio.rfc || 'N/A'}')">
+                                <div class="font-medium">${nombreCompleto.trim()}</div>
                                 <div class="text-sm text-gray-500">${socio.numero_socio} | RFC: ${socio.rfc || 'N/A'}</div>
-                            </div>`
-                        ).join('');
+                            </div>`;
+                        }).join('');
                         resultadosDiv.classList.remove('hidden');
                     } else {
                         resultadosDiv.innerHTML = '<div class="px-4 py-2 text-gray-500">No se encontraron socios</div>';
