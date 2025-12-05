@@ -1,17 +1,39 @@
 -- =====================================================
 -- Sistema de Gestión Integral de Caja de Ahorros
 -- Script de actualización v1.10 - Módulo de Inversionistas
+-- Compatible con MySQL 5.7
 -- Ejecutar después de las actualizaciones anteriores
 -- =====================================================
 
 -- Add new user roles: cliente and inversionista
 ALTER TABLE usuarios MODIFY rol ENUM('administrador', 'operativo', 'consulta', 'cliente', 'inversionista') NOT NULL DEFAULT 'consulta';
 
--- Add additional fields to usuarios table
-ALTER TABLE usuarios 
-    ADD COLUMN telefono VARCHAR(20) DEFAULT NULL AFTER email,
-    ADD COLUMN celular VARCHAR(20) DEFAULT NULL AFTER telefono,
-    ADD COLUMN avatar VARCHAR(255) DEFAULT NULL AFTER celular;
+-- Add additional fields to usuarios table (MySQL 5.7 compatible)
+-- The script checks INFORMATION_SCHEMA and executes the ALTER only if the column doesn't exist.
+
+-- Añadir telefono si no existe
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'telefono');
+SET @sql_stmt := IF(@col_exists = 0,
+                    'ALTER TABLE usuarios ADD COLUMN telefono VARCHAR(20) DEFAULT NULL AFTER email;',
+                    'SELECT "telefono already exists";');
+PREPARE stmt FROM @sql_stmt; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Añadir celular si no existe
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'celular');
+SET @sql_stmt := IF(@col_exists = 0,
+                    'ALTER TABLE usuarios ADD COLUMN celular VARCHAR(20) DEFAULT NULL AFTER telefono;',
+                    'SELECT "celular already exists";');
+PREPARE stmt FROM @sql_stmt; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Añadir avatar si no existe
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'usuarios' AND COLUMN_NAME = 'avatar');
+SET @sql_stmt := IF(@col_exists = 0,
+                    'ALTER TABLE usuarios ADD COLUMN avatar VARCHAR(255) DEFAULT NULL AFTER celular;',
+                    'SELECT "avatar already exists";');
+PREPARE stmt FROM @sql_stmt; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Create inversionistas table
 CREATE TABLE IF NOT EXISTS inversionistas (
@@ -89,12 +111,13 @@ CREATE TABLE IF NOT EXISTS rendimientos_inversiones (
     INDEX idx_estatus (estatus)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Add identificacion_oficial column to socios table if not exists
--- For MySQL < 8.0.12, run this manually if needed:
--- First check: SHOW COLUMNS FROM socios LIKE 'identificacion_oficial';
--- If not exists: ALTER TABLE socios ADD COLUMN identificacion_oficial VARCHAR(255) DEFAULT NULL AFTER observaciones;
-ALTER TABLE socios 
-    ADD COLUMN identificacion_oficial VARCHAR(255) DEFAULT NULL AFTER observaciones;
+-- Add identificacion_oficial column to socios table if not exists (MySQL 5.7 compatible)
+SET @col_exists := (SELECT COUNT(*) FROM INFORMATION_SCHEMA.COLUMNS
+                    WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'socios' AND COLUMN_NAME = 'identificacion_oficial');
+SET @sql_stmt := IF(@col_exists = 0,
+                    'ALTER TABLE socios ADD COLUMN identificacion_oficial VARCHAR(255) DEFAULT NULL AFTER observaciones;',
+                    'SELECT "identificacion_oficial already exists";');
+PREPARE stmt FROM @sql_stmt; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- Create solicitudes_actualizacion_perfil table for client profile update requests
 CREATE TABLE IF NOT EXISTS solicitudes_actualizacion_perfil (
