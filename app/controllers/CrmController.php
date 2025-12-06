@@ -678,6 +678,18 @@ class CrmController extends Controller {
              ORDER BY sv.created_at DESC"
         );
         
+        // Obtener solicitudes de actualización de perfil pendientes
+        $solicitudesActualizacion = $this->db->fetchAll(
+            "SELECT sap.*, u.email as usuario_email, u.nombre as usuario_nombre,
+                    s.numero_socio, s.nombre as socio_nombre, 
+                    s.apellido_paterno, s.apellido_materno
+             FROM solicitudes_actualizacion_perfil sap
+             JOIN usuarios u ON sap.usuario_id = u.id
+             LEFT JOIN socios s ON sap.socio_id = s.id
+             WHERE sap.estatus = 'pendiente'
+             ORDER BY sap.created_at DESC"
+        );
+        
         // Obtener historial de solicitudes
         $historialSolicitudes = $this->db->fetchAll(
             "SELECT sv.*, u.email as usuario_email,
@@ -707,12 +719,14 @@ class CrmController extends Controller {
                 "SELECT COUNT(*) as total FROM usuarios u
                  WHERE u.rol = 'cliente' AND u.activo = 1
                  AND u.id NOT IN (SELECT usuario_id FROM usuarios_socios)"
-            )['total']
+            )['total'],
+            'actualizaciones_pendientes' => count($solicitudesActualizacion)
         ];
         
         $this->view('crm/customerjourney', [
             'pageTitle' => 'Customer Journey',
             'solicitudesPendientes' => $solicitudesPendientes,
+            'solicitudesActualizacion' => $solicitudesActualizacion,
             'historialSolicitudes' => $historialSolicitudes,
             'stats' => $stats,
             'errors' => $errors,
