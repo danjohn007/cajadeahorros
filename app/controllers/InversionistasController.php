@@ -158,6 +158,36 @@ class InversionistasController extends Controller {
                             'usuario_id' => $userId,
                             'inversionista_id' => $inversionistaId
                         ]);
+                        
+                        // Send email with credentials
+                        $siteName = getSiteName();
+                        $loginUrl = BASE_URL . '/auth/login';
+                        
+                        $emailBody = "Hola {$data['nombre']},\n\n";
+                        $emailBody .= "Se ha creado una cuenta de usuario para ti en {$siteName}.\n\n";
+                        $emailBody .= "Tus credenciales de acceso son:\n";
+                        $emailBody .= "Correo: {$data['email']}\n";
+                        $emailBody .= "Contraseña temporal: {$tempPassword}\n\n";
+                        $emailBody .= "Por seguridad, deberás cambiar tu contraseña en el primer inicio de sesión.\n\n";
+                        $emailBody .= "Puedes acceder al sistema aquí: {$loginUrl}\n\n";
+                        $emailBody .= "Saludos,\n{$siteName}";
+                        
+                        $emailResult = sendSystemEmail(
+                            $data['email'],
+                            "Credenciales de Acceso - {$siteName}",
+                            $emailBody
+                        );
+                        
+                        if ($emailResult !== true) {
+                            // Log error but continue
+                            $this->db->insert('bitacora', [
+                                'usuario_id' => $_SESSION['user_id'],
+                                'accion' => 'EMAIL_ERROR',
+                                'descripcion' => 'Error al enviar credenciales a inversionista: ' . $emailResult,
+                                'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+                                'fecha' => date('Y-m-d H:i:s')
+                            ]);
+                        }
                     }
                     
                     $this->logAction('CREAR_INVERSIONISTA', "Se creó el inversionista {$data['nombre']} {$data['apellido_paterno']}", 'inversionistas', $inversionistaId);

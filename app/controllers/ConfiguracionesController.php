@@ -510,6 +510,93 @@ class ConfiguracionesController extends Controller {
         return $response;
     }
     
+    public function modulos() {
+        $this->requireRole(['programador']);
+        
+        $success = '';
+        $errors = [];
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->validateCsrf();
+            
+            // Get disabled modules from checkboxes
+            $modulosDeshabilitados = [];
+            $modulosPosibles = ['financiero', 'membresias', 'inversionistas', 'crm', 'kyc', 'escrow'];
+            
+            foreach ($modulosPosibles as $modulo) {
+                if (isset($_POST['deshabilitar_' . $modulo])) {
+                    $modulosDeshabilitados[] = $modulo;
+                }
+            }
+            
+            // Save as JSON
+            $this->guardarConfiguracion('modulos_deshabilitados', json_encode($modulosDeshabilitados));
+            
+            // Clear config cache so changes take effect immediately
+            clearConfigCache();
+            
+            $this->logAction('ACTUALIZAR_MODULOS', 'Se actualizó configuración de módulos especiales', 'configuraciones', null);
+            $success = 'Configuración de módulos guardada exitosamente';
+        }
+        
+        $config = $this->getConfiguraciones(['modulos_deshabilitados']);
+        $modulosDeshabilitados = json_decode($config['modulos_deshabilitados'] ?: '[]', true) ?: [];
+        
+        $this->view('configuraciones/modulos', [
+            'pageTitle' => 'Módulos Especiales',
+            'modulosDeshabilitados' => $modulosDeshabilitados,
+            'success' => $success,
+            'errors' => $errors
+        ]);
+    }
+    
+    public function chatbot() {
+        $this->requireRole(['administrador', 'programador']);
+        
+        $success = '';
+        $errors = [];
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            $this->validateCsrf();
+            
+            // Save chatbot configuration
+            $campos = [
+                'chatbot_whatsapp_numero',
+                'chatbot_url_publica',
+                'chatbot_mensaje_bienvenida',
+                'chatbot_mensaje_horario',
+                'chatbot_mensaje_fuera_horario'
+            ];
+            
+            foreach ($campos as $campo) {
+                if (isset($_POST[$campo])) {
+                    $this->guardarConfiguracion($campo, $this->sanitize($_POST[$campo]));
+                }
+            }
+            
+            // Clear config cache so changes take effect immediately
+            clearConfigCache();
+            
+            $this->logAction('ACTUALIZAR_CHATBOT', 'Se actualizó configuración del chatbot', 'configuraciones', null);
+            $success = 'Configuración del chatbot guardada exitosamente';
+        }
+        
+        $config = $this->getConfiguraciones([
+            'chatbot_whatsapp_numero',
+            'chatbot_url_publica',
+            'chatbot_mensaje_bienvenida',
+            'chatbot_mensaje_horario',
+            'chatbot_mensaje_fuera_horario'
+        ]);
+        
+        $this->view('configuraciones/chatbot', [
+            'pageTitle' => 'Configuración del Chatbot',
+            'config' => $config,
+            'success' => $success,
+            'errors' => $errors
+        ]);
+    }
+    
     private function guardarConfiguracion($clave, $valor) {
         $existe = $this->db->fetch(
             "SELECT id FROM configuraciones WHERE clave = :clave",

@@ -3,6 +3,7 @@
  * Vista de Configuraciones
  * Sistema de Gestión Integral de Caja de Ahorros
  */
+$isProgramador = ($_SESSION['user_role'] ?? '') === 'programador';
 ?>
 
 <div class="mb-6">
@@ -42,6 +43,17 @@
         </div>
         <h2 class="text-lg font-semibold text-gray-800 mb-2">Estilos del Sistema</h2>
         <p class="text-gray-600 text-sm">Cambiar colores principales del sistema</p>
+    </a>
+    
+    <!-- Chatbot / WhatsApp -->
+    <a href="<?= url('configuraciones/chatbot') ?>" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow">
+        <div class="flex items-center mb-4">
+            <div class="p-3 rounded-full bg-green-100 text-green-600">
+                <i class="fab fa-whatsapp text-2xl"></i>
+            </div>
+        </div>
+        <h2 class="text-lg font-semibold text-gray-800 mb-2">Chatbot / WhatsApp</h2>
+        <p class="text-gray-600 text-sm">Configurar el chatbot y mensajes predeterminados de WhatsApp</p>
     </a>
     
     <!-- PayPal -->
@@ -99,6 +111,29 @@
         <p class="text-gray-600 text-sm">Registro de acciones y cambios en el sistema</p>
     </a>
 </div>
+
+<?php if ($isProgramador): ?>
+<!-- Sección de Módulos Especiales (Solo para Programadores) -->
+<div class="mt-8">
+    <h2 class="text-xl font-bold text-gray-800 mb-4">
+        <i class="fas fa-code text-orange-600 mr-2"></i>Módulos Especiales
+        <span class="text-sm font-normal text-orange-600 ml-2">(Solo Programadores)</span>
+    </h2>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <!-- Módulos del Sistema -->
+        <a href="<?= url('configuraciones/modulos') ?>" class="bg-white rounded-lg shadow-md p-6 hover:shadow-lg transition-shadow border-l-4 border-orange-500">
+            <div class="flex items-center mb-4">
+                <div class="p-3 rounded-full bg-orange-100 text-orange-600">
+                    <i class="fas fa-cogs text-2xl"></i>
+                </div>
+            </div>
+            <h2 class="text-lg font-semibold text-gray-800 mb-2">Módulos del Sistema</h2>
+            <p class="text-gray-600 text-sm">Habilitar o deshabilitar módulos especiales del sistema</p>
+        </a>
+    </div>
+</div>
+<?php endif; ?>
 
 <!-- Información del Sistema -->
 <div class="mt-8 bg-white rounded-lg shadow-md p-6">

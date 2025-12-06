@@ -218,3 +218,165 @@ function hexToRgba($hexColor, $alpha = 1) {
     $b = hexdec(substr($hex, 4, 2));
     return "rgba($r, $g, $b, $alpha)";
 }
+
+/**
+ * Send email using SMTP configuration from database
+ * @param string $to Recipient email
+ * @param string $subject Email subject
+ * @param string $body Email body (plain text or HTML)
+ * @param bool $isHtml Whether body is HTML
+ * @return bool|string True on success, error message on failure
+ */
+function sendSystemEmail($to, $subject, $body, $isHtml = false) {
+    $db = Database::getInstance();
+    
+    // Get SMTP configuration
+    $getConfig = function($key) use ($db) {
+        $result = $db->fetch("SELECT valor FROM configuraciones WHERE clave = :clave", ['clave' => $key]);
+        return $result['valor'] ?? '';
+    };
+    
+    $smtpHost = $getConfig('smtp_host');
+    $smtpPort = (int)($getConfig('smtp_port') ?: 587);
+    $smtpUser = $getConfig('smtp_user');
+    $smtpPass = $getConfig('smtp_password');
+    $smtpEncryption = $getConfig('smtp_encryption') ?: 'tls';
+    $fromEmail = $getConfig('correo_sistema') ?: $smtpUser;
+    $fromName = $getConfig('smtp_from_name') ?: 'Sistema Caja de Ahorros';
+    
+    if (empty($smtpHost) || empty($smtpUser) || empty($smtpPass)) {
+        return 'Configuración SMTP incompleta';
+    }
+    
+    try {
+        // Determine connection type based on port and encryption
+        $secure = '';
+        if ($smtpEncryption === 'ssl' || $smtpPort == 465) {
+            $secure = 'ssl://';
+        }
+        
+        $context = stream_context_create([
+            'ssl' => [
+                'verify_peer' => false,
+                'verify_peer_name' => false,
+                'allow_self_signed' => true
+            ]
+        ]);
+        
+        $socket = @stream_socket_client(
+            $secure . $smtpHost . ':' . $smtpPort,
+            $errno,
+            $errstr,
+            30,
+            STREAM_CLIENT_CONNECT,
+            $context
+        );
+        
+        if (!$socket) {
+            return "No se pudo conectar al servidor SMTP: {$errstr}";
+        }
+        
+        stream_set_timeout($socket, 30);
+        
+        // Read greeting
+        $response = _getSmtpResponse($socket);
+        if (!$response || substr($response, 0, 3) != '220') {
+            fclose($socket);
+            return "Error en respuesta del servidor";
+        }
+        
+        // EHLO
+        fputs($socket, "EHLO localhost\r\n");
+        $ehloResponse = _getSmtpResponse($socket);
+        
+        // STARTTLS if needed
+        if ($smtpEncryption === 'tls' && $smtpPort != 465 && strpos($ehloResponse, 'STARTTLS') !== false) {
+            fputs($socket, "STARTTLS\r\n");
+            $response = _getSmtpResponse($socket);
+            if ($response && substr($response, 0, 3) == '220') {
+                @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
+                fputs($socket, "EHLO localhost\r\n");
+                $ehloResponse = _getSmtpResponse($socket);
+            }
+        }
+        
+        // AUTH LOGIN
+        if (strpos($ehloResponse, 'AUTH') !== false) {
+            fputs($socket, "AUTH LOGIN\r\n");
+            $response = fgets($socket, 515);
+            if ($response && substr($response, 0, 3) == '334') {
+                fputs($socket, base64_encode($smtpUser) . "\r\n");
+                $response = fgets($socket, 515);
+                if ($response && substr($response, 0, 3) == '334') {
+                    fputs($socket, base64_encode($smtpPass) . "\r\n");
+                    $response = fgets($socket, 515);
+                    if (!$response || substr($response, 0, 3) != '235') {
+                        fclose($socket);
+                        return "Error de autenticación SMTP";
+                    }
+                }
+            }
+        }
+        
+        // MAIL FROM
+        fputs($socket, "MAIL FROM:<{$fromEmail}>\r\n");
+        $response = _getSmtpResponse($socket);
+        if (!$response || substr($response, 0, 3) != '250') {
+            fclose($socket);
+            return "Error en MAIL FROM";
+        }
+        
+        // RCPT TO
+        fputs($socket, "RCPT TO:<{$to}>\r\n");
+        $response = _getSmtpResponse($socket);
+        if (!$response || substr($response, 0, 3) != '250') {
+            fclose($socket);
+            return "Error en RCPT TO";
+        }
+        
+        // DATA
+        fputs($socket, "DATA\r\n");
+        $response = _getSmtpResponse($socket);
+        if (!$response || substr($response, 0, 3) != '354') {
+            fclose($socket);
+            return "Error en DATA";
+        }
+        
+        // Build message
+        $headers = "From: {$fromName} <{$fromEmail}>\r\n";
+        $headers .= "To: {$to}\r\n";
+        $headers .= "Subject: {$subject}\r\n";
+        $headers .= "MIME-Version: 1.0\r\n";
+        $headers .= "Content-Type: " . ($isHtml ? "text/html" : "text/plain") . "; charset=UTF-8\r\n";
+        $headers .= "Date: " . date('r') . "\r\n";
+        
+        fputs($socket, $headers . "\r\n" . $body . "\r\n.\r\n");
+        $response = _getSmtpResponse($socket);
+        
+        fputs($socket, "QUIT\r\n");
+        fclose($socket);
+        
+        if (!$response || substr($response, 0, 3) != '250') {
+            return "Error al enviar mensaje";
+        }
+        
+        return true;
+        
+    } catch (Exception $e) {
+        return "Error: " . $e->getMessage();
+    }
+}
+
+/**
+ * Helper function to read SMTP response
+ */
+function _getSmtpResponse($socket) {
+    $response = '';
+    while ($line = fgets($socket, 515)) {
+        $response .= $line;
+        if (substr($line, 3, 1) == ' ') {
+            break;
+        }
+    }
+    return $response;
+}

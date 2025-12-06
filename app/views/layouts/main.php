@@ -7,6 +7,27 @@ $colorPrimario = $systemColors['color_primario'];
 $colorSecundario = $systemColors['color_secundario'];
 $colorAcento = $systemColors['color_acento'];
 $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAME . '. Todos los derechos reservados.');
+
+// Get disabled modules from configuration
+$modulosDeshabilitadosJson = getConfig('modulos_deshabilitados', '[]');
+$modulosDeshabilitados = json_decode($modulosDeshabilitadosJson, true) ?: [];
+
+// Get user avatar for top navigation
+$userAvatar = '';
+if (isset($_SESSION['user_id'])) {
+    $db = Database::getInstance();
+    $userInfo = $db->fetch("SELECT avatar FROM usuarios WHERE id = :id", ['id' => $_SESSION['user_id']]);
+    $userAvatar = $userInfo['avatar'] ?? '';
+}
+
+// Helper function to check if module is enabled
+function isModuloEnabled($modulo, $modulosDeshabilitados, $userRole) {
+    // Programador always sees all modules
+    if ($userRole === 'programador') {
+        return true;
+    }
+    return !in_array($modulo, $modulosDeshabilitados);
+}
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -67,10 +88,10 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
         
         <!-- Sidebar -->
         <aside :class="sidebarOpen ? 'w-64' : 'w-20'" 
-               class="bg-primary-800 text-white transition-all duration-300 fixed h-full z-30">
+               class="bg-primary-800 text-white transition-all duration-300 fixed h-full z-30 flex flex-col">
             
             <!-- Logo -->
-            <div class="flex items-center justify-between p-4 border-b border-primary-700">
+            <div class="flex items-center justify-between p-4 border-b border-primary-700 flex-shrink-0">
                 <div class="flex items-center space-x-3" x-show="sidebarOpen">
                     <?php if ($logoUrl): ?>
                         <img src="<?= htmlspecialchars($logoUrl) ?>" alt="<?= htmlspecialchars($siteName) ?>" class="h-8 w-auto">
@@ -84,8 +105,8 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                 </button>
             </div>
             
-            <!-- Navigation -->
-            <nav class="mt-4">
+            <!-- Navigation with scroll -->
+            <nav class="mt-4 flex-1 overflow-y-auto pb-4">
                 <?php if ($_SESSION['user_role'] === 'cliente'): ?>
                 <!-- Menú para CLIENTE - Solo acceso a su portal -->
                 <a href="<?= BASE_URL ?>/cliente" 
@@ -169,44 +190,56 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                     <span class="ml-3" x-show="sidebarOpen">Reportes</span>
                 </a>
                 
-                <!-- Nuevos Módulos -->
+                <!-- Nuevos Módulos (controlados por configuración) -->
+                <?php if (isModuloEnabled('financiero', $modulosDeshabilitados, $_SESSION['user_role'])): ?>
                 <a href="<?= BASE_URL ?>/financiero" 
                    class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'financiero') !== false ? 'active' : '' ?>">
                     <i class="fas fa-coins w-6"></i>
                     <span class="ml-3" x-show="sidebarOpen">Módulo Financiero</span>
                 </a>
+                <?php endif; ?>
                 
+                <?php if (isModuloEnabled('membresias', $modulosDeshabilitados, $_SESSION['user_role'])): ?>
                 <a href="<?= BASE_URL ?>/membresias" 
                    class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'membresias') !== false ? 'active' : '' ?>">
                     <i class="fas fa-id-card w-6"></i>
                     <span class="ml-3" x-show="sidebarOpen">Membresías</span>
                 </a>
+                <?php endif; ?>
                 
+                <?php if (isModuloEnabled('inversionistas', $modulosDeshabilitados, $_SESSION['user_role'])): ?>
                 <a href="<?= BASE_URL ?>/inversionistas" 
                    class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'inversionistas') !== false ? 'active' : '' ?>">
                     <i class="fas fa-chart-line w-6"></i>
                     <span class="ml-3" x-show="sidebarOpen">Inversionistas</span>
                 </a>
+                <?php endif; ?>
                 
+                <?php if (isModuloEnabled('crm', $modulosDeshabilitados, $_SESSION['user_role'])): ?>
                 <a href="<?= BASE_URL ?>/crm" 
                    class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'crm') !== false ? 'active' : '' ?>">
                     <i class="fas fa-address-book w-6"></i>
                     <span class="ml-3" x-show="sidebarOpen">Informe CRM</span>
                 </a>
+                <?php endif; ?>
                 
+                <?php if (isModuloEnabled('kyc', $modulosDeshabilitados, $_SESSION['user_role'])): ?>
                 <a href="<?= BASE_URL ?>/kyc" 
                    class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'kyc') !== false ? 'active' : '' ?>">
                     <i class="fas fa-user-shield w-6"></i>
                     <span class="ml-3" x-show="sidebarOpen">Sistema KYC</span>
                 </a>
+                <?php endif; ?>
                 
+                <?php if (isModuloEnabled('escrow', $modulosDeshabilitados, $_SESSION['user_role'])): ?>
                 <a href="<?= BASE_URL ?>/escrow" 
                    class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'escrow') !== false ? 'active' : '' ?>">
                     <i class="fas fa-handshake w-6"></i>
                     <span class="ml-3" x-show="sidebarOpen">Sistema ESCROW</span>
                 </a>
+                <?php endif; ?>
                 
-                <?php if ($_SESSION['user_role'] === 'administrador'): ?>
+                <?php if ($_SESSION['user_role'] === 'administrador' || $_SESSION['user_role'] === 'programador'): ?>
                 <div class="border-t border-primary-700 mt-4 pt-4">
                     <a href="<?= BASE_URL ?>/importar" 
                        class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'importar') !== false ? 'active' : '' ?>">
@@ -310,9 +343,14 @@ $textoCopyright = getConfig('texto_copyright', '© ' . date('Y') . ' ' . APP_NAM
                         <!-- User Dropdown -->
                         <div class="relative" x-data="{ open: false }">
                             <button @click="open = !open" class="flex items-center space-x-2 text-gray-700 hover:text-gray-900">
-                                <div class="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white">
-                                    <i class="fas fa-user"></i>
-                                </div>
+                                <?php if ($userAvatar && file_exists(UPLOADS_PATH . '/avatars/' . $userAvatar)): ?>
+                                    <img src="<?= BASE_URL ?>/uploads/avatars/<?= htmlspecialchars($userAvatar) ?>" 
+                                         alt="Avatar" class="w-8 h-8 rounded-full object-cover border-2 border-primary-200">
+                                <?php else: ?>
+                                    <div class="w-8 h-8 bg-primary-600 rounded-full flex items-center justify-center text-white">
+                                        <i class="fas fa-user"></i>
+                                    </div>
+                                <?php endif; ?>
                                 <span><?= $_SESSION['user_nombre'] ?? 'Usuario' ?></span>
                                 <i class="fas fa-chevron-down text-xs"></i>
                             </button>

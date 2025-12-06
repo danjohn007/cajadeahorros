@@ -48,7 +48,7 @@ abstract class Controller {
                            'cartera', 'reportes', 'configuraciones', 'usuarios', 
                            'bitacora', 'auth', 'api', 'membresias', 'crm', 'importar',
                            'financiero', 'auditoria', 'dispositivos', 'pago', 'cliente', 'kyc',
-                           'escrow', 'buro'];
+                           'escrow', 'buro', 'inversionistas', 'soporte'];
         
         $isAllowed = false;
         foreach ($allowedPrefixes as $prefix) {
