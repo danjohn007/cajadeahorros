@@ -32,7 +32,7 @@
 <?php endif; ?>
 
 <!-- Estadísticas -->
-<div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+<div class="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
     <div class="bg-white rounded-lg shadow p-4">
         <div class="flex items-center">
             <div class="p-2 bg-yellow-100 rounded-full mr-3">
@@ -80,9 +80,100 @@
             </div>
         </div>
     </div>
+    
+    <div class="bg-white rounded-lg shadow p-4">
+        <div class="flex items-center">
+            <div class="p-2 bg-purple-100 rounded-full mr-3">
+                <i class="fas fa-user-edit text-purple-600"></i>
+            </div>
+            <div>
+                <p class="text-sm text-gray-500">Actualizaciones</p>
+                <p class="text-2xl font-bold text-purple-600"><?= number_format($stats['actualizaciones_pendientes']) ?></p>
+            </div>
+        </div>
+    </div>
 </div>
 
-<!-- Solicitudes Pendientes -->
+<!-- Solicitudes de Actualización Pendientes -->
+<div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
+    <div class="px-6 py-4 border-b bg-purple-50">
+        <h3 class="text-lg font-semibold text-purple-800">
+            <i class="fas fa-user-edit mr-2"></i>Solicitudes de Actualización Pendientes
+        </h3>
+    </div>
+    
+    <?php if (empty($solicitudesActualizacion)): ?>
+    <div class="p-6 text-center text-gray-500">
+        <i class="fas fa-inbox text-4xl mb-4"></i>
+        <p>No hay solicitudes de actualización pendientes</p>
+    </div>
+    <?php else: ?>
+    <div class="overflow-x-auto">
+        <table class="w-full">
+            <thead class="bg-gray-100">
+                <tr>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Fecha</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Socio</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Usuario</th>
+                    <th class="px-4 py-3 text-left text-sm font-medium text-gray-700">Cambios Solicitados</th>
+                    <th class="px-4 py-3 text-center text-sm font-medium text-gray-700">Acciones</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-200">
+                <?php foreach ($solicitudesActualizacion as $solicitud): ?>
+                <?php 
+                    $cambios = json_decode($solicitud['cambios_solicitados'], true);
+                    $camposModificados = is_array($cambios) ? array_keys($cambios) : [];
+                ?>
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3 text-sm text-gray-600">
+                        <?= date('d/m/Y H:i', strtotime($solicitud['created_at'])) ?>
+                    </td>
+                    <td class="px-4 py-3 font-medium text-gray-800">
+                        <?php if ($solicitud['numero_socio']): ?>
+                            <?= htmlspecialchars($solicitud['socio_nombre'] . ' ' . $solicitud['apellido_paterno']) ?>
+                            <br><span class="text-xs text-gray-500"><?= htmlspecialchars($solicitud['numero_socio']) ?></span>
+                        <?php else: ?>
+                            <span class="text-gray-400">Sin vincular</span>
+                        <?php endif; ?>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <?= htmlspecialchars($solicitud['usuario_nombre'] ?? $solicitud['usuario_email']) ?>
+                        <br><span class="text-xs text-gray-500"><?= htmlspecialchars($solicitud['usuario_email']) ?></span>
+                    </td>
+                    <td class="px-4 py-3 text-sm">
+                        <button onclick="verCambios<?= $solicitud['id'] ?>()" class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-eye mr-1"></i><?= count($camposModificados) ?> campo(s) modificado(s)
+                        </button>
+                        <div id="cambios<?= $solicitud['id'] ?>" class="hidden mt-2 text-xs bg-gray-50 p-2 rounded">
+                            <?php foreach ($cambios as $campo => $valor): ?>
+                                <div class="mb-1">
+                                    <strong><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $campo))) ?>:</strong>
+                                    <?= htmlspecialchars(is_array($valor) ? json_encode($valor) : $valor) ?>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                        <script>
+                        function verCambios<?= $solicitud['id'] ?>() {
+                            document.getElementById('cambios<?= $solicitud['id'] ?>').classList.toggle('hidden');
+                        }
+                        </script>
+                    </td>
+                    <td class="px-4 py-3 text-center">
+                        <a href="<?= BASE_URL ?>/cliente/actualizaciones/<?= $solicitud['id'] ?>" 
+                           class="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700">
+                            <i class="fas fa-edit mr-1"></i>Revisar
+                        </a>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+            </tbody>
+        </table>
+    </div>
+    <?php endif; ?>
+</div>
+
+<!-- Solicitudes de Vinculación Pendientes -->
 <div class="bg-white rounded-lg shadow-md overflow-hidden mb-6">
     <div class="px-6 py-4 border-b bg-yellow-50">
         <h3 class="text-lg font-semibold text-yellow-800">

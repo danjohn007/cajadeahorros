@@ -63,6 +63,12 @@
                         <?= ucfirst($cuenta['estatus']) ?>
                     </span>
                 </div>
+                <?php if (!empty($socio['asesor_nombre'])): ?>
+                <div class="flex justify-between">
+                    <span class="text-gray-500">Asesor</span>
+                    <span class="font-medium"><?= htmlspecialchars($socio['asesor_nombre']) ?></span>
+                </div>
+                <?php endif; ?>
             </div>
             
             <div class="border-t pt-4 mt-4">

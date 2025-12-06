@@ -70,9 +70,10 @@ class AhorroController extends Controller {
         $socioId = $this->params['id'] ?? 0;
         
         $socio = $this->db->fetch(
-            "SELECT s.*, ut.nombre as unidad_trabajo
+            "SELECT s.*, ut.nombre as unidad_trabajo, u.nombre as asesor_nombre
              FROM socios s
              LEFT JOIN unidades_trabajo ut ON s.unidad_trabajo_id = ut.id
+             LEFT JOIN usuarios u ON s.created_by = u.id
              WHERE s.id = :id",
             ['id' => $socioId]
         );
@@ -365,9 +366,11 @@ class AhorroController extends Controller {
         
         $cuenta = $this->db->fetch(
             "SELECT ca.*, s.numero_socio, s.nombre, s.apellido_paterno, s.apellido_materno,
-                    s.rfc, s.curp, s.telefono, s.celular, s.email, s.direccion
+                    s.rfc, s.curp, s.telefono, s.celular, s.email, s.direccion,
+                    u.nombre as asesor_nombre
              FROM cuentas_ahorro ca
              JOIN socios s ON ca.socio_id = s.id
+             LEFT JOIN usuarios u ON s.created_by = u.id
              WHERE ca.id = :id",
             ['id' => $cuentaId]
         );
