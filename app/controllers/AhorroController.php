@@ -162,28 +162,42 @@ class AhorroController extends Controller {
                     $comprobanteArchivo = null;
                     if (isset($_FILES['comprobante']) && $_FILES['comprobante']['error'] === UPLOAD_ERR_OK) {
                         $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+                        $allowedExtensions = ['jpg', 'jpeg', 'png', 'gif', 'pdf'];
                         $maxSize = 5 * 1024 * 1024; // 5MB
                         
-                        $fileType = mime_content_type($_FILES['comprobante']['tmp_name']);
-                        $fileSize = $_FILES['comprobante']['size'];
+                        // Get file extension
+                        $ext = strtolower(pathinfo($_FILES['comprobante']['name'], PATHINFO_EXTENSION));
                         
-                        if (!in_array($fileType, $allowedTypes)) {
-                            $errors[] = 'Formato de archivo no válido. Use JPG, PNG, GIF o PDF.';
-                        } elseif ($fileSize > $maxSize) {
-                            $errors[] = 'El archivo es demasiado grande. Máximo 5MB.';
+                        // Validate extension first
+                        if (!in_array($ext, $allowedExtensions)) {
+                            $errors[] = 'Extensión de archivo no válida. Use JPG, PNG, GIF o PDF.';
                         } else {
-                            // Ensure uploads directory exists
-                            $uploadsDir = UPLOADS_PATH . '/comprobantes';
-                            if (!is_dir($uploadsDir)) {
-                                mkdir($uploadsDir, 0755, true);
-                            }
+                            // Use finfo for more secure MIME type detection
+                            $finfo = finfo_open(FILEINFO_MIME_TYPE);
+                            $fileType = finfo_file($finfo, $_FILES['comprobante']['tmp_name']);
+                            finfo_close($finfo);
                             
-                            $ext = strtolower(pathinfo($_FILES['comprobante']['name'], PATHINFO_EXTENSION));
-                            $comprobanteArchivo = 'comprobante_' . time() . '_' . uniqid() . '.' . $ext;
+                            $fileSize = $_FILES['comprobante']['size'];
                             
-                            if (!move_uploaded_file($_FILES['comprobante']['tmp_name'], $uploadsDir . '/' . $comprobanteArchivo)) {
-                                $errors[] = 'Error al guardar el comprobante';
-                                $comprobanteArchivo = null;
+                            if (!in_array($fileType, $allowedTypes)) {
+                                $errors[] = 'Formato de archivo no válido. El tipo MIME no coincide con la extensión.';
+                            } elseif ($fileSize > $maxSize) {
+                                $errors[] = 'El archivo es demasiado grande. Máximo 5MB.';
+                            } else {
+                                // Ensure uploads directory exists with restrictive permissions
+                                $uploadsDir = UPLOADS_PATH . '/comprobantes';
+                                if (!is_dir($uploadsDir)) {
+                                    mkdir($uploadsDir, 0750, true);
+                                }
+                                
+                                // Generate secure filename
+                                $comprobanteArchivo = 'comprobante_' . time() . '_' . bin2hex(random_bytes(8)) . '.' . $ext;
+                                
+                                if (!move_uploaded_file($_FILES['comprobante']['tmp_name'], $uploadsDir . '/' . $comprobanteArchivo)) {
+                                    $uploadError = error_get_last();
+                                    $errors[] = 'Error al guardar el comprobante: ' . ($uploadError['message'] ?? 'Error desconocido');
+                                    $comprobanteArchivo = null;
+                                }
                             }
                         }
                     }

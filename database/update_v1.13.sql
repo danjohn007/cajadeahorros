@@ -26,10 +26,7 @@ ON DUPLICATE KEY UPDATE descripcion = 'Lista de módulos especiales deshabilitad
 -- Verificar que existe el rol 'programador'
 -- Este script asume que update_v1.12.sql ya se ejecutó
 -- Si no existe el rol, agregarlo
-SET @sql = CONCAT('ALTER TABLE usuarios MODIFY rol ENUM(\'administrador\', \'operativo\', \'consulta\', \'cliente\', \'inversionista\', \'programador\') NOT NULL DEFAULT \'consulta\'');
-PREPARE stmt FROM @sql;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+ALTER TABLE usuarios MODIFY rol ENUM('administrador', 'operativo', 'consulta', 'cliente', 'inversionista', 'programador') NOT NULL DEFAULT 'consulta';
 
 -- Comentario informativo
 -- Los siguientes elementos ya deben estar presentes si se ejecutó update_v1.12.sql:
