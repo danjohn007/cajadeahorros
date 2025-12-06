@@ -126,7 +126,35 @@ class AuthController extends Controller {
                     ['id' => $user['id']]
                 );
                 
-                // En producción aquí se enviaría el correo
+                // Enviar correo de recuperación
+                $siteName = getSiteName();
+                $resetLink = BASE_URL . '/auth/reset-password?token=' . $token;
+                
+                $emailBody = "Hola {$user['nombre']},\n\n";
+                $emailBody .= "Has solicitado restablecer tu contraseña en {$siteName}.\n\n";
+                $emailBody .= "Para restablecer tu contraseña, haz clic en el siguiente enlace:\n";
+                $emailBody .= "{$resetLink}\n\n";
+                $emailBody .= "Este enlace expirará en 1 hora.\n\n";
+                $emailBody .= "Si no solicitaste este cambio, puedes ignorar este correo.\n\n";
+                $emailBody .= "Saludos,\n{$siteName}";
+                
+                $emailResult = sendSystemEmail(
+                    $user['email'],
+                    "Recuperar Contraseña - {$siteName}",
+                    $emailBody
+                );
+                
+                if ($emailResult !== true) {
+                    // Log the error but don't expose it to user
+                    $this->db->insert('bitacora', [
+                        'usuario_id' => $user['id'],
+                        'accion' => 'EMAIL_ERROR',
+                        'descripcion' => 'Error al enviar correo de recuperación: ' . $emailResult,
+                        'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+                        'fecha' => date('Y-m-d H:i:s')
+                    ]);
+                }
+                
                 $success = 'Si el correo existe en nuestro sistema, recibirás instrucciones para recuperar tu contraseña.';
                 
                 $this->logAction('RECUPERAR_PASSWORD', 'Solicitud de recuperación de contraseña', 'usuarios', $user['id']);

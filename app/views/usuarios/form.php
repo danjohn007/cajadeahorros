@@ -50,11 +50,15 @@
                         <option value="consulta" <?= ($usuario['rol'] ?? '') == 'consulta' ? 'selected' : '' ?>>Consulta</option>
                         <option value="operativo" <?= ($usuario['rol'] ?? '') == 'operativo' ? 'selected' : '' ?>>Operativo</option>
                         <option value="administrador" <?= ($usuario['rol'] ?? '') == 'administrador' ? 'selected' : '' ?>>Administrador</option>
+                        <?php if ($_SESSION['user_role'] === 'programador'): ?>
+                        <option value="programador" <?= ($usuario['rol'] ?? '') == 'programador' ? 'selected' : '' ?>>Programador</option>
+                        <?php endif; ?>
                     </select>
                     <p class="mt-1 text-sm text-gray-500">
                         <strong>Consulta:</strong> Solo puede ver información<br>
                         <strong>Operativo:</strong> Puede capturar y modificar información<br>
-                        <strong>Administrador:</strong> Acceso total al sistema
+                        <strong>Administrador:</strong> Acceso total al sistema<?php if ($_SESSION['user_role'] === 'programador'): ?><br>
+                        <strong>Programador:</strong> Acceso total incluyendo módulos especiales<?php endif; ?>
                     </p>
                 </div>
                 

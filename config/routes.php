@@ -86,6 +86,8 @@ $router->add('configuraciones/estilos', ['controller' => 'configuraciones', 'act
 $router->add('configuraciones/paypal', ['controller' => 'configuraciones', 'action' => 'paypal']);
 $router->add('configuraciones/qr', ['controller' => 'configuraciones', 'action' => 'qr']);
 $router->add('configuraciones/testEmail', ['controller' => 'configuraciones', 'action' => 'testEmail']);
+$router->add('configuraciones/modulos', ['controller' => 'configuraciones', 'action' => 'modulos']);
+$router->add('configuraciones/chatbot', ['controller' => 'configuraciones', 'action' => 'chatbot']);
 
 // Gestión de Usuarios
 $router->add('usuarios', ['controller' => 'usuarios', 'action' => 'index']);
@@ -207,3 +209,6 @@ $router->add('api/qr/masivo', ['controller' => 'api', 'action' => 'generarQRMasi
 $router->add('api/notificaciones', ['controller' => 'api', 'action' => 'notificaciones']);
 $router->add('api/notificaciones/marcarLeida/{id}', ['controller' => 'api', 'action' => 'marcarNotificacionLeida']);
 $router->add('api/notificaciones/marcarTodasLeidas', ['controller' => 'api', 'action' => 'marcarTodasNotificacionesLeidas']);
+
+// Página pública de Soporte Técnico
+$router->add('soporte', ['controller' => 'soporte', 'action' => 'index']);
