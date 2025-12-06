@@ -229,13 +229,7 @@ class SociosController extends Controller {
                         
                         if ($emailResult !== true) {
                             // Log error but don't fail the operation
-                            $this->db->insert('bitacora', [
-                                'usuario_id' => $_SESSION['user_id'],
-                                'accion' => 'EMAIL_ERROR',
-                                'descripcion' => 'Error al enviar correo de bienvenida a socio: ' . $emailResult,
-                                'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
-                                'fecha' => date('Y-m-d H:i:s')
-                            ]);
+                            $this->logAction('EMAIL_ERROR', 'Error al enviar correo de bienvenida a socio: ' . $emailResult, 'socios', $socioId);
                         }
                     }
                     
