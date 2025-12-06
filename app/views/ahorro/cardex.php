@@ -151,40 +151,30 @@ $direccionOficina = getConfig('direccion_oficina', '');
 
 <style>
 @media print {
-    /* Ocultar todos los elementos que no deben imprimirse */
-    body * {
-        visibility: hidden;
-    }
-    
-    /* Solo mostrar el cardex para impresión */
-    #cardex-print, #cardex-print * {
-        visibility: visible;
-    }
-    
-    #cardex-print {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-        padding: 20px !important;
-        margin: 0 !important;
-    }
-    
-    /* Ocultar elementos del sistema que no deben aparecer */
-    aside, nav, header, footer, .sidebar, .no-print {
+    /* Ocultar elementos del sistema que no deben aparecer en la impresión */
+    aside, nav, header:not(#cardex-print header), footer, 
+    .sidebar, .no-print, [x-data], button:not(#cardex-print button) {
         display: none !important;
-        visibility: hidden !important;
     }
     
-    /* Ajustar tamaño de fuente para impresión */
+    /* Asegurar que el contenido principal ocupe toda la página */
     body {
         margin: 0;
         padding: 0;
         font-size: 11px;
     }
     
+    #cardex-print {
+        position: static;
+        width: 100%;
+        max-width: 100%;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 20px !important;
+        margin: 0 !important;
+    }
+    
+    /* Ajustar tamaño de fuente para impresión */
     table {
         font-size: 9px !important;
         page-break-inside: auto;

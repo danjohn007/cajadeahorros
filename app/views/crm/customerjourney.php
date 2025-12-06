@@ -142,7 +142,7 @@
                         <br><span class="text-xs text-gray-500"><?= htmlspecialchars($solicitud['usuario_email']) ?></span>
                     </td>
                     <td class="px-4 py-3 text-sm">
-                        <button onclick="verCambios<?= $solicitud['id'] ?>()" class="text-blue-600 hover:text-blue-800">
+                        <button onclick="toggleCambios(<?= $solicitud['id'] ?>)" class="text-blue-600 hover:text-blue-800">
                             <i class="fas fa-eye mr-1"></i><?= count($camposModificados) ?> campo(s) modificado(s)
                         </button>
                         <div id="cambios<?= $solicitud['id'] ?>" class="hidden mt-2 text-xs bg-gray-50 p-2 rounded">
@@ -153,11 +153,6 @@
                                 </div>
                             <?php endforeach; ?>
                         </div>
-                        <script>
-                        function verCambios<?= $solicitud['id'] ?>() {
-                            document.getElementById('cambios<?= $solicitud['id'] ?>').classList.toggle('hidden');
-                        }
-                        </script>
                     </td>
                     <td class="px-4 py-3 text-center">
                         <a href="<?= BASE_URL ?>/cliente/actualizaciones/<?= $solicitud['id'] ?>" 
@@ -394,6 +389,10 @@
 </div>
 
 <script>
+function toggleCambios(id) {
+    document.getElementById('cambios' + id).classList.toggle('hidden');
+}
+
 function mostrarModalAprobacion(id, nombre, email, celular) {
     document.getElementById('aprobar_solicitud_id').value = id;
     document.getElementById('aprobar_nombre').textContent = nombre;
