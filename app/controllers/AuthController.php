@@ -126,22 +126,25 @@ class AuthController extends Controller {
                     ['id' => $user['id']]
                 );
                 
-                // Enviar correo de recuperación
+                // Enviar correo de recuperación con estilo
                 $siteName = getSiteName();
                 $resetLink = BASE_URL . '/auth/reset-password?token=' . $token;
                 
-                $emailBody = "Hola {$user['nombre']},\n\n";
-                $emailBody .= "Has solicitado restablecer tu contraseña en {$siteName}.\n\n";
-                $emailBody .= "Para restablecer tu contraseña, haz clic en el siguiente enlace:\n";
-                $emailBody .= "{$resetLink}\n\n";
-                $emailBody .= "Este enlace expirará en 1 hora.\n\n";
-                $emailBody .= "Si no solicitaste este cambio, puedes ignorar este correo.\n\n";
-                $emailBody .= "Saludos,\n{$siteName}";
+                $emailContent = "<p style='font-size: 16px;'>Hola <strong>{$user['nombre']}</strong>,</p>";
+                $emailContent .= "<p>Has solicitado restablecer tu contraseña en <strong>{$siteName}</strong>.</p>";
+                $emailContent .= "<p>Para continuar con el proceso, haz clic en el botón de abajo:</p>";
+                $emailContent .= "<p style='background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 20px 0; border-radius: 4px;'>";
+                $emailContent .= "<strong>⏰ Importante:</strong> Este enlace expirará en <strong>1 hora</strong>.";
+                $emailContent .= "</p>";
+                $emailContent .= "<p style='color: #6b7280; font-size: 14px;'>Si no solicitaste este cambio, puedes ignorar este correo de forma segura.</p>";
                 
-                $emailResult = sendSystemEmail(
+                $emailResult = sendStyledEmail(
                     $user['email'],
                     "Recuperar Contraseña - {$siteName}",
-                    $emailBody
+                    "Recuperar Contraseña",
+                    $emailContent,
+                    "Restablecer Contraseña",
+                    $resetLink
                 );
                 
                 if ($emailResult !== true) {
@@ -167,6 +170,68 @@ class AuthController extends Controller {
         $this->viewPartial('auth/forgot-password', [
             'success' => $success,
             'error' => $error,
+            'csrf_token' => $this->csrf_token()
+        ]);
+    }
+    
+    public function resetPassword() {
+        $token = $_GET['token'] ?? '';
+        $success = '';
+        $error = '';
+        $validToken = false;
+        
+        if (empty($token)) {
+            $error = 'Token de recuperación no proporcionado.';
+        } else {
+            // Validate token
+            $user = $this->db->fetch(
+                "SELECT * FROM usuarios WHERE token_recuperacion = :token AND token_expiracion > NOW() AND activo = 1",
+                ['token' => $token]
+            );
+            
+            if ($user) {
+                $validToken = true;
+                
+                if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+                    $csrfToken = $_POST['csrf_token'] ?? '';
+                    if (!hash_equals($_SESSION['csrf_token'] ?? '', $csrfToken)) {
+                        $error = 'Token de seguridad inválido. Por favor, recarga la página.';
+                    } else {
+                        $password = $_POST['password'] ?? '';
+                        $passwordConfirm = $_POST['password_confirm'] ?? '';
+                        
+                        if (empty($password)) {
+                            $error = 'La contraseña es requerida.';
+                        } elseif (strlen($password) < 6) {
+                            $error = 'La contraseña debe tener al menos 6 caracteres.';
+                        } elseif ($password !== $passwordConfirm) {
+                            $error = 'Las contraseñas no coinciden.';
+                        } else {
+                            // Update password
+                            $this->db->update('usuarios', [
+                                'password' => password_hash($password, PASSWORD_DEFAULT),
+                                'token_recuperacion' => null,
+                                'token_expiracion' => null,
+                                'requiere_cambio_password' => 0
+                            ], 'id = :id', ['id' => $user['id']]);
+                            
+                            $this->logAction('CAMBIO_PASSWORD', 'Contraseña restablecida mediante enlace de recuperación', 'usuarios', $user['id']);
+                            
+                            $validToken = false; // Hide form after success
+                            $success = 'Tu contraseña ha sido restablecida exitosamente. Ahora puedes iniciar sesión con tu nueva contraseña.';
+                        }
+                    }
+                }
+            } else {
+                $error = 'El enlace de recuperación es inválido o ha expirado. Por favor, solicita uno nuevo.';
+            }
+        }
+        
+        $this->viewPartial('auth/reset-password', [
+            'success' => $success,
+            'error' => $error,
+            'validToken' => $validToken,
+            'token' => $token,
             'csrf_token' => $this->csrf_token()
         ]);
     }

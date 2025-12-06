@@ -192,6 +192,53 @@ class SociosController extends Controller {
                     
                     $this->logAction('CREAR_SOCIO', "Se creó el socio {$data['nombre']} {$data['apellido_paterno']}", 'socios', $socioId);
                     
+                    // Send welcome email if email is provided
+                    if (!empty($data['email'])) {
+                        $siteName = getSiteName();
+                        $nombreCompleto = $data['nombre'] . ' ' . $data['apellido_paterno'];
+                        
+                        $emailContent = "<p style='font-size: 16px;'>Estimado/a <strong>{$nombreCompleto}</strong>,</p>";
+                        $emailContent .= "<p>¡Te damos la más cordial bienvenida a <strong>{$siteName}</strong>!</p>";
+                        $emailContent .= "<p>Es un placer informarte que tu registro como socio ha sido completado exitosamente. A partir de este momento, formas parte de nuestra comunidad de ahorradores.</p>";
+                        $emailContent .= "<div style='background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;'>";
+                        $emailContent .= "<h3 style='margin-top: 0; color: #374151;'>📋 Datos de tu registro:</h3>";
+                        $emailContent .= "<p style='margin: 5px 0;'><strong>Número de Socio:</strong> {$numeroSocio}</p>";
+                        $emailContent .= "<p style='margin: 5px 0;'><strong>Número de Cuenta:</strong> {$numeroCuenta}</p>";
+                        $emailContent .= "<p style='margin: 5px 0;'><strong>Fecha de Alta:</strong> " . date('d/m/Y') . "</p>";
+                        $emailContent .= "</div>";
+                        $emailContent .= "<p>Como socio, puedes disfrutar de los siguientes beneficios:</p>";
+                        $emailContent .= "<ul style='color: #4b5563;'>";
+                        $emailContent .= "<li>Ahorro con intereses competitivos</li>";
+                        $emailContent .= "<li>Acceso a créditos con tasas preferenciales</li>";
+                        $emailContent .= "<li>Participación en programas especiales</li>";
+                        $emailContent .= "</ul>";
+                        $emailContent .= "<p style='background-color: #dbeafe; border-left: 4px solid #3b82f6; padding: 12px; margin: 20px 0; border-radius: 4px;'>";
+                        $emailContent .= "<strong>💡 Tip:</strong> Regístrate en nuestro portal en línea para consultar tu estado de cuenta y realizar operaciones desde cualquier lugar.";
+                        $emailContent .= "</p>";
+                        $emailContent .= "<p>Si tienes alguna pregunta, no dudes en contactarnos.</p>";
+                        $emailContent .= "<p style='margin-top: 20px;'>¡Gracias por confiar en nosotros!</p>";
+                        
+                        $emailResult = sendStyledEmail(
+                            $data['email'],
+                            "¡Bienvenido a {$siteName}!",
+                            "¡Bienvenido a {$siteName}!",
+                            $emailContent,
+                            "Registrarme en el Portal",
+                            BASE_URL . '/auth/registro'
+                        );
+                        
+                        if ($emailResult !== true) {
+                            // Log error but don't fail the operation
+                            $this->db->insert('bitacora', [
+                                'usuario_id' => $_SESSION['user_id'],
+                                'accion' => 'EMAIL_ERROR',
+                                'descripcion' => 'Error al enviar correo de bienvenida a socio: ' . $emailResult,
+                                'ip' => $_SERVER['REMOTE_ADDR'] ?? '',
+                                'fecha' => date('Y-m-d H:i:s')
+                            ]);
+                        }
+                    }
+                    
                     $this->setFlash('success', 'Socio creado exitosamente');
                     $this->redirect('socios/ver/' . $socioId);
                     

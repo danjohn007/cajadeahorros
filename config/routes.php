@@ -212,3 +212,8 @@ $router->add('api/notificaciones/marcarTodasLeidas', ['controller' => 'api', 'ac
 
 // Página pública de Soporte Técnico
 $router->add('soporte', ['controller' => 'soporte', 'action' => 'index']);
+$router->add('public/soporte-tecnico', ['controller' => 'soporte', 'action' => 'index']);
+$router->add('soporte-tecnico', ['controller' => 'soporte', 'action' => 'index']);
+
+// Recuperación de contraseña
+$router->add('auth/reset-password', ['controller' => 'auth', 'action' => 'resetPassword']);
