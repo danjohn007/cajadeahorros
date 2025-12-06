@@ -416,3 +416,157 @@ function isModuloEnabled($modulo, $modulosDeshabilitados, $userRole) {
 function formatPhoneForTel($phone) {
     return preg_replace('/[^0-9+]/', '', $phone);
 }
+
+/**
+ * Generate styled HTML email template
+ * @param string $title Email title/subject
+ * @param string $content Main content of the email (can be HTML)
+ * @param string $buttonText Optional button text
+ * @param string $buttonUrl Optional button URL
+ * @return string Styled HTML email content
+ */
+function generateStyledEmail($title, $content, $buttonText = '', $buttonUrl = '') {
+    $db = Database::getInstance();
+    
+    // Get system configuration
+    $getConfig = function($key, $default = '') use ($db) {
+        $result = $db->fetch("SELECT valor FROM configuraciones WHERE clave = :clave", ['clave' => $key]);
+        return $result['valor'] ?? $default;
+    };
+    
+    $siteName = $getConfig('nombre_sitio', 'Sistema de Caja de Ahorros');
+    $logoFile = $getConfig('logo', '');
+    $colorPrimario = $getConfig('color_primario', '#1e40af');
+    $colorSecundario = $getConfig('color_secundario', '#3b82f6');
+    $telefonoContacto = $getConfig('telefono_contacto', '');
+    $emailContacto = $getConfig('email_contacto', '');
+    $horarioAtencion = $getConfig('horario_atencion', 'Lunes a Viernes 9:00 - 18:00');
+    
+    // Build logo URL
+    $logoUrl = '';
+    if ($logoFile && defined('PUBLIC_URL')) {
+        $logoUrl = PUBLIC_URL . '/images/' . $logoFile;
+    }
+    
+    // Build button HTML if provided
+    $buttonHtml = '';
+    if ($buttonText && $buttonUrl) {
+        $buttonHtml = <<<HTML
+        <tr>
+            <td align="center" style="padding: 30px 0;">
+                <a href="{$buttonUrl}" style="display: inline-block; padding: 14px 32px; background-color: {$colorSecundario}; color: #ffffff; text-decoration: none; border-radius: 8px; font-weight: 600; font-size: 16px;">
+                    {$buttonText}
+                </a>
+            </td>
+        </tr>
+HTML;
+    }
+    
+    // Logo section
+    $logoHtml = '';
+    if ($logoUrl) {
+        $logoHtml = '<img src="' . htmlspecialchars($logoUrl) . '" alt="' . htmlspecialchars($siteName) . '" style="max-width: 180px; height: auto;">';
+    } else {
+        $logoHtml = '<span style="font-size: 28px; font-weight: bold; color: #ffffff;">' . htmlspecialchars($siteName) . '</span>';
+    }
+    
+    // Contact info
+    $contactInfo = '';
+    if ($telefonoContacto) {
+        $contactInfo .= '<span style="margin: 0 10px;">📞 ' . htmlspecialchars($telefonoContacto) . '</span>';
+    }
+    if ($emailContacto) {
+        $contactInfo .= '<span style="margin: 0 10px;">✉️ ' . htmlspecialchars($emailContacto) . '</span>';
+    }
+    
+    $currentYear = date('Y');
+    
+    $html = <<<HTML
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{$title}</title>
+</head>
+<body style="margin: 0; padding: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f4f7fa;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f7fa; padding: 40px 0;">
+        <tr>
+            <td align="center">
+                <table width="600" cellpadding="0" cellspacing="0" style="max-width: 600px; width: 100%;">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background: linear-gradient(135deg, {$colorPrimario} 0%, {$colorSecundario} 100%); padding: 30px; text-align: center; border-radius: 12px 12px 0 0;">
+                            {$logoHtml}
+                        </td>
+                    </tr>
+                    
+                    <!-- Main Content -->
+                    <tr>
+                        <td style="background-color: #ffffff; padding: 40px 30px; border-left: 1px solid #e5e7eb; border-right: 1px solid #e5e7eb;">
+                            <h1 style="margin: 0 0 20px 0; color: {$colorPrimario}; font-size: 24px; font-weight: 600;">
+                                {$title}
+                            </h1>
+                            <div style="color: #374151; font-size: 16px; line-height: 1.6;">
+                                {$content}
+                            </div>
+                        </td>
+                    </tr>
+                    
+                    <!-- Button Section -->
+                    {$buttonHtml}
+                    
+                    <!-- Footer -->
+                    <tr>
+                        <td style="background-color: #f9fafb; padding: 25px 30px; border: 1px solid #e5e7eb; border-top: 0; border-radius: 0 0 12px 12px;">
+                            <table width="100%" cellpadding="0" cellspacing="0">
+                                <tr>
+                                    <td style="text-align: center; padding-bottom: 15px;">
+                                        <p style="margin: 0; color: #6b7280; font-size: 14px;">
+                                            Horario de atención: <strong>{$horarioAtencion}</strong>
+                                        </p>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; padding-bottom: 15px; color: #6b7280; font-size: 13px;">
+                                        {$contactInfo}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td style="text-align: center; border-top: 1px solid #e5e7eb; padding-top: 15px;">
+                                        <p style="margin: 0; color: #9ca3af; font-size: 12px;">
+                                            © {$currentYear} {$siteName}. Todos los derechos reservados.
+                                        </p>
+                                        <p style="margin: 10px 0 0 0; color: #9ca3af; font-size: 11px;">
+                                            Este correo fue enviado automáticamente, por favor no responda a este mensaje.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+</html>
+HTML;
+    
+    return $html;
+}
+
+/**
+ * Send styled system email
+ * @param string $to Recipient email
+ * @param string $subject Email subject
+ * @param string $title Email title (displayed in email body)
+ * @param string $content Main content
+ * @param string $buttonText Optional button text
+ * @param string $buttonUrl Optional button URL
+ * @return bool|string True on success, error message on failure
+ */
+function sendStyledEmail($to, $subject, $title, $content, $buttonText = '', $buttonUrl = '') {
+    $htmlBody = generateStyledEmail($title, $content, $buttonText, $buttonUrl);
+    return sendSystemEmail($to, $subject, $htmlBody, true);
+}

@@ -159,23 +159,29 @@ class InversionistasController extends Controller {
                             'inversionista_id' => $inversionistaId
                         ]);
                         
-                        // Send email with credentials
+                        // Send styled email with credentials
                         $siteName = getSiteName();
                         $loginUrl = BASE_URL . '/auth/login';
                         
-                        $emailBody = "Hola {$data['nombre']},\n\n";
-                        $emailBody .= "Se ha creado una cuenta de usuario para ti en {$siteName}.\n\n";
-                        $emailBody .= "Tus credenciales de acceso son:\n";
-                        $emailBody .= "Correo: {$data['email']}\n";
-                        $emailBody .= "Contraseña temporal: {$tempPassword}\n\n";
-                        $emailBody .= "Por seguridad, deberás cambiar tu contraseña en el primer inicio de sesión.\n\n";
-                        $emailBody .= "Puedes acceder al sistema aquí: {$loginUrl}\n\n";
-                        $emailBody .= "Saludos,\n{$siteName}";
+                        $emailContent = "<p style='font-size: 16px;'>Hola <strong>{$data['nombre']}</strong>,</p>";
+                        $emailContent .= "<p>¡Te damos la bienvenida a <strong>{$siteName}</strong>!</p>";
+                        $emailContent .= "<p>Se ha creado una cuenta de inversionista para ti. A continuación encontrarás tus credenciales de acceso:</p>";
+                        $emailContent .= "<div style='background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;'>";
+                        $emailContent .= "<p style='margin: 5px 0;'><strong>📧 Correo:</strong> {$data['email']}</p>";
+                        $emailContent .= "<p style='margin: 5px 0;'><strong>🔑 Contraseña temporal:</strong> <code style='background-color: #e5e7eb; padding: 2px 8px; border-radius: 4px;'>{$tempPassword}</code></p>";
+                        $emailContent .= "</div>";
+                        $emailContent .= "<p style='background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 12px; margin: 20px 0; border-radius: 4px;'>";
+                        $emailContent .= "<strong>⚠️ Importante:</strong> Por seguridad, deberás cambiar tu contraseña en el primer inicio de sesión.";
+                        $emailContent .= "</p>";
+                        $emailContent .= "<p>Haz clic en el botón de abajo para acceder al sistema:</p>";
                         
-                        $emailResult = sendSystemEmail(
+                        $emailResult = sendStyledEmail(
                             $data['email'],
-                            "Credenciales de Acceso - {$siteName}",
-                            $emailBody
+                            "Bienvenido a {$siteName} - Credenciales de Acceso",
+                            "¡Bienvenido Inversionista!",
+                            $emailContent,
+                            "Iniciar Sesión",
+                            $loginUrl
                         );
                         
                         if ($emailResult !== true) {
