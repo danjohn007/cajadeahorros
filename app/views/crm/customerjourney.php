@@ -508,9 +508,19 @@ function clearSocioVincular() {
 
 // Función para revisar solicitud de actualización
 function revisarActualizacion(solicitudId, socioId) {
-    if (socioId) {
+    // Validar y sanear los IDs
+    solicitudId = parseInt(solicitudId, 10);
+    socioId = parseInt(socioId, 10);
+    
+    if (isNaN(solicitudId) || solicitudId <= 0) {
+        console.error('ID de solicitud inválido');
+        return;
+    }
+    
+    if (socioId && socioId > 0) {
         // Si tiene socio vinculado, ir a editar el socio
-        window.location.href = '<?= BASE_URL ?>/socios/editar/' + socioId + '?from_actualizacion=' + solicitudId;
+        const url = '<?= BASE_URL ?>/socios/editar/' + encodeURIComponent(socioId) + '?from_actualizacion=' + encodeURIComponent(solicitudId);
+        window.location.href = url;
     } else {
         // Si no tiene socio, mostrar mensaje con mejor UX
         const detailsDiv = document.getElementById('request-details-' + solicitudId);
@@ -531,8 +541,12 @@ function revisarActualizacion(solicitudId, socioId) {
                 </div>
             `;
             document.body.appendChild(notification);
-            // Auto-remove después de 5 segundos
-            setTimeout(() => notification.remove(), 5000);
+            // Auto-remove después de 5 segundos con verificación
+            setTimeout(() => {
+                if (notification && notification.parentElement) {
+                    notification.remove();
+                }
+            }, 5000);
         }
     }
 }

@@ -20,10 +20,17 @@ PREPARE stmt FROM @sql_stmt; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 -- 2. Agregar rol 'cliente' si no existe (para usuarios del portal)
 -- Ya se agregó en la modificación anterior
 
--- 3. Actualizar comentarios en configuraciones
-UPDATE configuraciones 
-SET descripcion = 'Rol de usuario: administrador (todos los permisos), operativo (operaciones diarias), consulta (solo lectura), programador (administrador + módulos especiales), cliente (portal del cliente)'
-WHERE clave = 'roles_sistema';
+-- 3. Insertar o actualizar configuración de roles
+INSERT INTO configuraciones (clave, valor, tipo, descripcion)
+VALUES (
+    'roles_sistema',
+    'administrador,operativo,consulta,programador,cliente',
+    'text',
+    'Rol de usuario: administrador (todos los permisos), operativo (operaciones diarias), consulta (solo lectura), programador (administrador + módulos especiales), cliente (portal del cliente)'
+)
+ON DUPLICATE KEY UPDATE
+    descripcion = 'Rol de usuario: administrador (todos los permisos), operativo (operaciones diarias), consulta (solo lectura), programador (administrador + módulos especiales), cliente (portal del cliente)',
+    valor = 'administrador,operativo,consulta,programador,cliente';
 
 -- 4. Insertar configuración si no existe
 INSERT IGNORE INTO configuraciones (clave, valor, tipo, descripcion)

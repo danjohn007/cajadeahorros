@@ -68,7 +68,8 @@ $direccionOficina = getConfig('direccion_oficina', '');
             <?php if (!empty($cuenta['asesor_nombre'])): ?>
             <p class="text-sm"><strong>Asesor:</strong> <?= htmlspecialchars($cuenta['asesor_nombre']) ?></p>
             <?php endif; ?>
-            <p class="text-sm"><strong>Saldo Actual:</strong> <span class="text-lg font-bold">$<?= number_format($cuenta['saldo'], 2) ?></span></p>
+            <p class="text-sm"><strong>Saldo Actual:</strong></p>
+            <p class="text-lg font-bold">$<?= number_format($cuenta['saldo'], 2) ?></p>
         </div>
     </div>
     
