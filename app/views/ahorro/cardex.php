@@ -165,21 +165,17 @@ $direccionOficina = getConfig('direccion_oficina', '');
     }
     
     /* Ocultar header excepto el del cardex */
-    header {
+    body > header,
+    nav header {
         display: none !important;
     }
     
-    #cardex-print header {
-        display: block !important;
-    }
-    
-    /* Ocultar botones excepto los del cardex */
-    button {
+    /* Ocultar botones de navegación, no los del cardex */
+    body > button,
+    nav button,
+    aside button,
+    .no-print button {
         display: none !important;
-    }
-    
-    #cardex-print button {
-        display: inline-block !important;
     }
     
     /* Asegurar que el contenido principal ocupe toda la página */
@@ -229,8 +225,9 @@ $direccionOficina = getConfig('direccion_oficina', '');
         height: auto;
     }
     
-    /* Usar page margins en lugar de position fixed */
+    /* Configuración de página para mejor compatibilidad cross-browser */
     @page {
+        size: A4 portrait;
         margin: 2cm;
     }
 }
