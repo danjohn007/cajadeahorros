@@ -104,7 +104,7 @@ $mensajeHorario = $config['chatbot_mensaje_horario'] ?: '';
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
             <!-- WhatsApp Support -->
             <?php if ($whatsappNumero): ?>
-            <a href="https://wa.me/<?= htmlspecialchars($whatsappNumero) ?>?text=<?= urlencode($mensajeBienvenida) ?>" 
+            <a href="https://wa.me/<?= htmlspecialchars(preg_replace('/[^0-9+]/', '', $whatsappNumero)) ?>?text=<?= urlencode('Hola, necesito soporte técnico. ¿Me pueden apoyar?') ?>" 
                target="_blank"
                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition group">
                 <div class="flex items-center mb-4">
@@ -256,7 +256,7 @@ $mensajeHorario = $config['chatbot_mensaje_horario'] ?: '';
     
     <!-- WhatsApp Fixed Button -->
     <?php if ($whatsappNumero): ?>
-    <a href="https://wa.me/<?= htmlspecialchars($whatsappNumero) ?>?text=<?= urlencode($mensajeBienvenida) ?>" 
+    <a href="https://wa.me/<?= htmlspecialchars(preg_replace('/[^0-9+]/', '', $whatsappNumero)) ?>?text=<?= urlencode('Hola, ¿me pueden apoyar con mi estado de cuenta?') ?>" 
        target="_blank"
        class="whatsapp-btn flex items-center justify-center w-16 h-16 bg-green-500 rounded-full shadow-lg hover:bg-green-600 transition">
         <i class="fab fa-whatsapp text-white text-3xl"></i>

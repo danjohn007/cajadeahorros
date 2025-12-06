@@ -112,7 +112,7 @@ function imprimirMovimiento() {
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
     <!-- Form -->
     <div class="lg:col-span-2">
-        <form method="POST" action="<?= BASE_URL ?>/ahorro/movimiento" class="bg-white rounded-xl shadow-sm">
+        <form method="POST" action="<?= BASE_URL ?>/ahorro/movimiento" enctype="multipart/form-data" class="bg-white rounded-xl shadow-sm">
             <input type="hidden" name="csrf_token" value="<?= csrf_token() ?>">
             
             <div class="p-6 border-b border-gray-200">
@@ -195,6 +195,32 @@ function imprimirMovimiento() {
                         <input type="text" name="referencia" value="<?= htmlspecialchars($data['referencia'] ?? '') ?>"
                                placeholder="Número de recibo, folio, etc."
                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                    </div>
+                    
+                    <!-- Método de Pago -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">Método de Pago *</label>
+                        <select name="metodo_pago" id="metodo_pago" required
+                                class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                            <option value="">Seleccionar método...</option>
+                            <option value="efectivo" <?= ($data['metodo_pago'] ?? '') === 'efectivo' ? 'selected' : '' ?>>Efectivo</option>
+                            <option value="transferencia" <?= ($data['metodo_pago'] ?? '') === 'transferencia' ? 'selected' : '' ?>>Transferencia Bancaria</option>
+                            <option value="cheque" <?= ($data['metodo_pago'] ?? '') === 'cheque' ? 'selected' : '' ?>>Cheque</option>
+                            <option value="tarjeta" <?= ($data['metodo_pago'] ?? '') === 'tarjeta' ? 'selected' : '' ?>>Tarjeta de Débito/Crédito</option>
+                            <option value="nomina" <?= ($data['metodo_pago'] ?? '') === 'nomina' ? 'selected' : '' ?>>Descuento de Nómina</option>
+                            <option value="otro" <?= ($data['metodo_pago'] ?? '') === 'otro' ? 'selected' : '' ?>>Otro</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Adjuntar Comprobante -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-1">
+                            Adjuntar Comprobante
+                            <span class="text-gray-500 text-xs">(Opcional)</span>
+                        </label>
+                        <input type="file" name="comprobante" id="comprobante" accept="image/*,application/pdf"
+                               class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-green-500">
+                        <p class="text-xs text-gray-500 mt-1">Formatos permitidos: JPG, PNG, PDF. Tamaño máximo: 5MB</p>
                     </div>
                 </div>
             </div>

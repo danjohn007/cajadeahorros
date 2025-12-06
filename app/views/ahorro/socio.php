@@ -11,10 +11,17 @@
             <p class="text-gray-600"><?= htmlspecialchars($socio['numero_socio']) ?> - <?= htmlspecialchars($socio['unidad_trabajo'] ?? 'Sin unidad') ?></p>
         </div>
         <?php if (in_array($_SESSION['user_role'], ['administrador', 'operativo']) && $cuenta): ?>
-        <a href="<?= BASE_URL ?>/ahorro/movimiento?socio=<?= $socio['id'] ?>" 
-           class="mt-4 md:mt-0 inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
-            <i class="fas fa-exchange-alt mr-2"></i> Nuevo Movimiento
-        </a>
+        <div class="mt-4 md:mt-0 flex gap-2">
+            <a href="<?= BASE_URL ?>/ahorro/cardex/<?= $cuenta['id'] ?>" 
+               target="_blank"
+               class="inline-flex items-center px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition">
+                <i class="fas fa-print mr-2"></i> Imprimir Cardex de Socio
+            </a>
+            <a href="<?= BASE_URL ?>/ahorro/movimiento?socio=<?= $socio['id'] ?>" 
+               class="inline-flex items-center px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition">
+                <i class="fas fa-exchange-alt mr-2"></i> Nuevo Movimiento
+            </a>
+        </div>
         <?php endif; ?>
     </div>
 </div>
