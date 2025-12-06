@@ -124,6 +124,7 @@ class AhorroController extends Controller {
             if (empty($data['socio_id'])) $errors[] = 'Debe seleccionar un socio';
             if (empty($data['tipo'])) $errors[] = 'Debe seleccionar el tipo de movimiento';
             if (empty($data['monto']) || $data['monto'] <= 0) $errors[] = 'El monto debe ser mayor a 0';
+            if (empty($data['metodo_pago'])) $errors[] = 'Debe seleccionar un método de pago';
             
             // Verificar cuenta
             $cuenta = null;
@@ -157,40 +158,76 @@ class AhorroController extends Controller {
                         $saldoNuevo = $saldoAnterior + $monto;
                     }
                     
-                    // Registrar movimiento
-                    $this->db->insert('movimientos_ahorro', [
-                        'cuenta_id' => $cuenta['id'],
-                        'tipo' => $data['tipo'],
-                        'monto' => $monto,
-                        'saldo_anterior' => $saldoAnterior,
-                        'saldo_nuevo' => $saldoNuevo,
-                        'concepto' => $data['concepto'] ?? '',
-                        'referencia' => $data['referencia'] ?? '',
-                        'origen' => 'ventanilla',
-                        'usuario_id' => $_SESSION['user_id'],
-                        'fecha' => date('Y-m-d H:i:s')
-                    ]);
+                    // Handle file upload
+                    $comprobanteArchivo = null;
+                    if (isset($_FILES['comprobante']) && $_FILES['comprobante']['error'] === UPLOAD_ERR_OK) {
+                        $allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'application/pdf'];
+                        $maxSize = 5 * 1024 * 1024; // 5MB
+                        
+                        $fileType = mime_content_type($_FILES['comprobante']['tmp_name']);
+                        $fileSize = $_FILES['comprobante']['size'];
+                        
+                        if (!in_array($fileType, $allowedTypes)) {
+                            $errors[] = 'Formato de archivo no válido. Use JPG, PNG, GIF o PDF.';
+                        } elseif ($fileSize > $maxSize) {
+                            $errors[] = 'El archivo es demasiado grande. Máximo 5MB.';
+                        } else {
+                            // Ensure uploads directory exists
+                            $uploadsDir = UPLOADS_PATH . '/comprobantes';
+                            if (!is_dir($uploadsDir)) {
+                                mkdir($uploadsDir, 0755, true);
+                            }
+                            
+                            $ext = strtolower(pathinfo($_FILES['comprobante']['name'], PATHINFO_EXTENSION));
+                            $comprobanteArchivo = 'comprobante_' . time() . '_' . uniqid() . '.' . $ext;
+                            
+                            if (!move_uploaded_file($_FILES['comprobante']['tmp_name'], $uploadsDir . '/' . $comprobanteArchivo)) {
+                                $errors[] = 'Error al guardar el comprobante';
+                                $comprobanteArchivo = null;
+                            }
+                        }
+                    }
                     
-                    $movimientoId = $this->db->lastInsertId();
-                    
-                    // Actualizar saldo de cuenta
-                    $this->db->update('cuentas_ahorro', 
-                        ['saldo' => $saldoNuevo],
-                        'id = :id',
-                        ['id' => $cuenta['id']]
-                    );
-                    
-                    $this->db->commit();
-                    
-                    $this->logAction('MOVIMIENTO_AHORRO', 
-                        ucfirst($data['tipo']) . " de $" . number_format($monto, 2) . " en cuenta " . $cuenta['numero_cuenta'],
-                        'movimientos_ahorro',
-                        $movimientoId
-                    );
-                    
-                    // Store movement data for printing
-                    $movimientoRealizado = [
-                        'id' => $movimientoId,
+                    // If there were errors uploading, rollback
+                    if (!empty($errors)) {
+                        $this->db->rollBack();
+                    } else {
+                        // Registrar movimiento
+                        $this->db->insert('movimientos_ahorro', [
+                            'cuenta_id' => $cuenta['id'],
+                            'tipo' => $data['tipo'],
+                            'monto' => $monto,
+                            'saldo_anterior' => $saldoAnterior,
+                            'saldo_nuevo' => $saldoNuevo,
+                            'concepto' => $data['concepto'] ?? '',
+                            'referencia' => $data['referencia'] ?? '',
+                            'metodo_pago' => $data['metodo_pago'],
+                            'comprobante' => $comprobanteArchivo,
+                            'origen' => 'ventanilla',
+                            'usuario_id' => $_SESSION['user_id'],
+                            'fecha' => date('Y-m-d H:i:s')
+                        ]);
+                        
+                        $movimientoId = $this->db->lastInsertId();
+                        
+                        // Actualizar saldo de cuenta
+                        $this->db->update('cuentas_ahorro', 
+                            ['saldo' => $saldoNuevo],
+                            'id = :id',
+                            ['id' => $cuenta['id']]
+                        );
+                        
+                        $this->db->commit();
+                        
+                        $this->logAction('MOVIMIENTO_AHORRO', 
+                            ucfirst($data['tipo']) . " de $" . number_format($monto, 2) . " en cuenta " . $cuenta['numero_cuenta'] . " - Método: " . $data['metodo_pago'],
+                            'movimientos_ahorro',
+                            $movimientoId
+                        );
+                        
+                        // Store movement data for printing
+                        $movimientoRealizado = [
+                            'id' => $movimientoId,
                         'tipo' => $data['tipo'],
                         'monto' => $monto,
                         'saldo_anterior' => $saldoAnterior,
@@ -201,12 +238,13 @@ class AhorroController extends Controller {
                         'numero_cuenta' => $cuenta['numero_cuenta'],
                         'numero_socio' => $cuenta['numero_socio'],
                         'nombre_socio' => $cuenta['nombre'] . ' ' . $cuenta['apellido_paterno'] . ' ' . ($cuenta['apellido_materno'] ?? ''),
-                        'usuario' => $_SESSION['user_name'] ?? 'Sistema'
-                    ];
-                    
-                    $this->setFlash('success', 'Movimiento registrado exitosamente');
-                    // Don't redirect - show form with print option
-                    $data = []; // Clear form data
+                            'usuario' => $_SESSION['user_name'] ?? 'Sistema'
+                        ];
+                        
+                        $this->setFlash('success', 'Movimiento registrado exitosamente');
+                        // Don't redirect - show form with print option
+                        $data = []; // Clear form data
+                    }
                     
                 } catch (Exception $e) {
                     $this->db->rollBack();
@@ -367,5 +405,51 @@ class AhorroController extends Controller {
             'aportacionesMes' => $aportacionesMes,
             'retirosMes' => $retirosMes
         ];
+    }
+    
+    public function cardex($id) {
+        $this->requireAuth();
+        
+        // Get socio information
+        $socio = $this->db->fetch(
+            "SELECT s.*, ut.nombre as unidad_trabajo 
+             FROM socios s
+             LEFT JOIN unidades_trabajo ut ON s.unidad_trabajo_id = ut.id
+             WHERE s.id = :id",
+            ['id' => $id]
+        );
+        
+        if (!$socio) {
+            $this->setFlash('error', 'Socio no encontrado');
+            $this->redirect('ahorro');
+        }
+        
+        // Get cuenta de ahorro
+        $cuenta = $this->db->fetch(
+            "SELECT * FROM cuentas_ahorro WHERE socio_id = :socio_id ORDER BY id DESC LIMIT 1",
+            ['socio_id' => $id]
+        );
+        
+        if (!$cuenta) {
+            $this->setFlash('error', 'El socio no tiene una cuenta de ahorro');
+            $this->redirect('ahorro/socio/' . $id);
+        }
+        
+        // Get all movimientos (transactions)
+        $movimientos = $this->db->fetchAll(
+            "SELECT ma.*, u.nombre as usuario_nombre
+             FROM movimientos_ahorro ma
+             LEFT JOIN usuarios u ON ma.usuario_id = u.id
+             WHERE ma.cuenta_id = :cuenta_id
+             ORDER BY ma.fecha DESC, ma.id DESC",
+            ['cuenta_id' => $cuenta['id']]
+        );
+        
+        $this->view('ahorro/cardex', [
+            'pageTitle' => 'Cardex de Socio - ' . $socio['nombre'] . ' ' . $socio['apellido_paterno'],
+            'socio' => $socio,
+            'cuenta' => $cuenta,
+            'movimientos' => $movimientos
+        ]);
     }
 }
