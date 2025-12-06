@@ -150,11 +150,36 @@ $direccionOficina = getConfig('direccion_oficina', '');
 </div>
 
 <style>
+.no-print {
+    /* Clase para elementos que no deben imprimirse */
+}
+
 @media print {
-    /* Ocultar elementos del sistema que no deben aparecer en la impresión */
-    aside, nav, header:not(#cardex-print header), footer, 
-    .sidebar, .no-print, button:not(#cardex-print button) {
+    /* Ocultar elementos del sistema usando clases específicas */
+    .no-print,
+    aside,
+    nav,
+    footer,
+    .sidebar {
         display: none !important;
+    }
+    
+    /* Ocultar header excepto el del cardex */
+    header {
+        display: none !important;
+    }
+    
+    #cardex-print header {
+        display: block !important;
+    }
+    
+    /* Ocultar botones excepto los del cardex */
+    button {
+        display: none !important;
+    }
+    
+    #cardex-print button {
+        display: inline-block !important;
     }
     
     /* Asegurar que el contenido principal ocupe toda la página */
