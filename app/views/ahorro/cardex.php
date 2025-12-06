@@ -153,7 +153,7 @@ $direccionOficina = getConfig('direccion_oficina', '');
 @media print {
     /* Ocultar elementos del sistema que no deben aparecer en la impresión */
     aside, nav, header:not(#cardex-print header), footer, 
-    .sidebar, .no-print, [x-data], button:not(#cardex-print button) {
+    .sidebar, .no-print, button:not(#cardex-print button) {
         display: none !important;
     }
     
@@ -192,12 +192,9 @@ $direccionOficina = getConfig('direccion_oficina', '');
     
     .print-footer {
         display: block !important;
-        position: fixed;
-        bottom: 0;
-        left: 0;
-        right: 0;
         text-align: center;
-        padding: 10px;
+        padding: 10px 0;
+        margin-top: 20px;
         border-top: 1px solid #ccc;
     }
     
@@ -205,6 +202,11 @@ $direccionOficina = getConfig('direccion_oficina', '');
     img {
         max-width: 100%;
         height: auto;
+    }
+    
+    /* Usar page margins en lugar de position fixed */
+    @page {
+        margin: 2cm;
     }
 }
 

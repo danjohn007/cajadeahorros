@@ -142,10 +142,10 @@
                         <br><span class="text-xs text-gray-500"><?= htmlspecialchars($solicitud['usuario_email']) ?></span>
                     </td>
                     <td class="px-4 py-3 text-sm">
-                        <button onclick="toggleCambios(<?= $solicitud['id'] ?>)" class="text-blue-600 hover:text-blue-800">
+                        <button data-solicitud-id="<?= (int)$solicitud['id'] ?>" class="toggle-cambios text-blue-600 hover:text-blue-800">
                             <i class="fas fa-eye mr-1"></i><?= count($camposModificados) ?> campo(s) modificado(s)
                         </button>
-                        <div id="cambios<?= $solicitud['id'] ?>" class="hidden mt-2 text-xs bg-gray-50 p-2 rounded">
+                        <div id="cambios<?= (int)$solicitud['id'] ?>" class="hidden mt-2 text-xs bg-gray-50 p-2 rounded">
                             <?php foreach ($cambios as $campo => $valor): ?>
                                 <div class="mb-1">
                                     <strong><?= htmlspecialchars(ucfirst(str_replace('_', ' ', $campo))) ?>:</strong>
@@ -389,9 +389,18 @@
 </div>
 
 <script>
-function toggleCambios(id) {
-    document.getElementById('cambios' + id).classList.toggle('hidden');
-}
+// Event delegation for toggle cambios buttons
+document.addEventListener('DOMContentLoaded', function() {
+    document.addEventListener('click', function(e) {
+        if (e.target.closest('.toggle-cambios')) {
+            const button = e.target.closest('.toggle-cambios');
+            const id = button.getAttribute('data-solicitud-id');
+            if (id) {
+                document.getElementById('cambios' + id).classList.toggle('hidden');
+            }
+        }
+    });
+});
 
 function mostrarModalAprobacion(id, nombre, email, celular) {
     document.getElementById('aprobar_solicitud_id').value = id;
