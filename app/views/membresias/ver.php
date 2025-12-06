@@ -26,51 +26,51 @@
     
     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Número de Membresía</label>
-            <p class="text-gray-900 font-semibold"><?= htmlspecialchars($membresia['numero_membresia']) ?></p>
+            <label class="block text-sm font-medium text-gray-700 mb-1">ID de Membresía</label>
+            <p class="text-gray-900 font-semibold"><?= htmlspecialchars($membresia['id'] ?? 'N/A') ?></p>
         </div>
         
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Tipo de Membresía</label>
-            <p class="text-gray-900"><?= htmlspecialchars($membresia['tipo_nombre']) ?></p>
+            <p class="text-gray-900"><?= htmlspecialchars($membresia['tipo_membresia'] ?? 'N/A') ?></p>
         </div>
         
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Socio</label>
             <p class="text-gray-900">
-                <?= htmlspecialchars($membresia['socio_nombre'] . ' ' . $membresia['socio_apellido_paterno'] . ' ' . ($membresia['socio_apellido_materno'] ?? '')) ?>
+                <?= htmlspecialchars($membresia['nombre_socio'] ?? 'N/A') ?>
             </p>
-            <p class="text-sm text-gray-500"><?= htmlspecialchars($membresia['numero_socio']) ?></p>
+            <p class="text-sm text-gray-500"><?= htmlspecialchars($membresia['numero_socio'] ?? 'N/A') ?></p>
         </div>
         
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
             <span class="px-3 py-1 rounded-full text-sm font-medium <?= 
-                $membresia['estado'] === 'activa' ? 'bg-green-100 text-green-800' : 
-                ($membresia['estado'] === 'vencida' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800') 
+                ($membresia['estatus'] ?? '') === 'activa' ? 'bg-green-100 text-green-800' : 
+                (($membresia['estatus'] ?? '') === 'vencida' ? 'bg-red-100 text-red-800' : 'bg-gray-100 text-gray-800') 
             ?>">
-                <?= htmlspecialchars(ucfirst($membresia['estado'])) ?>
+                <?= htmlspecialchars(ucfirst($membresia['estatus'] ?? 'N/A')) ?>
             </span>
         </div>
         
         <div>
             <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Inicio</label>
-            <p class="text-gray-900"><?= date('d/m/Y', strtotime($membresia['fecha_inicio'])) ?></p>
+            <p class="text-gray-900"><?= !empty($membresia['fecha_inicio']) ? date('d/m/Y', strtotime($membresia['fecha_inicio'])) : 'N/A' ?></p>
         </div>
         
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Vencimiento</label>
-            <p class="text-gray-900"><?= date('d/m/Y', strtotime($membresia['fecha_vencimiento'])) ?></p>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Fecha de Fin</label>
+            <p class="text-gray-900"><?= !empty($membresia['fecha_fin']) ? date('d/m/Y', strtotime($membresia['fecha_fin'])) : 'N/A' ?></p>
         </div>
         
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Monto</label>
-            <p class="text-gray-900 font-semibold text-lg">$<?= number_format($membresia['monto'], 2) ?></p>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Costo</label>
+            <p class="text-gray-900 font-semibold text-lg">$<?= number_format($membresia['costo'] ?? 0, 2) ?></p>
         </div>
         
         <div>
-            <label class="block text-sm font-medium text-gray-700 mb-1">Periodicidad</label>
-            <p class="text-gray-900"><?= htmlspecialchars(ucfirst($membresia['periodicidad'])) ?></p>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Descripción del Tipo</label>
+            <p class="text-gray-900"><?= htmlspecialchars($membresia['tipo_descripcion'] ?? 'N/A') ?></p>
         </div>
     </div>
     
