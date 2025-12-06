@@ -4,6 +4,10 @@
  * Sistema de Gestión Integral de Caja de Ahorros
  */
 $siteName = getSiteName();
+$logoUrl = getLogo();
+$emailContacto = getConfig('email_contacto', '');
+$telefonoContacto = getConfig('telefono_contacto', '');
+$direccionOficina = getConfig('direccion_oficina', '');
 $meses = [
     1 => 'Enero', 2 => 'Febrero', 3 => 'Marzo', 4 => 'Abril',
     5 => 'Mayo', 6 => 'Junio', 7 => 'Julio', 8 => 'Agosto',
@@ -59,8 +63,21 @@ $meses = [
 <div class="bg-white rounded-xl shadow-sm p-6" id="estado-cuenta-print">
     <!-- Header para impresión -->
     <div class="text-center border-b-2 border-gray-800 pb-4 mb-4 print-header">
+        <?php if ($logoUrl): ?>
+            <img src="<?= htmlspecialchars($logoUrl) ?>" alt="<?= htmlspecialchars($siteName) ?>" class="h-16 mx-auto mb-2">
+        <?php endif; ?>
         <h1 class="text-2xl font-bold"><?= htmlspecialchars($siteName) ?></h1>
-        <h2 class="text-lg">ESTADO DE CUENTA</h2>
+        <?php if ($direccionOficina): ?>
+            <p class="text-xs text-gray-600"><?= htmlspecialchars($direccionOficina) ?></p>
+        <?php endif; ?>
+        <?php if ($telefonoContacto || $emailContacto): ?>
+            <p class="text-xs text-gray-600">
+                <?php if ($telefonoContacto): ?>Tel: <?= htmlspecialchars($telefonoContacto) ?><?php endif; ?>
+                <?php if ($telefonoContacto && $emailContacto): ?> | <?php endif; ?>
+                <?php if ($emailContacto): ?>Email: <?= htmlspecialchars($emailContacto) ?><?php endif; ?>
+            </p>
+        <?php endif; ?>
+        <h2 class="text-lg font-semibold mt-2">ESTADO DE CUENTA</h2>
         <p class="text-sm text-gray-600"><?= $meses[$mes] ?> <?= $anio ?></p>
         <p class="text-sm text-gray-600">Fecha de impresión: <?= date('d/m/Y H:i:s') ?></p>
     </div>
@@ -90,6 +107,9 @@ $meses = [
             <p class="text-sm"><strong>Puesto:</strong> <?= htmlspecialchars($socio['puesto']) ?></p>
             <?php endif; ?>
             <p class="text-sm"><strong>Estatus:</strong> <?= ucfirst($socio['estatus']) ?></p>
+            <?php if (!empty($socio['asesor_nombre'])): ?>
+            <p class="text-sm"><strong>Asesor:</strong> <?= htmlspecialchars($socio['asesor_nombre']) ?></p>
+            <?php endif; ?>
         </div>
     </div>
     
@@ -262,23 +282,64 @@ $meses = [
 
 <style>
 @media print {
-    .no-print {
+    /* Ocultar todos los elementos excepto el área de impresión */
+    body * {
+        visibility: hidden;
+    }
+    
+    #estado-cuenta-print, #estado-cuenta-print * {
+        visibility: visible;
+    }
+    
+    #estado-cuenta-print {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    .no-print, .no-print * {
+        visibility: hidden !important;
         display: none !important;
     }
     
     body {
         margin: 0;
         padding: 0;
-    }
-    
-    #estado-cuenta-print {
-        box-shadow: none !important;
-        border-radius: 0 !important;
-        padding: 0 !important;
+        font-size: 11px;
     }
     
     table {
-        font-size: 10px !important;
+        font-size: 9px !important;
+        page-break-inside: auto;
+    }
+    
+    tr {
+        page-break-inside: avoid;
+        page-break-after: auto;
+    }
+    
+    thead {
+        display: table-header-group;
+    }
+    
+    img {
+        max-width: 100px !important;
+        height: auto !important;
+    }
+    
+    @page {
+        size: A4 portrait;
+        margin: 1.5cm;
+    }
+    
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }
 </style>

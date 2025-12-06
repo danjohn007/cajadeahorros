@@ -68,7 +68,7 @@ $direccionOficina = getConfig('direccion_oficina', '');
             <?php if (!empty($cuenta['asesor_nombre'])): ?>
             <p class="text-sm"><strong>Asesor:</strong> <?= htmlspecialchars($cuenta['asesor_nombre']) ?></p>
             <?php endif; ?>
-            <p class="text-sm text-lg"><strong>Saldo Actual: $<?= number_format($cuenta['saldo'], 2) ?></strong></p>
+            <p class="text-sm"><strong>Saldo Actual:</strong> <span class="text-lg font-bold">$<?= number_format($cuenta['saldo'], 2) ?></span></p>
         </div>
     </div>
     
@@ -155,26 +155,29 @@ $direccionOficina = getConfig('direccion_oficina', '');
 }
 
 @media print {
-    /* Ocultar elementos del sistema usando clases específicas */
-    .no-print,
-    aside,
-    nav,
-    footer,
-    .sidebar {
-        display: none !important;
+    /* Ocultar todos los elementos del sistema excepto el área de impresión */
+    body * {
+        visibility: hidden;
     }
     
-    /* Ocultar header excepto el del cardex */
-    body > header,
-    nav header {
-        display: none !important;
+    #cardex-print, #cardex-print * {
+        visibility: visible;
     }
     
-    /* Ocultar botones de navegación, no los del cardex */
-    body > button,
-    nav button,
-    aside button,
-    .no-print button {
+    #cardex-print {
+        position: absolute;
+        left: 0;
+        top: 0;
+        width: 100%;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+    
+    /* Ocultar elementos con clase no-print */
+    .no-print, .no-print * {
+        visibility: hidden !important;
         display: none !important;
     }
     
@@ -183,16 +186,6 @@ $direccionOficina = getConfig('direccion_oficina', '');
         margin: 0;
         padding: 0;
         font-size: 11px;
-    }
-    
-    #cardex-print {
-        position: static;
-        width: 100%;
-        max-width: 100%;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-        padding: 20px !important;
-        margin: 0 !important;
     }
     
     /* Ajustar tamaño de fuente para impresión */
@@ -206,9 +199,14 @@ $direccionOficina = getConfig('direccion_oficina', '');
         page-break-after: auto;
     }
     
+    thead {
+        display: table-header-group;
+    }
+    
     .print-header {
         display: block !important;
         page-break-after: avoid;
+        visibility: visible !important;
     }
     
     .print-footer {
@@ -217,18 +215,27 @@ $direccionOficina = getConfig('direccion_oficina', '');
         padding: 10px 0;
         margin-top: 20px;
         border-top: 1px solid #ccc;
+        visibility: visible !important;
     }
     
     /* Asegurar que el logo se imprima correctamente */
     img {
-        max-width: 100%;
-        height: auto;
+        max-width: 100px !important;
+        height: auto !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
     
     /* Configuración de página para mejor compatibilidad cross-browser */
     @page {
         size: A4 portrait;
-        margin: 2cm;
+        margin: 1.5cm;
+    }
+    
+    /* Asegurar que los colores se impriman */
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }
 

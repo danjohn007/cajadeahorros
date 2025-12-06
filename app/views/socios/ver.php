@@ -73,6 +73,12 @@
                     ?>
                     <p><span class="px-2 py-1 text-xs font-medium rounded-full <?= $color ?>"><?= ucfirst($socio['estatus']) ?></span></p>
                 </div>
+                <?php if (!empty($socio['asesor_nombre'])): ?>
+                <div>
+                    <label class="text-sm text-gray-500">Asesor</label>
+                    <p class="font-medium"><?= htmlspecialchars($socio['asesor_nombre']) ?></p>
+                </div>
+                <?php endif; ?>
             </div>
         </div>
         

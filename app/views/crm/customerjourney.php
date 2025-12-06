@@ -155,10 +155,10 @@
                         </div>
                     </td>
                     <td class="px-4 py-3 text-center">
-                        <a href="<?= BASE_URL ?>/cliente/actualizaciones/<?= $solicitud['id'] ?>" 
-                           class="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700">
+                        <button onclick="revisarActualizacion(<?= (int)$solicitud['id'] ?>, <?= (int)$solicitud['socio_id'] ?>)" 
+                                class="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700">
                             <i class="fas fa-edit mr-1"></i>Revisar
-                        </a>
+                        </button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -504,5 +504,19 @@ function clearSocioVincular() {
     document.getElementById('vincular_socio_id').value = '';
     document.getElementById('socio_selected_vincular').classList.add('hidden');
     document.getElementById('socio_search_vincular').focus();
+}
+
+// Función para revisar solicitud de actualización
+function revisarActualizacion(solicitudId, socioId) {
+    if (socioId) {
+        // Si tiene socio vinculado, ir a editar el socio
+        window.location.href = '<?= BASE_URL ?>/socios/editar/' + socioId + '?from_actualizacion=' + solicitudId;
+    } else {
+        // Si no tiene socio, mostrar modal con los cambios solicitados
+        const detailsDiv = document.getElementById('request-details-' + solicitudId);
+        if (detailsDiv) {
+            alert('Este usuario no tiene un socio vinculado. Por favor, vincúlelo primero o apruebe la solicitud de vinculación.');
+        }
+    }
 }
 </script>
