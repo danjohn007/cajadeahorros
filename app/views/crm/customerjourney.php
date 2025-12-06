@@ -395,8 +395,12 @@ document.addEventListener('DOMContentLoaded', function() {
         if (e.target.closest('.toggle-cambios')) {
             const button = e.target.closest('.toggle-cambios');
             const id = button.getAttribute('data-request-id');
-            if (id) {
-                document.getElementById('request-details-' + id).classList.toggle('hidden');
+            // Validate that ID is a positive integer
+            if (id && /^\d+$/.test(id) && parseInt(id, 10) > 0) {
+                const element = document.getElementById('request-details-' + id);
+                if (element) {
+                    element.classList.toggle('hidden');
+                }
             }
         }
     });
