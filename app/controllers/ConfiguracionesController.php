@@ -519,6 +519,10 @@ class ConfiguracionesController extends Controller {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $this->validateCsrf();
             
+            // Get current configuration for comparison
+            $currentConfig = $this->getConfiguraciones(['modulos_deshabilitados']);
+            $currentModulos = json_decode($currentConfig['modulos_deshabilitados'] ?: '[]', true) ?: [];
+            
             // Get disabled modules from checkboxes
             $modulosDeshabilitados = [];
             $modulosPosibles = ['financiero', 'membresias', 'inversionistas', 'crm', 'kyc', 'escrow'];
@@ -529,13 +533,26 @@ class ConfiguracionesController extends Controller {
                 }
             }
             
+            // Calculate changes for detailed logging
+            $enabled = array_diff($currentModulos, $modulosDeshabilitados);
+            $disabled = array_diff($modulosDeshabilitados, $currentModulos);
+            
             // Save as JSON
             $this->guardarConfiguracion('modulos_deshabilitados', json_encode($modulosDeshabilitados));
             
             // Clear config cache so changes take effect immediately
             clearConfigCache();
             
-            $this->logAction('ACTUALIZAR_MODULOS', 'Se actualizó configuración de módulos especiales', 'configuraciones', null);
+            // Detailed logging of changes
+            $logMessage = 'Configuración de módulos especiales actualizada.';
+            if (!empty($disabled)) {
+                $logMessage .= ' Deshabilitados: ' . implode(', ', $disabled) . '.';
+            }
+            if (!empty($enabled)) {
+                $logMessage .= ' Habilitados: ' . implode(', ', $enabled) . '.';
+            }
+            
+            $this->logAction('ACTUALIZAR_MODULOS', $logMessage, 'configuraciones', null);
             $success = 'Configuración de módulos guardada exitosamente';
         }
         

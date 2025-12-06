@@ -255,6 +255,10 @@ function sendSystemEmail($to, $subject, $body, $isHtml = false) {
             $secure = 'ssl://';
         }
         
+        // SSL context configuration
+        // Note: Certificate verification is disabled for compatibility with self-signed certificates
+        // commonly used in internal/development SMTP servers. For production environments with
+        // properly signed certificates, consider enabling verification.
         $context = stream_context_create([
             'ssl' => [
                 'verify_peer' => false,
@@ -263,7 +267,7 @@ function sendSystemEmail($to, $subject, $body, $isHtml = false) {
             ]
         ]);
         
-        $socket = @stream_socket_client(
+        $socket = stream_socket_client(
             $secure . $smtpHost . ':' . $smtpPort,
             $errno,
             $errstr,
@@ -273,7 +277,8 @@ function sendSystemEmail($to, $subject, $body, $isHtml = false) {
         );
         
         if (!$socket) {
-            return "No se pudo conectar al servidor SMTP: {$errstr}";
+            $errorMsg = $errstr ?: 'Connection failed';
+            return "No se pudo conectar al servidor SMTP: {$errorMsg} (errno: {$errno})";
         }
         
         stream_set_timeout($socket, 30);
@@ -294,9 +299,16 @@ function sendSystemEmail($to, $subject, $body, $isHtml = false) {
             fputs($socket, "STARTTLS\r\n");
             $response = _getSmtpResponse($socket);
             if ($response && substr($response, 0, 3) == '220') {
-                @stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
-                fputs($socket, "EHLO localhost\r\n");
-                $ehloResponse = _getSmtpResponse($socket);
+                $cryptoEnabled = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLSv1_2_CLIENT);
+                if ($cryptoEnabled === false) {
+                    // TLS 1.2 failed, try with any TLS method
+                    $cryptoEnabled = stream_socket_enable_crypto($socket, true, STREAM_CRYPTO_METHOD_TLS_CLIENT);
+                }
+                if ($cryptoEnabled) {
+                    fputs($socket, "EHLO localhost\r\n");
+                    $ehloResponse = _getSmtpResponse($socket);
+                }
+                // If TLS fails, continue without it - some servers allow this
             }
         }
         
@@ -379,4 +391,28 @@ function _getSmtpResponse($socket) {
         }
     }
     return $response;
+}
+
+/**
+ * Check if a module is enabled based on system configuration
+ * @param string $modulo The module identifier
+ * @param array $modulosDeshabilitados Array of disabled module identifiers
+ * @param string $userRole Current user's role
+ * @return bool True if module is enabled, false otherwise
+ */
+function isModuloEnabled($modulo, $modulosDeshabilitados, $userRole) {
+    // Programador always sees all modules
+    if ($userRole === 'programador') {
+        return true;
+    }
+    return !in_array($modulo, $modulosDeshabilitados);
+}
+
+/**
+ * Format phone number for tel: links (removes non-numeric characters except +)
+ * @param string $phone Phone number
+ * @return string Formatted phone number
+ */
+function formatPhoneForTel($phone) {
+    return preg_replace('/[^0-9+]/', '', $phone);
 }

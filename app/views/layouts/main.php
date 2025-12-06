@@ -19,15 +19,6 @@ if (isset($_SESSION['user_id'])) {
     $userInfo = $db->fetch("SELECT avatar FROM usuarios WHERE id = :id", ['id' => $_SESSION['user_id']]);
     $userAvatar = $userInfo['avatar'] ?? '';
 }
-
-// Helper function to check if module is enabled
-function isModuloEnabled($modulo, $modulosDeshabilitados, $userRole) {
-    // Programador always sees all modules
-    if ($userRole === 'programador') {
-        return true;
-    }
-    return !in_array($modulo, $modulosDeshabilitados);
-}
 ?>
 <!DOCTYPE html>
 <html lang="es">

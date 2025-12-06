@@ -133,7 +133,7 @@ $mensajeHorario = $config['chatbot_mensaje_horario'] ?: '';
             
             <!-- Phone Support -->
             <?php if ($telefonoContacto): ?>
-            <a href="tel:<?= preg_replace('/[^0-9+]/', '', $telefonoContacto) ?>" 
+            <a href="tel:<?= formatPhoneForTel($telefonoContacto) ?>" 
                class="bg-white rounded-xl shadow-lg p-6 hover:shadow-xl transition group">
                 <div class="flex items-center mb-4">
                     <div class="p-3 rounded-full bg-purple-100 text-purple-600 group-hover:bg-purple-200 transition">
