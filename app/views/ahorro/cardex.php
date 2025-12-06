@@ -155,29 +155,14 @@ $direccionOficina = getConfig('direccion_oficina', '');
 }
 
 @media print {
-    /* Ocultar todos los elementos del sistema excepto el área de impresión */
-    body * {
-        visibility: hidden;
-    }
-    
-    #cardex-print, #cardex-print * {
-        visibility: visible;
-    }
-    
-    #cardex-print {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    
-    /* Ocultar elementos con clase no-print */
-    .no-print, .no-print * {
-        visibility: hidden !important;
+    /* Ocultar elementos específicos del sistema */
+    .no-print,
+    nav,
+    aside,
+    header:not(.print-header),
+    footer:not(.print-footer),
+    .sidebar,
+    button:not([data-print-keep]) {
         display: none !important;
     }
     
@@ -186,6 +171,14 @@ $direccionOficina = getConfig('direccion_oficina', '');
         margin: 0;
         padding: 0;
         font-size: 11px;
+    }
+    
+    #cardex-print {
+        width: 100%;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 20px !important;
+        margin: 0 !important;
     }
     
     /* Ajustar tamaño de fuente para impresión */
@@ -206,7 +199,6 @@ $direccionOficina = getConfig('direccion_oficina', '');
     .print-header {
         display: block !important;
         page-break-after: avoid;
-        visibility: visible !important;
     }
     
     .print-footer {
@@ -215,7 +207,6 @@ $direccionOficina = getConfig('direccion_oficina', '');
         padding: 10px 0;
         margin-top: 20px;
         border-top: 1px solid #ccc;
-        visibility: visible !important;
     }
     
     /* Asegurar que el logo se imprima correctamente */

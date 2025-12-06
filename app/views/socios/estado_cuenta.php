@@ -288,28 +288,14 @@ $meses = [
 
 <style>
 @media print {
-    /* Ocultar todos los elementos excepto el área de impresión */
-    body * {
-        visibility: hidden;
-    }
-    
-    #estado-cuenta-print, #estado-cuenta-print * {
-        visibility: visible;
-    }
-    
-    #estado-cuenta-print {
-        position: absolute;
-        left: 0;
-        top: 0;
-        width: 100%;
-        box-shadow: none !important;
-        border-radius: 0 !important;
-        padding: 0 !important;
-        margin: 0 !important;
-    }
-    
-    .no-print, .no-print * {
-        visibility: hidden !important;
+    /* Ocultar elementos específicos del sistema */
+    .no-print,
+    nav,
+    aside,
+    header:not(.print-header),
+    footer:not(.print-footer),
+    .sidebar,
+    button:not([data-print-keep]) {
         display: none !important;
     }
     
@@ -317,6 +303,14 @@ $meses = [
         margin: 0;
         padding: 0;
         font-size: 11px;
+    }
+    
+    #estado-cuenta-print {
+        width: 100%;
+        box-shadow: none !important;
+        border-radius: 0 !important;
+        padding: 20px !important;
+        margin: 0 !important;
     }
     
     table {

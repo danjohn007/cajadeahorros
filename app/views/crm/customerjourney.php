@@ -512,10 +512,27 @@ function revisarActualizacion(solicitudId, socioId) {
         // Si tiene socio vinculado, ir a editar el socio
         window.location.href = '<?= BASE_URL ?>/socios/editar/' + socioId + '?from_actualizacion=' + solicitudId;
     } else {
-        // Si no tiene socio, mostrar modal con los cambios solicitados
+        // Si no tiene socio, mostrar mensaje con mejor UX
         const detailsDiv = document.getElementById('request-details-' + solicitudId);
         if (detailsDiv) {
-            alert('Este usuario no tiene un socio vinculado. Por favor, vincúlelo primero o apruebe la solicitud de vinculación.');
+            // Crear notificación temporal
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-800 px-6 py-4 rounded-lg shadow-lg z-50 max-w-md';
+            notification.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-triangle mr-3 mt-1"></i>
+                    <div>
+                        <p class="font-medium">Usuario sin vincular</p>
+                        <p class="text-sm mt-1">Este usuario no tiene un socio vinculado. Por favor, vincúlelo primero o apruebe la solicitud de vinculación.</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-yellow-600 hover:text-yellow-800">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            // Auto-remove después de 5 segundos
+            setTimeout(() => notification.remove(), 5000);
         }
     }
 }
