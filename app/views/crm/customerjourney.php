@@ -508,6 +508,10 @@ function clearSocioVincular() {
 
 // Función para revisar solicitud de actualización
 function revisarActualizacion(solicitudId, socioId) {
+    // Constante para delay de notificación
+    const AUTO_REMOVE_DELAY = 5000;
+    const baseUrl = <?= json_encode(BASE_URL) ?>;
+    
     // Validar y sanear los IDs
     solicitudId = parseInt(solicitudId, 10);
     socioId = parseInt(socioId, 10);
@@ -519,7 +523,7 @@ function revisarActualizacion(solicitudId, socioId) {
     
     if (socioId && socioId > 0) {
         // Si tiene socio vinculado, ir a editar el socio
-        const url = '<?= BASE_URL ?>/socios/editar/' + encodeURIComponent(socioId) + '?from_actualizacion=' + encodeURIComponent(solicitudId);
+        const url = baseUrl + '/socios/editar/' + encodeURIComponent(socioId) + '?from_actualizacion=' + encodeURIComponent(solicitudId);
         window.location.href = url;
     } else {
         // Si no tiene socio, mostrar mensaje con mejor UX
@@ -541,12 +545,12 @@ function revisarActualizacion(solicitudId, socioId) {
                 </div>
             `;
             document.body.appendChild(notification);
-            // Auto-remove después de 5 segundos con verificación
+            // Auto-remove después del delay configurado con verificación
             setTimeout(() => {
                 if (notification && notification.parentElement) {
                     notification.remove();
                 }
-            }, 5000);
+            }, AUTO_REMOVE_DELAY);
         }
     }
 }
