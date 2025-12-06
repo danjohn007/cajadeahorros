@@ -143,7 +143,8 @@ class SociosController extends Controller {
                         'beneficiario_nombre' => $data['beneficiario_nombre'] ?? '',
                         'beneficiario_parentesco' => $data['beneficiario_parentesco'] ?? '',
                         'beneficiario_telefono' => $data['beneficiario_telefono'] ?? '',
-                        'observaciones' => $data['observaciones'] ?? ''
+                        'observaciones' => $data['observaciones'] ?? '',
+                        'created_by' => $_SESSION['user_id'] ?? null
                     ]);
                     
                     // Handle file upload for identificacion_oficial
@@ -390,9 +391,10 @@ class SociosController extends Controller {
         $id = $this->params['id'] ?? 0;
         
         $socio = $this->db->fetch(
-            "SELECT s.*, ut.nombre as unidad_trabajo
+            "SELECT s.*, ut.nombre as unidad_trabajo, u.nombre as asesor_nombre
              FROM socios s
              LEFT JOIN unidades_trabajo ut ON s.unidad_trabajo_id = ut.id
+             LEFT JOIN usuarios u ON s.created_by = u.id
              WHERE s.id = :id",
             ['id' => $id]
         );
@@ -541,9 +543,10 @@ class SociosController extends Controller {
         if ($anio < 2000 || $anio > (int)date('Y') + 1) $anio = (int)date('Y');
         
         $socio = $this->db->fetch(
-            "SELECT s.*, ut.nombre as unidad_trabajo
+            "SELECT s.*, ut.nombre as unidad_trabajo, u.nombre as asesor_nombre
              FROM socios s
              LEFT JOIN unidades_trabajo ut ON s.unidad_trabajo_id = ut.id
+             LEFT JOIN usuarios u ON s.created_by = u.id
              WHERE s.id = :id",
             ['id' => $id]
         );

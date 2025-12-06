@@ -155,10 +155,10 @@
                         </div>
                     </td>
                     <td class="px-4 py-3 text-center">
-                        <a href="<?= BASE_URL ?>/cliente/actualizaciones/<?= $solicitud['id'] ?>" 
-                           class="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700">
+                        <button onclick="revisarActualizacion(<?= (int)$solicitud['id'] ?>, <?= (int)$solicitud['socio_id'] ?>)" 
+                                class="px-3 py-1 bg-purple-600 text-white rounded text-sm hover:bg-purple-700">
                             <i class="fas fa-edit mr-1"></i>Revisar
-                        </a>
+                        </button>
                     </td>
                 </tr>
                 <?php endforeach; ?>
@@ -504,5 +504,54 @@ function clearSocioVincular() {
     document.getElementById('vincular_socio_id').value = '';
     document.getElementById('socio_selected_vincular').classList.add('hidden');
     document.getElementById('socio_search_vincular').focus();
+}
+
+// Función para revisar solicitud de actualización
+function revisarActualizacion(solicitudId, socioId) {
+    // Constante para delay de notificación
+    const AUTO_REMOVE_DELAY = 5000;
+    const baseUrl = <?= json_encode(BASE_URL) ?>;
+    
+    // Validar y sanear los IDs
+    solicitudId = parseInt(solicitudId, 10);
+    socioId = parseInt(socioId, 10);
+    
+    if (isNaN(solicitudId) || solicitudId <= 0) {
+        console.error('ID de solicitud inválido');
+        return;
+    }
+    
+    if (socioId && socioId > 0) {
+        // Si tiene socio vinculado, ir a editar el socio
+        const url = baseUrl + '/socios/editar/' + encodeURIComponent(socioId) + '?from_actualizacion=' + encodeURIComponent(solicitudId);
+        window.location.href = url;
+    } else {
+        // Si no tiene socio, mostrar mensaje con mejor UX
+        const detailsDiv = document.getElementById('request-details-' + solicitudId);
+        if (detailsDiv) {
+            // Crear notificación temporal
+            const notification = document.createElement('div');
+            notification.className = 'fixed top-4 right-4 bg-yellow-100 border border-yellow-400 text-yellow-800 px-6 py-4 rounded-lg shadow-lg z-50 max-w-md';
+            notification.innerHTML = `
+                <div class="flex items-start">
+                    <i class="fas fa-exclamation-triangle mr-3 mt-1"></i>
+                    <div>
+                        <p class="font-medium">Usuario sin vincular</p>
+                        <p class="text-sm mt-1">Este usuario no tiene un socio vinculado. Por favor, vincúlelo primero o apruebe la solicitud de vinculación.</p>
+                    </div>
+                    <button onclick="this.parentElement.parentElement.remove()" class="ml-4 text-yellow-600 hover:text-yellow-800">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+            `;
+            document.body.appendChild(notification);
+            // Auto-remove después del delay configurado con verificación
+            setTimeout(() => {
+                if (notification && notification.parentElement) {
+                    notification.remove();
+                }
+            }, AUTO_REMOVE_DELAY);
+        }
+    }
 }
 </script>
