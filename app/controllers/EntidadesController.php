@@ -73,10 +73,10 @@ class EntidadesController extends Controller {
                     $id
                 );
                 
-                $this->setFlashMessage('Empresa creada correctamente', 'success');
+                $this->setFlash('success', 'Empresa creada correctamente');
                 $this->redirect('/entidades/empresas');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al crear empresa: ' . $e->getMessage(), 'error');
+                $this->setFlash('error', 'Error al crear empresa: ' . $e->getMessage());
             }
         }
         
@@ -129,10 +129,10 @@ class EntidadesController extends Controller {
                     $id
                 );
                 
-                $this->setFlashMessage('Unidad de negocio creada correctamente', 'success');
+                $this->setFlash('success', 'Unidad de negocio creada correctamente');
                 $this->redirect('/entidades/unidades');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al crear unidad de negocio', 'error');
+                $this->setFlash('error', 'Error al crear unidad de negocio');
             }
         }
         
@@ -223,10 +223,10 @@ class EntidadesController extends Controller {
                     $id
                 );
                 
-                $this->setFlashMessage('Política creada correctamente', 'success');
+                $this->setFlash('success', 'Política creada correctamente');
                 $this->redirect('/entidades/politicas');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al crear política', 'error');
+                $this->setFlash('error', 'Error al crear política');
             }
         }
         

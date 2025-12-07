@@ -165,10 +165,10 @@ class CobranzaController extends Controller {
                     $id
                 );
                 
-                $this->setFlashMessage('Convenio de pago creado correctamente', 'success');
+                $this->setFlash('success', 'Convenio de pago creado correctamente');
                 $this->redirect('/cobranza/convenios');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al crear convenio: ' . $e->getMessage(), 'error');
+                $this->setFlash('error', 'Error al crear convenio: ' . $e->getMessage());
             }
         }
         
@@ -255,10 +255,10 @@ class CobranzaController extends Controller {
                     $id
                 );
                 
-                $this->setFlashMessage('Liquidación registrada correctamente', 'success');
+                $this->setFlash('success', 'Liquidación registrada correctamente');
                 $this->redirect('/cobranza/liquidaciones');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al registrar liquidación', 'error');
+                $this->setFlash('error', 'Error al registrar liquidación');
             }
         }
         

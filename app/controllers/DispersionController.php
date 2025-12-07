@@ -66,10 +66,10 @@ class DispersionController extends Controller {
                     $id
                 );
                 
-                $this->setFlashMessage('Crédito registrado correctamente', 'success');
+                $this->setFlash('success', 'Crédito registrado correctamente');
                 $this->redirect('/dispersion');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al registrar crédito', 'error');
+                $this->setFlash('error', 'Error al registrar crédito');
             }
         }
         
@@ -194,10 +194,10 @@ class DispersionController extends Controller {
                     'activo' => 1
                 ]);
                 
-                $this->setFlashMessage('Garantía registrada correctamente', 'success');
+                $this->setFlash('success', 'Garantía registrada correctamente');
                 $this->redirect('/dispersion/garantias/' . $id);
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al registrar garantía', 'error');
+                $this->setFlash('error', 'Error al registrar garantía');
             }
         }
         

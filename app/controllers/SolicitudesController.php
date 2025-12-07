@@ -86,7 +86,7 @@ class SolicitudesController extends Controller {
                 
                 $this->redirect('/solicitudes');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al crear solicitud: ' . $e->getMessage(), 'error');
+                $this->setFlash('error', 'Error al crear solicitud: ' . $e->getMessage());
                 $this->redirect('/solicitudes/recepcion');
             }
         }
@@ -121,10 +121,10 @@ class SolicitudesController extends Controller {
                     'observaciones' => $_POST['observaciones'] ?? ''
                 ]);
                 
-                $this->setFlashMessage('Datos capturados correctamente', 'success');
+                $this->setFlash('success', 'Datos capturados correctamente');
                 $this->redirect('/solicitudes');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al capturar datos', 'error');
+                $this->setFlash('error', 'Error al capturar datos');
             }
         }
         
