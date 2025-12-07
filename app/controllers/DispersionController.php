@@ -25,7 +25,7 @@ class DispersionController extends Controller {
              JOIN socios s ON c.socio_id = s.id
              LEFT JOIN productos_financieros pf ON c.producto_financiero_id = pf.id
              WHERE c.estatus IN ('aprobado', 'formalizacion')
-             ORDER BY c.fecha_aprobacion DESC"
+             ORDER BY c.fecha_solicitud DESC"
         );
         
         $this->view('dispersion/index', [
