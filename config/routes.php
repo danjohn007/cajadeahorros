@@ -217,3 +217,23 @@ $router->add('soporte-tecnico', ['controller' => 'soporte', 'action' => 'index']
 
 // Recuperación de contraseña
 $router->add('auth/reset-password', ['controller' => 'auth', 'action' => 'resetPassword']);
+
+// Políticas de Crédito
+$router->add('politicas/validar-edad-plazo', ['controller' => 'politicasCredito', 'action' => 'validarEdadPlazo']);
+$router->add('politicas/validar-aval', ['controller' => 'politicasCredito', 'action' => 'validarRequiereAval']);
+$router->add('politicas/checklist', ['controller' => 'politicasCredito', 'action' => 'obtenerChecklist']);
+$router->add('politicas/checklist/validar', ['controller' => 'politicasCredito', 'action' => 'validarChecklistCredito']);
+$router->add('politicas/checklist/marcar', ['controller' => 'politicasCredito', 'action' => 'marcarItemCompletado']);
+
+// Tesorería
+$router->add('tesoreria', ['controller' => 'tesoreria', 'action' => 'index']);
+$router->add('tesoreria/proyecciones', ['controller' => 'tesoreria', 'action' => 'obtenerProyecciones']);
+$router->add('tesoreria/flujos', ['controller' => 'tesoreria', 'action' => 'obtenerFlujosEfectivo']);
+$router->add('tesoreria/proyeccion', ['controller' => 'tesoreria', 'action' => 'registrarProyeccion']);
+$router->add('tesoreria/resumen-cartera', ['controller' => 'tesoreria', 'action' => 'obtenerResumenCartera']);
+
+// Reportes CNBV
+$router->add('cnbv', ['controller' => 'cnbv', 'action' => 'index']);
+$router->add('cnbv/reportes', ['controller' => 'cnbv', 'action' => 'listarReportes']);
+$router->add('cnbv/generar-situacion-financiera', ['controller' => 'cnbv', 'action' => 'generarReporteSituacionFinanciera']);
+$router->add('cnbv/generar-cartera', ['controller' => 'cnbv', 'action' => 'generarReporteCartera']);
