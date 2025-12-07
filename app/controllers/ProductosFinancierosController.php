@@ -75,7 +75,7 @@ class ProductosFinancierosController extends Controller {
                     'activo' => 1
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'crear_producto',
                     "Producto financiero creado: $nombre",
@@ -146,7 +146,7 @@ class ProductosFinancierosController extends Controller {
                     'comision_apertura' => $comision_apertura
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'actualizar_tasas',
                     "Tasas actualizadas para producto #$producto_id",
@@ -211,7 +211,7 @@ class ProductosFinancierosController extends Controller {
                     'monto_requiere_aval' => $monto_requiere_aval
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'actualizar_plazos',
                     "Plazos y condiciones actualizados para producto #$producto_id",

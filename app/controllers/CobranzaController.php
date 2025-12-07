@@ -66,7 +66,7 @@ class CobranzaController extends Controller {
                     'observaciones' => 'Asignado a agente de cobranza ID: ' . $usuario_id
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'asignar_agente_cobranza',
                     "Agente de cobranza asignado a crédito #$credito_id",
@@ -157,7 +157,7 @@ class CobranzaController extends Controller {
                     'observaciones' => $observaciones
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'crear_convenio_pago',
                     "Convenio de pago creado para crédito #$credito_id",
@@ -247,7 +247,7 @@ class CobranzaController extends Controller {
                     ]);
                 }
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'liquidar_credito',
                     "Liquidación de crédito #$credito_id - Tipo: $tipo",

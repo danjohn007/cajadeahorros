@@ -855,7 +855,7 @@ class CreditosController extends Controller {
                     'fecha_rechazo' => date('Y-m-d')
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'rechazar_credito',
                     "Crédito rechazado #$id: $motivo_rechazo",

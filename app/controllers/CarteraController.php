@@ -284,7 +284,7 @@ class CarteraController extends Controller {
                     [$monto - $monto_restante, $credito_id]
                 );
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'aplicar_pago',
                     "Pago aplicado al crédito #$credito_id por $" . number_format($monto, 2),
@@ -468,7 +468,7 @@ class CarteraController extends Controller {
                     'tipo_cartera' => $nuevo_tipo
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'traspaso_cartera',
                     "Traspaso de cartera: $tipo_traspaso para crédito #$credito_id",

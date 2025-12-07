@@ -65,7 +65,7 @@ class EntidadesController extends Controller {
                     'activo' => 1
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'crear_empresa',
                     "Empresa creada: $nombre",
@@ -121,7 +121,7 @@ class EntidadesController extends Controller {
                     'activo' => 1
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'crear_unidad_negocio',
                     "Unidad de negocio creada: $nombre",
@@ -215,7 +215,7 @@ class EntidadesController extends Controller {
                     'activo' => 1
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'crear_politica',
                     "Política creada: $nombre",

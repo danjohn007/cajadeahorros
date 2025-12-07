@@ -76,7 +76,7 @@ class SolicitudesController extends Controller {
                     'tipo_credito_id' => 1
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'crear_solicitud',
                     "Solicitud de crédito creada: $numero_solicitud",
@@ -213,7 +213,7 @@ class SolicitudesController extends Controller {
                     'promotor_id' => $promotor_id
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'asignar_promotor',
                     "Promotor asignado a solicitud #$solicitud_id",

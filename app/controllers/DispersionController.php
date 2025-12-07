@@ -58,7 +58,7 @@ class DispersionController extends Controller {
                     'numero_pagare' => $numero_pagare
                 ]);
                 
-                $this->registrarBitacora(
+                $this->logAction(
                     $_SESSION['user_id'],
                     'formalizar_credito',
                     "Crédito formalizado #$id - Contrato: $numero_contrato",
