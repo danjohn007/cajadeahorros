@@ -4,7 +4,7 @@
  * Validación automática de requisitos básicos y excluyentes para optimizar el proceso de análisis crediticio
  */
 
-// Simular datos de estadísticas (en producción vendrían de la base de datos)
+// Mock statistics data (in production would come from database)
 $stats = [
     'total' => 247,
     'aprobadas' => 189,
@@ -12,7 +12,7 @@ $stats = [
     'pendientes' => 24
 ];
 
-// Simular evaluaciones para mostrar (en producción vendrían de la base de datos con filtros aplicados)
+// Mock evaluations data (in production would come from database with applied filters)
 $evaluaciones = [
     [
         'id' => 1,
@@ -143,7 +143,7 @@ $evaluaciones = [
     <!-- Filtros de Búsqueda -->
     <div class="bg-white rounded-lg shadow p-6 mb-6">
         <h3 class="text-lg font-semibold text-gray-800 mb-4">Filtros de Búsqueda</h3>
-        <form method="GET" action="<?= BASE_URL ?>/solicitudes/evaluacion/list">
+        <form method="GET" action="<?= BASE_URL ?>/solicitudes/evaluacion">
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Número de Solicitud</label>
@@ -170,12 +170,12 @@ $evaluaciones = [
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Desde</label>
-                    <input type="date" name="fecha_desde" value="2024-01-01"
+                    <input type="date" name="fecha_desde" value="<?= date('Y-01-01') ?>"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Fecha Hasta</label>
-                    <input type="date" name="fecha_hasta" value="2024-12-31"
+                    <input type="date" name="fecha_hasta" value="<?= date('Y-12-31') ?>"
                            class="w-full border border-gray-300 rounded-lg px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent">
                 </div>
                 <div>
@@ -214,7 +214,7 @@ $evaluaciones = [
                     <button type="submit" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg flex items-center justify-center">
                         <i class="fas fa-search mr-2"></i>Filtrar
                     </button>
-                    <button type="button" onclick="window.location.href='<?= BASE_URL ?>/solicitudes/evaluacion/list'" 
+                    <button type="button" onclick="window.location.href='<?= BASE_URL ?>/solicitudes/evaluacion'" 
                             class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-6 py-2 rounded-lg flex items-center justify-center">
                         <i class="fas fa-times mr-2"></i>Limpiar
                     </button>

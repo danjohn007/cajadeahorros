@@ -161,37 +161,12 @@ class SolicitudesController extends Controller {
 
     /**
      * Evaluación preliminar de requisitos individual
+     * TODO: Implement detailed individual evaluation view
      */
     public function evaluacionDetalle($id) {
-        $solicitud = $this->db->fetch("SELECT c.*, s.fecha_nacimiento, s.nombre, s.apellido_paterno 
-                                       FROM creditos c 
-                                       JOIN socios s ON c.socio_id = s.id 
-                                       WHERE c.id = ?", [$id]);
-        
-        if (!$solicitud) {
-            $this->redirect('/solicitudes/evaluacion');
-            return;
-        }
-        
-        // Validar edad vs plazo
-        $edad = floor((time() - strtotime($solicitud['fecha_nacimiento'])) / (365.25 * 24 * 60 * 60));
-        $plazo_maximo_permitido = ($edad >= 69) ? 12 : $solicitud['plazo_meses'];
-        
-        // Obtener checklist
-        $checklist = $this->db->fetchAll(
-            "SELECT ci.* FROM checklist_items ci
-             JOIN checklists_credito cc ON ci.checklist_id = cc.id
-             WHERE cc.tipo_operacion = 'apertura' AND cc.activo = 1
-             ORDER BY ci.orden"
-        );
-        
-        $this->view('solicitudes/evaluacion-detalle', [
-            'pageTitle' => 'Evaluación Preliminar',
-            'solicitud' => $solicitud,
-            'edad' => $edad,
-            'plazo_maximo_permitido' => $plazo_maximo_permitido,
-            'checklist' => $checklist
-        ]);
+        // For now, redirect to the list view
+        // In the future, this will show detailed evaluation for a specific application
+        $this->redirect('/solicitudes/evaluacion');
     }
 
     /**
