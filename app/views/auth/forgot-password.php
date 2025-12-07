@@ -107,12 +107,12 @@ $whatsappNumero = getConfig('chatbot_whatsapp_numero', '');
     
     <!-- WhatsApp Support Button -->
     <?php if (!empty($whatsappNumero)): ?>
-    <a href="https://wa.me/<?= htmlspecialchars(preg_replace('/[^0-9+]/', '', $whatsappNumero)) ?>?text=<?= urlencode('Hola, ¿me pueden apoyar con mi estado de cuenta?') ?>" 
+    <a href="https://wa.me/<?= htmlspecialchars(preg_replace('/[^0-9+]/', '', $whatsappNumero)) ?>?text=<?= urlencode('Hola, necesito ayuda para recuperar mi contraseña') ?>" 
        target="_blank"
-       class="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white rounded-full p-4 shadow-lg transition-all duration-300 hover:scale-110 z-50"
+       class="fixed bottom-6 right-6 bg-green-500 hover:bg-green-600 text-white rounded-full w-14 h-14 flex items-center justify-center shadow-lg transition-all duration-300 hover:scale-110 z-50"
        title="Soporte por WhatsApp"
        aria-label="Contactar por WhatsApp">
-        <i class="fa-brands fa-whatsapp text-3xl"></i>
+        <i class="fab fa-whatsapp text-3xl"></i>
     </a>
     <?php endif; ?>
 </div>

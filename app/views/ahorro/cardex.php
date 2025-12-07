@@ -68,7 +68,8 @@ $direccionOficina = getConfig('direccion_oficina', '');
             <?php if (!empty($cuenta['asesor_nombre'])): ?>
             <p class="text-sm"><strong>Asesor:</strong> <?= htmlspecialchars($cuenta['asesor_nombre']) ?></p>
             <?php endif; ?>
-            <p class="text-sm text-lg"><strong>Saldo Actual: $<?= number_format($cuenta['saldo'], 2) ?></strong></p>
+            <p class="text-sm"><strong>Saldo Actual:</strong></p>
+            <p class="text-lg font-bold">$<?= number_format($cuenta['saldo'], 2) ?></p>
         </div>
     </div>
     
@@ -155,26 +156,14 @@ $direccionOficina = getConfig('direccion_oficina', '');
 }
 
 @media print {
-    /* Ocultar elementos del sistema usando clases específicas */
+    /* Ocultar elementos específicos del sistema */
     .no-print,
-    aside,
     nav,
-    footer,
-    .sidebar {
-        display: none !important;
-    }
-    
-    /* Ocultar header excepto el del cardex */
-    body > header,
-    nav header {
-        display: none !important;
-    }
-    
-    /* Ocultar botones de navegación, no los del cardex */
-    body > button,
-    nav button,
-    aside button,
-    .no-print button {
+    aside,
+    header:not(.print-header),
+    footer:not(.print-footer),
+    .sidebar,
+    button:not([data-print-keep]) {
         display: none !important;
     }
     
@@ -186,9 +175,7 @@ $direccionOficina = getConfig('direccion_oficina', '');
     }
     
     #cardex-print {
-        position: static;
         width: 100%;
-        max-width: 100%;
         box-shadow: none !important;
         border-radius: 0 !important;
         padding: 20px !important;
@@ -206,6 +193,10 @@ $direccionOficina = getConfig('direccion_oficina', '');
         page-break-after: auto;
     }
     
+    thead {
+        display: table-header-group;
+    }
+    
     .print-header {
         display: block !important;
         page-break-after: avoid;
@@ -221,14 +212,22 @@ $direccionOficina = getConfig('direccion_oficina', '');
     
     /* Asegurar que el logo se imprima correctamente */
     img {
-        max-width: 100%;
-        height: auto;
+        max-width: 100px !important;
+        height: auto !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
     
     /* Configuración de página para mejor compatibilidad cross-browser */
     @page {
         size: A4 portrait;
-        margin: 2cm;
+        margin: 1.5cm;
+    }
+    
+    /* Asegurar que los colores se impriman */
+    * {
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
     }
 }
 

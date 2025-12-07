@@ -578,9 +578,10 @@ class ClienteController extends Controller {
         if ($anio < 2000 || $anio > (int)date('Y') + 1) $anio = (int)date('Y');
         
         $socio = $this->db->fetch(
-            "SELECT s.*, ut.nombre as unidad_trabajo
+            "SELECT s.*, ut.nombre as unidad_trabajo, u.nombre as asesor_nombre
              FROM socios s
              LEFT JOIN unidades_trabajo ut ON s.unidad_trabajo_id = ut.id
+             LEFT JOIN usuarios u ON s.created_by = u.id
              WHERE s.id = :id",
             ['id' => $this->socioId]
         );
