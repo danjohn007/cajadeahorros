@@ -157,11 +157,60 @@ if (isset($_SESSION['user_id'])) {
                     <span class="ml-3" x-show="sidebarOpen">Ahorro</span>
                 </a>
                 
-                <a href="<?= BASE_URL ?>/creditos" 
-                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'creditos') !== false ? 'active' : '' ?>">
-                    <i class="fas fa-hand-holding-usd w-6"></i>
-                    <span class="ml-3" x-show="sidebarOpen">Créditos</span>
-                </a>
+                <!-- SOLICITUDES -->
+                <div x-data="{ open: <?= strpos($_SERVER['REQUEST_URI'], 'solicitudes') !== false ? 'true' : 'false' ?> }">
+                    <button @click="open = !open" class="sidebar-link flex items-center justify-between w-full px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'solicitudes') !== false ? 'active' : '' ?>">
+                        <div class="flex items-center">
+                            <i class="fas fa-file-alt w-6"></i>
+                            <span class="ml-3" x-show="sidebarOpen">Solicitudes</span>
+                        </div>
+                        <i :class="open ? 'fa-chevron-down' : 'fa-chevron-right'" class="fas text-xs" x-show="sidebarOpen"></i>
+                    </button>
+                    <div x-show="open && sidebarOpen" x-collapse class="bg-primary-900">
+                        <a href="<?= BASE_URL ?>/solicitudes/recepcion" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Recepción de Solicitudes</a>
+                        <a href="<?= BASE_URL ?>/solicitudes" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Captura y Verificación</a>
+                        <a href="<?= BASE_URL ?>/solicitudes" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Evaluación Preliminar</a>
+                        <a href="<?= BASE_URL ?>/solicitudes" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Gestión de Expedientes</a>
+                        <a href="<?= BASE_URL ?>/solicitudes/asignacion" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Asignación Fuerza de Ventas</a>
+                    </div>
+                </div>
+                
+                <!-- CRÉDITOS -->
+                <div x-data="{ open: <?= strpos($_SERVER['REQUEST_URI'], 'creditos') !== false ? 'true' : 'false' ?> }">
+                    <button @click="open = !open" class="sidebar-link flex items-center justify-between w-full px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'creditos') !== false ? 'active' : '' ?>">
+                        <div class="flex items-center">
+                            <i class="fas fa-hand-holding-usd w-6"></i>
+                            <span class="ml-3" x-show="sidebarOpen">Créditos</span>
+                        </div>
+                        <i :class="open ? 'fa-chevron-down' : 'fa-chevron-right'" class="fas text-xs" x-show="sidebarOpen"></i>
+                    </button>
+                    <div x-show="open && sidebarOpen" x-collapse class="bg-primary-900">
+                        <a href="<?= BASE_URL ?>/creditos" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Generación de Propuestas</a>
+                        <a href="<?= BASE_URL ?>/creditos/comite" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Comité de Crédito</a>
+                        <a href="<?= BASE_URL ?>/creditos" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Autorización y Rechazo</a>
+                        <a href="<?= BASE_URL ?>/creditos/motor-reglas" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Motor de Reglas</a>
+                        <a href="<?= BASE_URL ?>/creditos" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Garantías y Avales</a>
+                        <a href="<?= BASE_URL ?>/creditos" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Ejecución de Políticas</a>
+                    </div>
+                </div>
+                
+                <!-- DISPERSIÓN -->
+                <div x-data="{ open: <?= strpos($_SERVER['REQUEST_URI'], 'dispersion') !== false ? 'true' : 'false' ?> }">
+                    <button @click="open = !open" class="sidebar-link flex items-center justify-between w-full px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'dispersion') !== false ? 'active' : '' ?>">
+                        <div class="flex items-center">
+                            <i class="fas fa-money-check-alt w-6"></i>
+                            <span class="ml-3" x-show="sidebarOpen">Dispersión</span>
+                        </div>
+                        <i :class="open ? 'fa-chevron-down' : 'fa-chevron-right'" class="fas text-xs" x-show="sidebarOpen"></i>
+                    </button>
+                    <div x-show="open && sidebarOpen" x-collapse class="bg-primary-900">
+                        <a href="<?= BASE_URL ?>/dispersion" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Registro de Créditos</a>
+                        <a href="<?= BASE_URL ?>/dispersion" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Proceso de Formalización</a>
+                        <a href="<?= BASE_URL ?>/dispersion" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Contratos y Pagarés</a>
+                        <a href="<?= BASE_URL ?>/dispersion" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Hoja de Garantías</a>
+                        <a href="<?= BASE_URL ?>/dispersion/coordinacion" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Coordinación de Dispersión</a>
+                    </div>
+                </div>
                 
                 <a href="<?= BASE_URL ?>/nomina" 
                    class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'nomina') !== false ? 'active' : '' ?>">
@@ -169,11 +218,43 @@ if (isset($_SESSION['user_id'])) {
                     <span class="ml-3" x-show="sidebarOpen">Nómina</span>
                 </a>
                 
-                <a href="<?= BASE_URL ?>/cartera" 
-                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'cartera') !== false ? 'active' : '' ?>">
-                    <i class="fas fa-chart-pie w-6"></i>
-                    <span class="ml-3" x-show="sidebarOpen">Cartera</span>
-                </a>
+                <!-- CARTERA -->
+                <div x-data="{ open: <?= strpos($_SERVER['REQUEST_URI'], 'cartera') !== false ? 'true' : 'false' ?> }">
+                    <button @click="open = !open" class="sidebar-link flex items-center justify-between w-full px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'cartera') !== false ? 'active' : '' ?>">
+                        <div class="flex items-center">
+                            <i class="fas fa-chart-pie w-6"></i>
+                            <span class="ml-3" x-show="sidebarOpen">Cartera</span>
+                        </div>
+                        <i :class="open ? 'fa-chevron-down' : 'fa-chevron-right'" class="fas text-xs" x-show="sidebarOpen"></i>
+                    </button>
+                    <div x-show="open && sidebarOpen" x-collapse class="bg-primary-900">
+                        <a href="<?= BASE_URL ?>/cartera" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Aplicación de Pagos</a>
+                        <a href="<?= BASE_URL ?>/cartera/vigente" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Carteras Vigentes</a>
+                        <a href="<?= BASE_URL ?>/cartera" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Estados de Cuenta</a>
+                        <a href="<?= BASE_URL ?>/cartera/gestion-vencida" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Cartera Vencida</a>
+                        <a href="<?= BASE_URL ?>/cartera/prepagos" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Prepagos y Liquidaciones</a>
+                        <a href="<?= BASE_URL ?>/cartera/traspasos" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Traspasos de Cartera</a>
+                    </div>
+                </div>
+                
+                <!-- COBRANZA -->
+                <div x-data="{ open: <?= strpos($_SERVER['REQUEST_URI'], 'cobranza') !== false ? 'true' : 'false' ?> }">
+                    <button @click="open = !open" class="sidebar-link flex items-center justify-between w-full px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'cobranza') !== false ? 'active' : '' ?>">
+                        <div class="flex items-center">
+                            <i class="fas fa-phone-volume w-6"></i>
+                            <span class="ml-3" x-show="sidebarOpen">Cobranza</span>
+                        </div>
+                        <i :class="open ? 'fa-chevron-down' : 'fa-chevron-right'" class="fas text-xs" x-show="sidebarOpen"></i>
+                    </button>
+                    <div x-show="open && sidebarOpen" x-collapse class="bg-primary-900">
+                        <a href="<?= BASE_URL ?>/cobranza/estrategias" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Estrategias de Cobranza</a>
+                        <a href="<?= BASE_URL ?>/cobranza/agentes" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Agentes de Cobranza</a>
+                        <a href="<?= BASE_URL ?>/cobranza/convenios" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Convenios de Pago</a>
+                        <a href="<?= BASE_URL ?>/cobranza/liquidaciones" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Liquidaciones</a>
+                        <a href="<?= BASE_URL ?>/cobranza/reportes" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Reportes de Gestión</a>
+                        <a href="<?= BASE_URL ?>/cobranza/compromisos" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Compromisos de Pago</a>
+                    </div>
+                </div>
                 
                 <a href="<?= BASE_URL ?>/reportes" 
                    class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'reportes') !== false ? 'active' : '' ?>">
@@ -181,13 +262,57 @@ if (isset($_SESSION['user_id'])) {
                     <span class="ml-3" x-show="sidebarOpen">Reportes</span>
                 </a>
                 
-                <!-- ID FINANCIERO - Nuevos Módulos -->
+                <!-- PRODUCTOS FINANCIEROS -->
                 <?php if ($_SESSION['user_role'] === 'administrador' || $_SESSION['user_role'] === 'operativo'): ?>
-                <a href="<?= BASE_URL ?>/tesoreria" 
-                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'tesoreria') !== false ? 'active' : '' ?>">
-                    <i class="fas fa-money-bill-trend-up w-6"></i>
-                    <span class="ml-3" x-show="sidebarOpen">Tesorería</span>
-                </a>
+                <div x-data="{ open: <?= strpos($_SERVER['REQUEST_URI'], 'productos-financieros') !== false ? 'true' : 'false' ?> }">
+                    <button @click="open = !open" class="sidebar-link flex items-center justify-between w-full px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'productos-financieros') !== false ? 'active' : '' ?>">
+                        <div class="flex items-center">
+                            <i class="fas fa-box-open w-6"></i>
+                            <span class="ml-3" x-show="sidebarOpen">Productos Financieros</span>
+                        </div>
+                        <i :class="open ? 'fa-chevron-down' : 'fa-chevron-right'" class="fas text-xs" x-show="sidebarOpen"></i>
+                    </button>
+                    <div x-show="open && sidebarOpen" x-collapse class="bg-primary-900">
+                        <a href="<?= BASE_URL ?>/productos-financieros/creditos" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Configuración de Créditos</a>
+                        <a href="<?= BASE_URL ?>/productos-financieros/tasas" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Tasas y Comisiones</a>
+                        <a href="<?= BASE_URL ?>/productos-financieros/plazos" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Plazos y Condiciones</a>
+                        <a href="<?= BASE_URL ?>/productos-financieros/amortizacion" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Esquemas de Amortización</a>
+                        <a href="<?= BASE_URL ?>/productos-financieros/beneficios" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Beneficios y Promociones</a>
+                    </div>
+                </div>
+                
+                <!-- ENTIDADES -->
+                <div x-data="{ open: <?= strpos($_SERVER['REQUEST_URI'], 'entidades') !== false ? 'true' : 'false' ?> }">
+                    <button @click="open = !open" class="sidebar-link flex items-center justify-between w-full px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'entidades') !== false ? 'active' : '' ?>">
+                        <div class="flex items-center">
+                            <i class="fas fa-building w-6"></i>
+                            <span class="ml-3" x-show="sidebarOpen">Entidades</span>
+                        </div>
+                        <i :class="open ? 'fa-chevron-down' : 'fa-chevron-right'" class="fas text-xs" x-show="sidebarOpen"></i>
+                    </button>
+                    <div x-show="open && sidebarOpen" x-collapse class="bg-primary-900">
+                        <a href="<?= BASE_URL ?>/entidades/empresas" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Empresas del Grupo</a>
+                        <a href="<?= BASE_URL ?>/entidades/unidades" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Unidades de Negocio</a>
+                        <a href="<?= BASE_URL ?>/entidades/catalogos" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Catálogos Corporativos</a>
+                        <a href="<?= BASE_URL ?>/entidades/politicas" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Políticas Institucionales</a>
+                        <a href="<?= BASE_URL ?>/entidades/reportes" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Estructura Organizacional</a>
+                    </div>
+                </div>
+                
+                <!-- TESORERÍA -->
+                <div x-data="{ open: <?= strpos($_SERVER['REQUEST_URI'], 'tesoreria') !== false ? 'true' : 'false' ?> }">
+                    <button @click="open = !open" class="sidebar-link flex items-center justify-between w-full px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'tesoreria') !== false ? 'active' : '' ?>">
+                        <div class="flex items-center">
+                            <i class="fas fa-money-bill-trend-up w-6"></i>
+                            <span class="ml-3" x-show="sidebarOpen">Tesorería</span>
+                        </div>
+                        <i :class="open ? 'fa-chevron-down' : 'fa-chevron-right'" class="fas text-xs" x-show="sidebarOpen"></i>
+                    </button>
+                    <div x-show="open && sidebarOpen" x-collapse class="bg-primary-900">
+                        <a href="<?= BASE_URL ?>/tesoreria" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Proyección de Flujos</a>
+                        <a href="<?= BASE_URL ?>/tesoreria" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Cálculo Capital e Intereses</a>
+                    </div>
+                </div>
                 <?php endif; ?>
                 
                 <?php if ($_SESSION['user_role'] === 'administrador'): ?>

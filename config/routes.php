@@ -237,3 +237,63 @@ $router->add('cnbv', ['controller' => 'cnbv', 'action' => 'index']);
 $router->add('cnbv/reportes', ['controller' => 'cnbv', 'action' => 'listarReportes']);
 $router->add('cnbv/generar-situacion-financiera', ['controller' => 'cnbv', 'action' => 'generarReporteSituacionFinanciera']);
 $router->add('cnbv/generar-cartera', ['controller' => 'cnbv', 'action' => 'generarReporteCartera']);
+
+// Solicitudes de Crédito (Módulo nuevo)
+$router->add('solicitudes', ['controller' => 'solicitudes', 'action' => 'index']);
+$router->add('solicitudes/recepcion', ['controller' => 'solicitudes', 'action' => 'recepcion']);
+$router->add('solicitudes/captura/{id}', ['controller' => 'solicitudes', 'action' => 'captura']);
+$router->add('solicitudes/evaluacion/{id}', ['controller' => 'solicitudes', 'action' => 'evaluacion']);
+$router->add('solicitudes/expediente/{id}', ['controller' => 'solicitudes', 'action' => 'expediente']);
+$router->add('solicitudes/asignacion', ['controller' => 'solicitudes', 'action' => 'asignacion']);
+
+// Dispersión de Fondos (Módulo nuevo)
+$router->add('dispersion', ['controller' => 'dispersion', 'action' => 'index']);
+$router->add('dispersion/registrar/{id}', ['controller' => 'dispersion', 'action' => 'registrar']);
+$router->add('dispersion/formalizacion/{id}', ['controller' => 'dispersion', 'action' => 'formalizacion']);
+$router->add('dispersion/contratos/{id}', ['controller' => 'dispersion', 'action' => 'contratos']);
+$router->add('dispersion/garantias/{id}', ['controller' => 'dispersion', 'action' => 'garantias']);
+$router->add('dispersion/coordinacion', ['controller' => 'dispersion', 'action' => 'coordinacion']);
+
+// Cobranza (Módulo nuevo)
+$router->add('cobranza', ['controller' => 'cobranza', 'action' => 'index']);
+$router->add('cobranza/estrategias', ['controller' => 'cobranza', 'action' => 'estrategias']);
+$router->add('cobranza/agentes', ['controller' => 'cobranza', 'action' => 'agentes']);
+$router->add('cobranza/compromisos', ['controller' => 'cobranza', 'action' => 'compromisos']);
+$router->add('cobranza/convenios', ['controller' => 'cobranza', 'action' => 'convenios']);
+$router->add('cobranza/convenios/{id}', ['controller' => 'cobranza', 'action' => 'convenios']);
+$router->add('cobranza/liquidaciones', ['controller' => 'cobranza', 'action' => 'liquidaciones']);
+$router->add('cobranza/reportes', ['controller' => 'cobranza', 'action' => 'reportes']);
+
+// Entidades / Empresas del Grupo (Módulo nuevo)
+$router->add('entidades', ['controller' => 'entidades', 'action' => 'index']);
+$router->add('entidades/empresas', ['controller' => 'entidades', 'action' => 'empresas']);
+$router->add('entidades/unidades', ['controller' => 'entidades', 'action' => 'unidades']);
+$router->add('entidades/catalogos', ['controller' => 'entidades', 'action' => 'catalogos']);
+$router->add('entidades/politicas', ['controller' => 'entidades', 'action' => 'politicas']);
+$router->add('entidades/reportes', ['controller' => 'entidades', 'action' => 'reportes']);
+
+// Productos Financieros (Módulo nuevo)
+$router->add('productos-financieros', ['controller' => 'productosFinancieros', 'action' => 'index']);
+$router->add('productos-financieros/creditos', ['controller' => 'productosFinancieros', 'action' => 'creditos']);
+$router->add('productos-financieros/tasas', ['controller' => 'productosFinancieros', 'action' => 'tasas']);
+$router->add('productos-financieros/tasas/{id}', ['controller' => 'productosFinancieros', 'action' => 'tasas']);
+$router->add('productos-financieros/plazos', ['controller' => 'productosFinancieros', 'action' => 'plazos']);
+$router->add('productos-financieros/plazos/{id}', ['controller' => 'productosFinancieros', 'action' => 'plazos']);
+$router->add('productos-financieros/amortizacion', ['controller' => 'productosFinancieros', 'action' => 'amortizacion']);
+$router->add('productos-financieros/beneficios', ['controller' => 'productosFinancieros', 'action' => 'beneficios']);
+
+// Cartera - Procesos nuevos
+$router->add('cartera/aplicar-pago', ['controller' => 'cartera', 'action' => 'aplicarPago']);
+$router->add('cartera/vigente', ['controller' => 'cartera', 'action' => 'vigente']);
+$router->add('cartera/estados-cuenta/{id}', ['controller' => 'cartera', 'action' => 'estadosCuenta']);
+$router->add('cartera/gestion-vencida', ['controller' => 'cartera', 'action' => 'gestionVencida']);
+$router->add('cartera/prepagos', ['controller' => 'cartera', 'action' => 'prepagos']);
+$router->add('cartera/traspasos', ['controller' => 'cartera', 'action' => 'traspasos']);
+
+// Créditos - Procesos nuevos
+$router->add('creditos/propuesta/{id}', ['controller' => 'creditos', 'action' => 'propuesta']);
+$router->add('creditos/motor-reglas', ['controller' => 'creditos', 'action' => 'motorReglas']);
+$router->add('creditos/ejecutar-politicas/{id}', ['controller' => 'creditos', 'action' => 'ejecutarPoliticas']);
+$router->add('creditos/garantias-avales/{id}', ['controller' => 'creditos', 'action' => 'garantiasAvales']);
+$router->add('creditos/comite', ['controller' => 'creditos', 'action' => 'comite']);
+$router->add('creditos/rechazar/{id}', ['controller' => 'creditos', 'action' => 'rechazar']);
