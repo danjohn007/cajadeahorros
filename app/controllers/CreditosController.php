@@ -782,10 +782,10 @@ class CreditosController extends Controller {
                     ]);
                 }
                 
-                $this->setFlashMessage('Registro agregado correctamente', 'success');
+                $this->setFlash('success', 'Registro agregado correctamente');
                 $this->redirect('/creditos/garantias-avales/' . $credito_id);
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al agregar registro', 'error');
+                $this->setFlash('error', 'Error al agregar registro');
             }
         }
         
@@ -863,10 +863,10 @@ class CreditosController extends Controller {
                     $id
                 );
                 
-                $this->setFlashMessage('Crédito rechazado correctamente', 'success');
+                $this->setFlash('success', 'Crédito rechazado correctamente');
                 $this->redirect('/creditos');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al rechazar crédito: ' . $e->getMessage(), 'error');
+                $this->setFlash('error', 'Error al rechazar crédito: ' . $e->getMessage());
             }
         }
         

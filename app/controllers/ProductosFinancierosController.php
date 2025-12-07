@@ -83,10 +83,10 @@ class ProductosFinancierosController extends Controller {
                     $id
                 );
                 
-                $this->setFlashMessage('Producto creado correctamente', 'success');
+                $this->setFlash('success', 'Producto creado correctamente');
                 $this->redirect('/productos-financieros/creditos');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al crear producto: ' . $e->getMessage(), 'error');
+                $this->setFlash('error', 'Error al crear producto: ' . $e->getMessage());
             }
         }
         
@@ -154,10 +154,10 @@ class ProductosFinancierosController extends Controller {
                     $producto_id
                 );
                 
-                $this->setFlashMessage('Tasas actualizadas correctamente', 'success');
+                $this->setFlash('success', 'Tasas actualizadas correctamente');
                 $this->redirect('/productos-financieros/tasas/' . $producto_id);
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al actualizar tasas', 'error');
+                $this->setFlash('error', 'Error al actualizar tasas');
             }
         }
         
@@ -219,10 +219,10 @@ class ProductosFinancierosController extends Controller {
                     $producto_id
                 );
                 
-                $this->setFlashMessage('Plazos actualizados correctamente', 'success');
+                $this->setFlash('success', 'Plazos actualizados correctamente');
                 $this->redirect('/productos-financieros/plazos/' . $producto_id);
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al actualizar plazos', 'error');
+                $this->setFlash('error', 'Error al actualizar plazos');
             }
         }
         

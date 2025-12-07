@@ -413,10 +413,10 @@ class CarteraController extends Controller {
                     ]);
                 }
                 
-                $this->setFlashMessage('Prepago registrado correctamente', 'success');
+                $this->setFlash('success', 'Prepago registrado correctamente');
                 $this->redirect('/cartera/prepagos');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al registrar prepago', 'error');
+                $this->setFlash('error', 'Error al registrar prepago');
             }
         }
         
@@ -476,10 +476,10 @@ class CarteraController extends Controller {
                     $credito_id
                 );
                 
-                $this->setFlashMessage('Traspaso registrado correctamente', 'success');
+                $this->setFlash('success', 'Traspaso registrado correctamente');
                 $this->redirect('/cartera/traspasos');
             } catch (Exception $e) {
-                $this->setFlashMessage('Error al registrar traspaso', 'error');
+                $this->setFlash('error', 'Error al registrar traspaso');
             }
         }
         
