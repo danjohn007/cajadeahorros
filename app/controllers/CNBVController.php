@@ -11,6 +11,11 @@ class CNBVController extends Controller {
         $this->requireAuth();
         
         // Solo administradores pueden acceder a reportes regulatorios
+        if (!isset($_SESSION['usuario']) || !is_array($_SESSION['usuario'])) {
+            http_response_code(401);
+            die('Sesión inválida');
+        }
+        
         if (($_SESSION['usuario']['rol'] ?? '') !== 'administrador') {
             http_response_code(403);
             die('Acceso denegado');

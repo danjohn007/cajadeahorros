@@ -3,6 +3,11 @@
  * Frontend validation for credit policies
  */
 
+// Configuración
+const POLITICAS_CONFIG = {
+    ALERT_AUTO_DISMISS_TIMEOUT: 10000 // 10 segundos
+};
+
 const PoliticasCredito = {
     /**
      * Valida edad y plazo de un solicitante
@@ -96,13 +101,13 @@ const PoliticasCredito = {
             }
         }
 
-        // Auto-remover después de 10 segundos
+        // Auto-remover después del tiempo configurado
         setTimeout(() => {
             const alert = document.querySelector('[role="alert"]');
             if (alert) {
                 alert.remove();
             }
-        }, 10000);
+        }, POLITICAS_CONFIG.ALERT_AUTO_DISMISS_TIMEOUT);
     },
 
     /**

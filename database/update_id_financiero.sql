@@ -353,8 +353,23 @@ ADD INDEX IF NOT EXISTS idx_promotor (promotor_id),
 ADD INDEX IF NOT EXISTS idx_estatus (estatus),
 ADD INDEX IF NOT EXISTS idx_tipo_cartera (tipo_cartera);
 
--- Agregar foreign keys si no existen
--- Nota: Primero deben existir datos en las tablas referenciadas
+-- Agregar foreign keys para empresa_id y producto_financiero_id
+-- Estos se agregan después de que existan los datos iniciales de empresas_grupo y productos_financieros
+-- Solo se agregan si la columna existe y no tiene ya la constraint
+
+-- Verificar si la empresa por defecto existe antes de agregar FK
+SET @empresa_existe = (SELECT COUNT(*) FROM empresas_grupo WHERE id = 1);
+
+-- Agregar FK para empresa_id si existe la empresa por defecto
+SET @query = IF(@empresa_existe > 0,
+    'ALTER TABLE creditos ADD CONSTRAINT fk_creditos_empresa FOREIGN KEY (empresa_id) REFERENCES empresas_grupo(id) ON DELETE SET NULL',
+    'SELECT "Empresa por defecto no existe, FK no agregada" AS mensaje');
+PREPARE stmt FROM @query;
+EXECUTE stmt;
+DEALLOCATE PREPARE stmt;
+
+-- Nota: FK para producto_financiero_id se puede agregar manualmente después de asociar productos a créditos existentes
+-- ALTER TABLE creditos ADD CONSTRAINT fk_creditos_producto FOREIGN KEY (producto_financiero_id) REFERENCES productos_financieros(id) ON DELETE SET NULL;
 
 -- Agregar campo revisado a documentos_credito
 ALTER TABLE documentos_credito 
