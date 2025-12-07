@@ -181,6 +181,23 @@ if (isset($_SESSION['user_id'])) {
                     <span class="ml-3" x-show="sidebarOpen">Reportes</span>
                 </a>
                 
+                <!-- ID FINANCIERO - Nuevos Módulos -->
+                <?php if ($_SESSION['user_role'] === 'administrador' || $_SESSION['user_role'] === 'operativo'): ?>
+                <a href="<?= BASE_URL ?>/tesoreria" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'tesoreria') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-money-bill-trend-up w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Tesorería</span>
+                </a>
+                <?php endif; ?>
+                
+                <?php if ($_SESSION['user_role'] === 'administrador'): ?>
+                <a href="<?= BASE_URL ?>/cnbv" 
+                   class="sidebar-link flex items-center px-4 py-3 text-gray-100 hover:bg-primary-700 <?= strpos($_SERVER['REQUEST_URI'], 'cnbv') !== false ? 'active' : '' ?>">
+                    <i class="fas fa-file-shield w-6"></i>
+                    <span class="ml-3" x-show="sidebarOpen">Reportes CNBV</span>
+                </a>
+                <?php endif; ?>
+                
                 <!-- Nuevos Módulos (controlados por configuración) -->
                 <?php if (isModuloEnabled('financiero', $modulosDeshabilitados, $_SESSION['user_role'])): ?>
                 <a href="<?= BASE_URL ?>/financiero" 
