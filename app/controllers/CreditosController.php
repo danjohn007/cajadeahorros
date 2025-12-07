@@ -639,4 +639,240 @@ class CreditosController extends Controller {
             $fechaPago = date('Y-m-d', strtotime($fechaPago . ' +1 month'));
         }
     }
+    
+    /**
+     * Generación de propuestas de crédito
+     */
+    public function propuesta($id = null) {
+        if ($id) {
+            $credito = $this->db->fetch(
+                "SELECT c.*, s.nombre, s.apellido_paterno, s.fecha_nacimiento,
+                        pf.nombre as producto_nombre, pf.tasa_interes_min, pf.tasa_interes_max
+                 FROM creditos c
+                 JOIN socios s ON c.socio_id = s.id
+                 LEFT JOIN productos_financieros pf ON c.producto_financiero_id = pf.id
+                 WHERE c.id = ?",
+                [$id]
+            );
+            
+            if (!$credito) {
+                $this->redirect('/creditos');
+                return;
+            }
+            
+            // Calcular edad
+            $edad = floor((time() - strtotime($credito['fecha_nacimiento'])) / (365.25 * 24 * 60 * 60));
+            
+            $this->view('creditos/propuesta', [
+                'pageTitle' => 'Propuesta de Crédito',
+                'credito' => $credito,
+                'edad' => $edad
+            ]);
+        } else {
+            $this->redirect('/creditos');
+        }
+    }
+    
+    /**
+     * Configuración de motor de reglas de crédito
+     */
+    public function motorReglas() {
+        $this->requireAuth(['administrador']);
+        
+        $politicas = $this->db->fetchAll(
+            "SELECT pc.*, pf.nombre as producto_nombre
+             FROM politicas_credito pc
+             LEFT JOIN productos_financieros pf ON pc.producto_id = pf.id
+             ORDER BY pc.activo DESC, pc.nombre"
+        );
+        
+        $this->view('creditos/motor_reglas', [
+            'pageTitle' => 'Motor de Reglas de Crédito',
+            'politicas' => $politicas
+        ]);
+    }
+    
+    /**
+     * Ejecución de políticas de crédito
+     */
+    public function ejecutarPoliticas($credito_id) {
+        $credito = $this->db->fetch("SELECT * FROM creditos WHERE id = ?", [$credito_id]);
+        
+        if (!$credito) {
+            $this->jsonResponse(['success' => false, 'message' => 'Crédito no encontrado'], 404);
+            return;
+        }
+        
+        $socio = $this->db->fetch("SELECT * FROM socios WHERE id = ?", [$credito['socio_id']]);
+        
+        // Validar edad vs plazo
+        $edad = floor((time() - strtotime($socio['fecha_nacimiento'])) / (365.25 * 24 * 60 * 60));
+        $plazo_maximo = ($edad >= 69) ? 12 : 999;
+        
+        $validaciones = [
+            'edad_plazo' => [
+                'valido' => $credito['plazo_meses'] <= $plazo_maximo,
+                'mensaje' => $credito['plazo_meses'] <= $plazo_maximo ? 'OK' : "El plazo máximo para la edad del solicitante es $plazo_maximo meses"
+            ]
+        ];
+        
+        // Validar requiere aval
+        if ($credito['producto_financiero_id']) {
+            $producto = $this->db->fetch(
+                "SELECT * FROM productos_financieros WHERE id = ?",
+                [$credito['producto_financiero_id']]
+            );
+            
+            if ($producto && $producto['requiere_aval'] && $credito['monto_solicitado'] >= $producto['monto_requiere_aval']) {
+                $avales_count = $this->db->fetch(
+                    "SELECT COUNT(*) as total FROM avales_obligados WHERE credito_id = ? AND activo = 1",
+                    [$credito_id]
+                )['total'];
+                
+                $validaciones['requiere_aval'] = [
+                    'valido' => $avales_count > 0,
+                    'mensaje' => $avales_count > 0 ? 'OK' : 'Este crédito requiere al menos un aval'
+                ];
+            }
+        }
+        
+        $this->jsonResponse([
+            'success' => true,
+            'validaciones' => $validaciones,
+            'todas_validas' => !in_array(false, array_column($validaciones, 'valido'))
+        ]);
+    }
+    
+    /**
+     * Documentación de garantías y avales
+     */
+    public function garantiasAvales($credito_id) {
+        $credito = $this->db->fetch("SELECT * FROM creditos WHERE id = ?", [$credito_id]);
+        
+        if (!$credito) {
+            $this->redirect('/creditos');
+            return;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $tipo = $_POST['tipo'] ?? 'aval';
+                
+                if ($tipo === 'garantia') {
+                    $this->db->insert('garantias', [
+                        'credito_id' => $credito_id,
+                        'tipo' => $_POST['tipo_garantia'],
+                        'descripcion' => $_POST['descripcion'],
+                        'valor_estimado' => $_POST['valor_estimado'],
+                        'fecha_valuacion' => date('Y-m-d'),
+                        'activo' => 1
+                    ]);
+                } else {
+                    $this->db->insert('avales_obligados', [
+                        'credito_id' => $credito_id,
+                        'tipo' => $_POST['tipo_aval'],
+                        'nombre' => $_POST['nombre'],
+                        'apellido_paterno' => $_POST['apellido_paterno'],
+                        'apellido_materno' => $_POST['apellido_materno'],
+                        'rfc' => $_POST['rfc'],
+                        'curp' => $_POST['curp'],
+                        'telefono' => $_POST['telefono'],
+                        'direccion' => $_POST['direccion'],
+                        'activo' => 1
+                    ]);
+                }
+                
+                $this->setFlashMessage('Registro agregado correctamente', 'success');
+                $this->redirect('/creditos/garantias-avales/' . $credito_id);
+            } catch (Exception $e) {
+                $this->setFlashMessage('Error al agregar registro', 'error');
+            }
+        }
+        
+        $avales = $this->db->fetchAll(
+            "SELECT * FROM avales_obligados WHERE credito_id = ? AND activo = 1",
+            [$credito_id]
+        );
+        
+        $garantias = $this->db->fetchAll(
+            "SELECT * FROM garantias WHERE credito_id = ? AND activo = 1",
+            [$credito_id]
+        );
+        
+        $this->view('creditos/garantias_avales', [
+            'pageTitle' => 'Garantías y Avales',
+            'credito' => $credito,
+            'avales' => $avales,
+            'garantias' => $garantias
+        ]);
+    }
+    
+    /**
+     * Gestión de comité de crédito
+     */
+    public function comite() {
+        $this->requireAuth(['administrador', 'operativo']);
+        
+        // Solicitudes pendientes de revisión
+        $solicitudes = $this->db->fetchAll(
+            "SELECT c.*, s.nombre, s.apellido_paterno,
+                    pf.nombre as producto_nombre
+             FROM creditos c
+             JOIN socios s ON c.socio_id = s.id
+             LEFT JOIN productos_financieros pf ON c.producto_financiero_id = pf.id
+             WHERE c.estatus = 'revision'
+             ORDER BY c.fecha_solicitud ASC"
+        );
+        
+        $this->view('creditos/comite', [
+            'pageTitle' => 'Comité de Crédito',
+            'solicitudes' => $solicitudes
+        ]);
+    }
+    
+    /**
+     * Autorización y rechazo de solicitudes (ampliación del método autorizar)
+     */
+    public function rechazar($id) {
+        $credito = $this->db->fetch("SELECT * FROM creditos WHERE id = ?", [$id]);
+        
+        if (!$credito) {
+            $this->redirect('/creditos');
+            return;
+        }
+        
+        if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+            try {
+                $motivo_rechazo = $_POST['motivo_rechazo'] ?? '';
+                
+                if (empty($motivo_rechazo)) {
+                    throw new Exception('Debe especificar el motivo del rechazo');
+                }
+                
+                $this->db->update('creditos', $id, [
+                    'estatus' => 'rechazado',
+                    'motivo_rechazo' => $motivo_rechazo,
+                    'fecha_rechazo' => date('Y-m-d')
+                ]);
+                
+                $this->logAction(
+                    $_SESSION['user_id'],
+                    'rechazar_credito',
+                    "Crédito rechazado #$id: $motivo_rechazo",
+                    'creditos',
+                    $id
+                );
+                
+                $this->setFlashMessage('Crédito rechazado correctamente', 'success');
+                $this->redirect('/creditos');
+            } catch (Exception $e) {
+                $this->setFlashMessage('Error al rechazar crédito: ' . $e->getMessage(), 'error');
+            }
+        }
+        
+        $this->view('creditos/rechazar', [
+            'pageTitle' => 'Rechazar Solicitud',
+            'credito' => $credito
+        ]);
+    }
 }
