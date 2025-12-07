@@ -27,8 +27,8 @@ define('UPLOADS_PATH', ROOT_PATH . '/uploads');
 // Configuración de base de datos
 // IMPORTANTE: Cambiar estas credenciales antes de usar en producción
 define('DB_HOST', getenv('DB_HOST') ?: 'localhost');
-define('DB_NAME', getenv('DB_NAME') ?: 'caja_financiero');
-define('DB_USER', getenv('DB_USER') ?: 'caja_financiero');
+define('DB_NAME', getenv('DB_NAME') ?: 'caja_ahorro');
+define('DB_USER', getenv('DB_USER') ?: 'caja_ahorro');
 define('DB_PASS', getenv('DB_PASS') ?: 'Danjohn007!');
 define('DB_CHARSET', 'utf8mb4');
 
