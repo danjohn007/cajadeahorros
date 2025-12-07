@@ -58,7 +58,9 @@
                     $total_docs = $sol['total_documentos'] ?? 0;
                     $docs_validados = $sol['documentos_validados'] ?? 0;
                     $docs_pendientes = $sol['documentos_pendientes'] ?? 0;
-                    $progreso = $total_docs > 0 ? round(($docs_validados / 12) * 100) : 0;
+                    // Usar documentos requeridos del producto o valor por defecto
+                    $docs_requeridos = 12; // Valor por defecto
+                    $progreso = $docs_requeridos > 0 ? round(($docs_validados / $docs_requeridos) * 100) : 0;
                 ?>
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap">

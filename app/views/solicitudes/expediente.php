@@ -221,12 +221,15 @@
                     $file_color = 'text-green-600';
                 }
                 
-                // Calcular tamaño del archivo (simulado)
-                $file_size = rand(500, 5000);
-                $file_size_text = $file_size < 1024 ? $file_size . ' KB' : round($file_size / 1024, 1) . ' MB';
+                // Obtener tamaño del archivo si existe
+                $file_size_text = 'N/A';
+                if (isset($doc['ruta_archivo']) && file_exists($doc['ruta_archivo'])) {
+                    $file_size = filesize($doc['ruta_archivo']);
+                    $file_size_text = $file_size < 1024 ? $file_size . ' B' : ($file_size < 1048576 ? round($file_size / 1024, 1) . ' KB' : round($file_size / 1048576, 1) . ' MB');
+                }
                 
-                // Número de páginas (simulado para PDFs)
-                $num_paginas = $extension === 'pdf' ? rand(1, 8) : 1;
+                // Número de páginas (solo mostrar si está disponible)
+                $num_paginas = isset($doc['num_paginas']) ? $doc['num_paginas'] : 'N/A';
             ?>
             <div class="border border-gray-200 rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div class="flex items-start mb-3">
@@ -236,7 +239,9 @@
                     <div class="flex-1 min-w-0">
                         <h4 class="text-sm font-semibold text-gray-900 truncate"><?= htmlspecialchars($doc['tipo'] ?? 'Documento') ?></h4>
                         <p class="text-xs text-gray-500">Subido: <?= date('d/m/Y H:i A', strtotime($doc['fecha_subida'] ?? 'now')) ?></p>
-                        <p class="text-xs text-gray-500">Tamaño: <?= $file_size_text ?> | Páginas: <?= $num_paginas ?></p>
+                        <?php if ($file_size_text !== 'N/A'): ?>
+                        <p class="text-xs text-gray-500">Tamaño: <?= $file_size_text ?><?= $num_paginas !== 'N/A' ? ' | Páginas: ' . $num_paginas : '' ?></p>
+                        <?php endif; ?>
                     </div>
                 </div>
                 

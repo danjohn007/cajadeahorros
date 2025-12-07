@@ -176,21 +176,48 @@ class SolicitudesController extends Controller {
      * Lista de expedientes digitales - Vista general
      */
     public function expedientes() {
-        // Obtener todas las solicitudes en revisión con su información
-        $sql = "SELECT s.*, 
-                       so.numero_socio, so.nombre, so.apellido_paterno, so.apellido_materno,
-                       pf.nombre as producto_nombre,
-                       COUNT(DISTINCT dc.id) as total_documentos,
-                       SUM(CASE WHEN dc.revisado = 1 THEN 1 ELSE 0 END) as documentos_validados,
-                       SUM(CASE WHEN dc.revisado = 0 AND dc.id IS NOT NULL THEN 1 ELSE 0 END) as documentos_pendientes
-                FROM creditos s
-                LEFT JOIN socios so ON s.socio_id = so.id
-                LEFT JOIN productos_financieros pf ON s.producto_financiero_id = pf.id
-                LEFT JOIN documentos_credito dc ON s.id = dc.credito_id
-                WHERE s.estatus IN ('revision', 'solicitado', 'aprobado')
-                GROUP BY s.id
-                ORDER BY s.created_at DESC
-                LIMIT 100";
+        // Verificar si existe la columna revisado
+        $columns = $this->db->fetchAll("SHOW COLUMNS FROM documentos_credito");
+        $has_revisado = false;
+        foreach ($columns as $col) {
+            if ($col['Field'] === 'revisado') {
+                $has_revisado = true;
+                break;
+            }
+        }
+        
+        // Construir query dependiendo de si existe la columna
+        if ($has_revisado) {
+            $sql = "SELECT s.*, 
+                           so.numero_socio, so.nombre, so.apellido_paterno, so.apellido_materno,
+                           pf.nombre as producto_nombre,
+                           COUNT(DISTINCT dc.id) as total_documentos,
+                           SUM(CASE WHEN dc.revisado = 1 THEN 1 ELSE 0 END) as documentos_validados,
+                           SUM(CASE WHEN dc.revisado = 0 AND dc.id IS NOT NULL THEN 1 ELSE 0 END) as documentos_pendientes
+                    FROM creditos s
+                    LEFT JOIN socios so ON s.socio_id = so.id
+                    LEFT JOIN productos_financieros pf ON s.producto_financiero_id = pf.id
+                    LEFT JOIN documentos_credito dc ON s.id = dc.credito_id
+                    WHERE s.estatus IN ('revision', 'solicitado', 'aprobado')
+                    GROUP BY s.id
+                    ORDER BY s.created_at DESC
+                    LIMIT 100";
+        } else {
+            $sql = "SELECT s.*, 
+                           so.numero_socio, so.nombre, so.apellido_paterno, so.apellido_materno,
+                           pf.nombre as producto_nombre,
+                           COUNT(DISTINCT dc.id) as total_documentos,
+                           0 as documentos_validados,
+                           COUNT(DISTINCT dc.id) as documentos_pendientes
+                    FROM creditos s
+                    LEFT JOIN socios so ON s.socio_id = so.id
+                    LEFT JOIN productos_financieros pf ON s.producto_financiero_id = pf.id
+                    LEFT JOIN documentos_credito dc ON s.id = dc.credito_id
+                    WHERE s.estatus IN ('revision', 'solicitado', 'aprobado')
+                    GROUP BY s.id
+                    ORDER BY s.created_at DESC
+                    LIMIT 100";
+        }
         
         $solicitudes = $this->db->fetchAll($sql);
         
@@ -240,17 +267,24 @@ class SolicitudesController extends Controller {
         ];
         
         foreach ($documentos as $doc) {
-            if (isset($doc['revisado']) && $doc['revisado'] == 1) {
+            if (isset($doc['revisado']) && $doc['revisado'] === '1') {
                 $stats['validados']++;
-            } else if (isset($doc['revisado']) && $doc['revisado'] == -1) {
+            } else if (isset($doc['revisado']) && $doc['revisado'] === '-1') {
                 $stats['rechazados']++;
             } else if ($doc['id']) {
                 $stats['pendientes']++;
             }
         }
         
-        // Documentos requeridos por categoría (ejemplo básico)
-        $documentos_requeridos = 12;
+        // Obtener documentos requeridos del producto financiero o usar valor por defecto
+        $documentos_requeridos = 12; // Valor por defecto
+        $producto = $this->db->fetch(
+            "SELECT documentos_requeridos FROM productos_financieros WHERE id = ?",
+            [$solicitud['producto_financiero_id'] ?? 0]
+        );
+        if ($producto && isset($producto['documentos_requeridos']) && $producto['documentos_requeridos'] > 0) {
+            $documentos_requeridos = (int)$producto['documentos_requeridos'];
+        }
         $stats['faltantes'] = max(0, $documentos_requeridos - $stats['total']);
         
         $this->view('solicitudes/expediente', [
