@@ -17,6 +17,18 @@ Plataforma web integral para la gestión de socios, ahorros, créditos, descuent
 - **👤 Gestión de Usuarios**: Control de acceso por roles (administrador, operativo, consulta)
 - **📝 Bitácora**: Registro de todas las acciones del sistema
 
+### 🆕 ID FINANCIERO - Nuevas Funcionalidades (v2.0)
+
+- **🏢 Arquitectura Multiempresa**: Gestión de múltiples entidades del grupo con productos y unidades de negocio segregadas
+- **📋 Políticas de Crédito**: Motor de reglas con validaciones automáticas de edad, montos y garantías
+- **✅ Sistema de Checklists**: Validación obligatoria de documentos y requisitos por tipo de operación
+- **💼 Módulo de Tesorería**: Proyecciones financieras y flujos de efectivo en tiempo real
+- **📊 Reportes CNBV**: Generación automática de reportes regulatorios en XML/Excel
+- **🤝 Gestión de Garantías**: Control de avales, obligados solidarios y garantías
+- **📉 Gestión de Cartera Avanzada**: Traspasos automáticos, convenios de pago, liquidaciones
+
+**Ver documentación completa**: [docs/ID_FINANCIERO.md](docs/ID_FINANCIERO.md)
+
 ### Tecnologías Utilizadas
 
 - **Backend**: PHP Puro (sin framework) - Arquitectura MVC

@@ -144,6 +144,26 @@ class CreditosController extends Controller {
                 if ($creditosActivos >= 2) {
                     $errors[] = 'El socio ya tiene el máximo de créditos permitidos';
                 }
+                
+                // Validar edad y plazo (Regla de negocio: >69 años = máximo 12 meses)
+                $socio = $this->db->fetch(
+                    "SELECT nombre, apellido_paterno, apellido_materno, fecha_nacimiento,
+                     TIMESTAMPDIFF(YEAR, fecha_nacimiento, CURDATE()) AS edad
+                     FROM socios WHERE id = :id",
+                    ['id' => $data['socio_id']]
+                );
+                
+                if ($socio && $socio['fecha_nacimiento']) {
+                    $edad = $socio['edad'];
+                    $plazo_solicitado = (int)$data['plazo_meses'];
+                    
+                    if ($edad > 69 && $plazo_solicitado > 12) {
+                        $nombre_completo = trim("{$socio['nombre']} {$socio['apellido_paterno']} {$socio['apellido_materno']}");
+                        $errors[] = "El solicitante {$nombre_completo} tiene {$edad} años. Por políticas de la institución, solicitantes mayores de 69 años solo pueden acceder a créditos con plazo máximo de 12 meses.";
+                    }
+                } else if ($socio && !$socio['fecha_nacimiento']) {
+                    $errors[] = 'El socio no tiene registrada su fecha de nacimiento. Por favor, actualice el perfil del socio antes de continuar.';
+                }
             }
             
             if (empty($errors)) {
