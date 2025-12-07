@@ -74,9 +74,9 @@
                 <?php foreach ($productos as $prod): ?>
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap"><?= htmlspecialchars($prod['nombre'] ?? 'N/A') ?></td>
-                    <td class="px-6 py-4 whitespace-nowrap">-</td>
-                    <td class="px-6 py-4 whitespace-nowrap">-</td>
-                    <td class="px-6 py-4 whitespace-nowrap">-</td>
+                    <td class="px-6 py-4 whitespace-nowrap"><?= isset($prod['plazo_minimo']) ? $prod['plazo_minimo'] . ' meses' : '-' ?></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><?= isset($prod['plazo_maximo']) ? $prod['plazo_maximo'] . ' meses' : '-' ?></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><?= htmlspecialchars(ucfirst($prod['periodicidad'] ?? '-')) ?></td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <a href="<?= BASE_URL ?>/productos_financieros/plazos/<?= $prod['id'] ?>" class="text-blue-600 hover:text-blue-900">
                             <i class="fas fa-edit"></i> Configurar

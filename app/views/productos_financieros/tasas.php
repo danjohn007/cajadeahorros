@@ -66,8 +66,8 @@
                 <tr class="hover:bg-gray-50">
                     <td class="px-6 py-4 whitespace-nowrap"><?= htmlspecialchars($prod['nombre'] ?? 'N/A') ?></td>
                     <td class="px-6 py-4 whitespace-nowrap"><?= htmlspecialchars($prod['empresa_nombre'] ?? 'N/A') ?></td>
-                    <td class="px-6 py-4 whitespace-nowrap">-</td>
-                    <td class="px-6 py-4 whitespace-nowrap">-</td>
+                    <td class="px-6 py-4 whitespace-nowrap"><?= isset($prod['tasa_interes']) ? number_format($prod['tasa_interes'], 2) . '%' : '-' ?></td>
+                    <td class="px-6 py-4 whitespace-nowrap"><?= isset($prod['comision_apertura']) ? number_format($prod['comision_apertura'], 2) . '%' : '-' ?></td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm">
                         <a href="<?= BASE_URL ?>/productos_financieros/tasas/<?= $prod['id'] ?>" class="text-blue-600 hover:text-blue-900">
                             <i class="fas fa-edit"></i> Configurar
