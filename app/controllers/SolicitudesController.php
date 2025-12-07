@@ -138,16 +138,38 @@ class SolicitudesController extends Controller {
     }
 
     /**
-     * Evaluación preliminar de requisitos
+     * Lista de evaluaciones preliminares
      */
-    public function evaluacion($id) {
+    public function evaluacion() {
+        // Obtener filtros
+        $filtros = [
+            'numero_solicitud' => $_GET['numero_solicitud'] ?? '',
+            'nombre_cliente' => $_GET['nombre_cliente'] ?? '',
+            'estado' => $_GET['estado'] ?? '',
+            'fecha_desde' => $_GET['fecha_desde'] ?? '',
+            'fecha_hasta' => $_GET['fecha_hasta'] ?? '',
+            'tipo_producto' => $_GET['tipo_producto'] ?? '',
+            'agente_ventas' => $_GET['agente_ventas'] ?? '',
+            'sucursal' => $_GET['sucursal'] ?? ''
+        ];
+        
+        $this->view('solicitudes/evaluacion', [
+            'pageTitle' => 'Evaluación Preliminar de Requisitos',
+            'filtros' => $filtros
+        ]);
+    }
+
+    /**
+     * Evaluación preliminar de requisitos individual
+     */
+    public function evaluacionDetalle($id) {
         $solicitud = $this->db->fetch("SELECT c.*, s.fecha_nacimiento, s.nombre, s.apellido_paterno 
                                        FROM creditos c 
                                        JOIN socios s ON c.socio_id = s.id 
                                        WHERE c.id = ?", [$id]);
         
         if (!$solicitud) {
-            $this->redirect('/solicitudes');
+            $this->redirect('/solicitudes/evaluacion');
             return;
         }
         
@@ -163,7 +185,7 @@ class SolicitudesController extends Controller {
              ORDER BY ci.orden"
         );
         
-        $this->view('solicitudes/evaluacion', [
+        $this->view('solicitudes/evaluacion-detalle', [
             'pageTitle' => 'Evaluación Preliminar',
             'solicitud' => $solicitud,
             'edad' => $edad,

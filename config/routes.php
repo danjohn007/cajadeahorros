@@ -242,7 +242,9 @@ $router->add('cnbv/generar-cartera', ['controller' => 'cnbv', 'action' => 'gener
 $router->add('solicitudes', ['controller' => 'solicitudes', 'action' => 'index']);
 $router->add('solicitudes/recepcion', ['controller' => 'solicitudes', 'action' => 'recepcion']);
 $router->add('solicitudes/captura/{id}', ['controller' => 'solicitudes', 'action' => 'captura']);
-$router->add('solicitudes/evaluacion/{id}', ['controller' => 'solicitudes', 'action' => 'evaluacion']);
+$router->add('solicitudes/evaluacion', ['controller' => 'solicitudes', 'action' => 'evaluacion']);
+$router->add('solicitudes/evaluacion/list', ['controller' => 'solicitudes', 'action' => 'evaluacion']);
+$router->add('solicitudes/evaluacion/{id}', ['controller' => 'solicitudes', 'action' => 'evaluacionDetalle']);
 $router->add('solicitudes/expediente/{id}', ['controller' => 'solicitudes', 'action' => 'expediente']);
 $router->add('solicitudes/asignacion', ['controller' => 'solicitudes', 'action' => 'asignacion']);
 
