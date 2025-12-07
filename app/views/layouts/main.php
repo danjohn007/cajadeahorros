@@ -170,7 +170,7 @@ if (isset($_SESSION['user_id'])) {
                         <a href="<?= BASE_URL ?>/solicitudes/recepcion" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Recepción de Solicitudes</a>
                         <a href="<?= BASE_URL ?>/solicitudes" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Captura y Verificación</a>
                         <a href="<?= BASE_URL ?>/solicitudes" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Evaluación Preliminar</a>
-                        <a href="<?= BASE_URL ?>/solicitudes" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Gestión de Expedientes</a>
+                        <a href="<?= BASE_URL ?>/solicitudes/expedientes" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Gestión de Expedientes</a>
                         <a href="<?= BASE_URL ?>/solicitudes/asignacion" class="block px-8 py-2 text-sm text-gray-300 hover:bg-primary-700">Asignación Fuerza de Ventas</a>
                     </div>
                 </div>

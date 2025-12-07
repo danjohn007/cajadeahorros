@@ -243,6 +243,7 @@ $router->add('solicitudes', ['controller' => 'solicitudes', 'action' => 'index']
 $router->add('solicitudes/recepcion', ['controller' => 'solicitudes', 'action' => 'recepcion']);
 $router->add('solicitudes/captura/{id}', ['controller' => 'solicitudes', 'action' => 'captura']);
 $router->add('solicitudes/evaluacion/{id}', ['controller' => 'solicitudes', 'action' => 'evaluacion']);
+$router->add('solicitudes/expedientes', ['controller' => 'solicitudes', 'action' => 'expedientes']);
 $router->add('solicitudes/expediente/{id}', ['controller' => 'solicitudes', 'action' => 'expediente']);
 $router->add('solicitudes/asignacion', ['controller' => 'solicitudes', 'action' => 'asignacion']);
 

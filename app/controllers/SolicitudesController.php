@@ -173,26 +173,92 @@ class SolicitudesController extends Controller {
     }
 
     /**
-     * Gestión de expedientes digitales
+     * Lista de expedientes digitales - Vista general
+     */
+    public function expedientes() {
+        // Obtener todas las solicitudes en revisión con su información
+        $sql = "SELECT s.*, 
+                       so.numero_socio, so.nombre, so.apellido_paterno, so.apellido_materno,
+                       pf.nombre as producto_nombre,
+                       COUNT(DISTINCT dc.id) as total_documentos,
+                       SUM(CASE WHEN dc.revisado = 1 THEN 1 ELSE 0 END) as documentos_validados,
+                       SUM(CASE WHEN dc.revisado = 0 AND dc.id IS NOT NULL THEN 1 ELSE 0 END) as documentos_pendientes
+                FROM creditos s
+                LEFT JOIN socios so ON s.socio_id = so.id
+                LEFT JOIN productos_financieros pf ON s.producto_financiero_id = pf.id
+                LEFT JOIN documentos_credito dc ON s.id = dc.credito_id
+                WHERE s.estatus IN ('revision', 'solicitado', 'aprobado')
+                GROUP BY s.id
+                ORDER BY s.created_at DESC
+                LIMIT 100";
+        
+        $solicitudes = $this->db->fetchAll($sql);
+        
+        $this->view('solicitudes/expedientes', [
+            'pageTitle' => 'Gestión de Expedientes Digitales',
+            'solicitudes' => $solicitudes
+        ]);
+    }
+
+    /**
+     * Gestión de expedientes digitales - Vista de detalle
      */
     public function expediente($id) {
-        $solicitud = $this->db->fetch("SELECT * FROM creditos WHERE id = ?", [$id]);
+        $solicitud = $this->db->fetch(
+            "SELECT s.*, 
+                    so.numero_socio, so.nombre, so.apellido_paterno, so.apellido_materno,
+                    pf.nombre as producto_nombre
+             FROM creditos s
+             LEFT JOIN socios so ON s.socio_id = so.id
+             LEFT JOIN productos_financieros pf ON s.producto_financiero_id = pf.id
+             WHERE s.id = ?", 
+            [$id]
+        );
         
         if (!$solicitud) {
-            $this->redirect('/solicitudes');
+            $this->redirect('/solicitudes/expedientes');
             return;
         }
         
-        // Obtener documentos
+        // Obtener documentos con información del usuario que los subió
         $documentos = $this->db->fetchAll(
-            "SELECT * FROM documentos_credito WHERE credito_id = ? ORDER BY created_at DESC",
+            "SELECT dc.*, u.nombre as usuario_nombre, u.apellido_paterno as usuario_apellido
+             FROM documentos_credito dc
+             LEFT JOIN usuarios u ON dc.usuario_id = u.id
+             WHERE dc.credito_id = ? 
+             ORDER BY dc.fecha_subida DESC",
             [$id]
         );
+        
+        // Calcular estadísticas
+        $stats = [
+            'total' => count($documentos),
+            'validados' => 0,
+            'pendientes' => 0,
+            'rechazados' => 0,
+            'faltantes' => 0
+        ];
+        
+        foreach ($documentos as $doc) {
+            if (isset($doc['revisado']) && $doc['revisado'] == 1) {
+                $stats['validados']++;
+            } else if (isset($doc['revisado']) && $doc['revisado'] == -1) {
+                $stats['rechazados']++;
+            } else if ($doc['id']) {
+                $stats['pendientes']++;
+            }
+        }
+        
+        // Documentos requeridos por categoría (ejemplo básico)
+        $documentos_requeridos = 12;
+        $stats['faltantes'] = max(0, $documentos_requeridos - $stats['total']);
         
         $this->view('solicitudes/expediente', [
             'pageTitle' => 'Expediente Digital',
             'solicitud' => $solicitud,
-            'documentos' => $documentos
+            'documentos' => $documentos,
+            'stats' => $stats,
+            'documentos_requeridos' => $documentos_requeridos
         ]);
     }
 
