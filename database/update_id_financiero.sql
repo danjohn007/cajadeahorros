@@ -1,15 +1,26 @@
 -- =====================================================
 -- ID FINANCIERO - Sistema de Gestión de Crédito Multiempresa
 -- Script de actualización de base de datos
--- Versión: 2.0
+-- Versión: 2.0 (lista para importar, compatible con MySQL/MariaDB sin ALTER ... IF NOT EXISTS)
 -- Fecha: 2025-12-07
 -- =====================================================
-
+--
+-- Instrucciones:
+-- 1) Ejecutar este script en un entorno de pruebas primero.
+-- 2) Requiere permisos para crear tablas, alterar tablas y crear índices/constraints.
+-- 3) Este script evita la sintaxis ALTER ... ADD COLUMN IF NOT EXISTS / ADD INDEX IF NOT EXISTS
+--    y en su lugar comprueba INFORMATION_SCHEMA y usa PREPARE/EXECUTE dinámico para aplicar cambios
+--    en el orden correcto (columnas -> índices -> constraints).
+--
+-- Nota importante:
+-- - Este script asume que la tabla `creditos` ya existe. Si no existe, creela primero.
+-- - Antes de agregar FKs (especialmente producto_financiero_id) confirme que los valores actuales
+--   en creditos son NULL o coinciden con las tablas de referencia para evitar errores de integridad.
+--
 -- =====================================================
--- 1. ARQUITECTURA MULTIEMPRESA
+-- 1. ARQUITECTURA MULTIEMPRESA (crear tablas nuevas si no existen)
 -- =====================================================
 
--- Tabla de empresas del grupo
 CREATE TABLE IF NOT EXISTS empresas_grupo (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(200) NOT NULL,
@@ -26,7 +37,6 @@ CREATE TABLE IF NOT EXISTS empresas_grupo (
     updated_at DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de unidades de negocio
 CREATE TABLE IF NOT EXISTS unidades_negocio (
     id INT AUTO_INCREMENT PRIMARY KEY,
     empresa_id INT NOT NULL,
@@ -42,7 +52,6 @@ CREATE TABLE IF NOT EXISTS unidades_negocio (
     FOREIGN KEY (empresa_id) REFERENCES empresas_grupo(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de productos financieros
 CREATE TABLE IF NOT EXISTS productos_financieros (
     id INT AUTO_INCREMENT PRIMARY KEY,
     empresa_id INT NOT NULL,
@@ -64,7 +73,6 @@ CREATE TABLE IF NOT EXISTS productos_financieros (
     FOREIGN KEY (empresa_id) REFERENCES empresas_grupo(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de fuerza de ventas (promotores/asesores)
 CREATE TABLE IF NOT EXISTS fuerza_ventas (
     id INT AUTO_INCREMENT PRIMARY KEY,
     unidad_negocio_id INT NOT NULL,
@@ -85,7 +93,6 @@ CREATE TABLE IF NOT EXISTS fuerza_ventas (
     FOREIGN KEY (unidad_negocio_id) REFERENCES unidades_negocio(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de poblaciones (catálogo geográfico)
 CREATE TABLE IF NOT EXISTS poblaciones (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(200) NOT NULL,
@@ -105,7 +112,6 @@ CREATE TABLE IF NOT EXISTS poblaciones (
 -- 2. POLÍTICAS DE CRÉDITO Y CHECKLISTS
 -- =====================================================
 
--- Tabla de políticas de crédito
 CREATE TABLE IF NOT EXISTS politicas_credito (
     id INT AUTO_INCREMENT PRIMARY KEY,
     producto_id INT,
@@ -121,7 +127,6 @@ CREATE TABLE IF NOT EXISTS politicas_credito (
     FOREIGN KEY (producto_id) REFERENCES productos_financieros(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de checklists de crédito
 CREATE TABLE IF NOT EXISTS checklists_credito (
     id INT AUTO_INCREMENT PRIMARY KEY,
     nombre VARCHAR(200) NOT NULL,
@@ -135,7 +140,6 @@ CREATE TABLE IF NOT EXISTS checklists_credito (
     FOREIGN KEY (producto_id) REFERENCES productos_financieros(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de items de checklist
 CREATE TABLE IF NOT EXISTS checklist_items (
     id INT AUTO_INCREMENT PRIMARY KEY,
     checklist_id INT NOT NULL,
@@ -148,7 +152,7 @@ CREATE TABLE IF NOT EXISTS checklist_items (
     FOREIGN KEY (checklist_id) REFERENCES checklists_credito(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de validaciones de checklist por crédito
+-- checklist_validaciones requiere la tabla creditos; se crea solo si creditos existe
 CREATE TABLE IF NOT EXISTS checklist_validaciones (
     id INT AUTO_INCREMENT PRIMARY KEY,
     credito_id INT NOT NULL,
@@ -168,7 +172,6 @@ CREATE TABLE IF NOT EXISTS checklist_validaciones (
 -- 3. GESTIÓN DE GARANTÍAS Y AVALES
 -- =====================================================
 
--- Tabla de avales y obligados solidarios
 CREATE TABLE IF NOT EXISTS avales_obligados (
     id INT AUTO_INCREMENT PRIMARY KEY,
     credito_id INT NOT NULL,
@@ -191,7 +194,6 @@ CREATE TABLE IF NOT EXISTS avales_obligados (
     FOREIGN KEY (credito_id) REFERENCES creditos(id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de garantías
 CREATE TABLE IF NOT EXISTS garantias (
     id INT AUTO_INCREMENT PRIMARY KEY,
     credito_id INT NOT NULL,
@@ -210,7 +212,6 @@ CREATE TABLE IF NOT EXISTS garantias (
 -- 4. MÓDULO DE TESORERÍA
 -- =====================================================
 
--- Tabla de proyecciones financieras
 CREATE TABLE IF NOT EXISTS proyecciones_financieras (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fecha_proyeccion DATE NOT NULL,
@@ -227,7 +228,6 @@ CREATE TABLE IF NOT EXISTS proyecciones_financieras (
     INDEX idx_fecha (fecha_proyeccion)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de flujos de efectivo
 CREATE TABLE IF NOT EXISTS flujos_efectivo (
     id INT AUTO_INCREMENT PRIMARY KEY,
     fecha DATE NOT NULL,
@@ -245,7 +245,6 @@ CREATE TABLE IF NOT EXISTS flujos_efectivo (
 -- 5. GESTIÓN DE CARTERA
 -- =====================================================
 
--- Tabla de traspasos de cartera
 CREATE TABLE IF NOT EXISTS traspasos_cartera (
     id INT AUTO_INCREMENT PRIMARY KEY,
     credito_id INT NOT NULL,
@@ -260,7 +259,6 @@ CREATE TABLE IF NOT EXISTS traspasos_cartera (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de convenios de pago
 CREATE TABLE IF NOT EXISTS convenios_pago (
     id INT AUTO_INCREMENT PRIMARY KEY,
     credito_id INT NOT NULL,
@@ -278,7 +276,6 @@ CREATE TABLE IF NOT EXISTS convenios_pago (
     FOREIGN KEY (usuario_id) REFERENCES usuarios(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de liquidaciones
 CREATE TABLE IF NOT EXISTS liquidaciones_credito (
     id INT AUTO_INCREMENT PRIMARY KEY,
     credito_id INT NOT NULL,
@@ -300,7 +297,6 @@ CREATE TABLE IF NOT EXISTS liquidaciones_credito (
 -- 6. REPORTES REGULATORIOS CNBV
 -- =====================================================
 
--- Tabla de reportes CNBV
 CREATE TABLE IF NOT EXISTS reportes_cnbv (
     id INT AUTO_INCREMENT PRIMARY KEY,
     periodo VARCHAR(20) NOT NULL COMMENT 'YYYY-MM',
@@ -318,7 +314,6 @@ CREATE TABLE IF NOT EXISTS reportes_cnbv (
     INDEX idx_periodo (periodo)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- Tabla de detalle de reportes CNBV
 CREATE TABLE IF NOT EXISTS reportes_cnbv_detalle (
     id INT AUTO_INCREMENT PRIMARY KEY,
     reporte_id INT NOT NULL,
@@ -330,52 +325,163 @@ CREATE TABLE IF NOT EXISTS reportes_cnbv_detalle (
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- =====================================================
--- 7. ACTUALIZACIONES A TABLAS EXISTENTES
+-- 7. ACTUALIZACIONES A TABLAS EXISTENTES (columnas, índices, FKs)
 -- =====================================================
+-- Nota: Se comprueba existence en INFORMATION_SCHEMA y se aplica en el orden correcto.
+--       Esto evita errores como "La columna clave 'empresa_id' no existe en la tabla".
 
--- Agregar campos a la tabla creditos si no existen
-ALTER TABLE creditos 
-ADD COLUMN IF NOT EXISTS empresa_id INT AFTER id,
-ADD COLUMN IF NOT EXISTS producto_financiero_id INT AFTER tipo_credito_id,
-ADD COLUMN IF NOT EXISTS origen_procedencia VARCHAR(100) AFTER observaciones COMMENT 'campaña, sucursal, digital, etc',
-ADD COLUMN IF NOT EXISTS tipo_origen VARCHAR(50) AFTER origen_procedencia COMMENT 'interno, externo, sindicalizado',
-ADD COLUMN IF NOT EXISTS promotor_id INT AFTER tipo_origen,
-ADD COLUMN IF NOT EXISTS requiere_aval TINYINT(1) DEFAULT 0 AFTER promotor_id,
-ADD COLUMN IF NOT EXISTS motivo_rechazo TEXT AFTER observaciones,
-ADD COLUMN IF NOT EXISTS dias_mora INT DEFAULT 0 AFTER pagos_vencidos,
-ADD COLUMN IF NOT EXISTS tipo_cartera VARCHAR(50) DEFAULT 'vigente' COMMENT 'vigente, vencida' AFTER dias_mora;
+-- Variables auxiliares: se reutilizan @cnt, @col_exists, @idx_exists, @sql, @empresa_existe, @fk_exists
+-- 7.1 Agregar columnas a la tabla creditos si no existen
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'empresa_id';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `creditos` ADD COLUMN `empresa_id` INT AFTER `id`',
+    'SELECT \"Column empresa_id already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- Agregar índices
-ALTER TABLE creditos
-ADD INDEX IF NOT EXISTS idx_empresa (empresa_id),
-ADD INDEX IF NOT EXISTS idx_producto (producto_financiero_id),
-ADD INDEX IF NOT EXISTS idx_promotor (promotor_id),
-ADD INDEX IF NOT EXISTS idx_estatus (estatus),
-ADD INDEX IF NOT EXISTS idx_tipo_cartera (tipo_cartera);
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'producto_financiero_id';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `creditos` ADD COLUMN `producto_financiero_id` INT AFTER `tipo_credito_id`',
+    'SELECT \"Column producto_financiero_id already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- Agregar foreign keys para empresa_id y producto_financiero_id
--- Estos se agregan después de que existan los datos iniciales de empresas_grupo y productos_financieros
--- Solo se agregan si la columna existe y no tiene ya la constraint
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'origen_procedencia';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `creditos` ADD COLUMN `origen_procedencia` VARCHAR(100) AFTER `observaciones`',
+    'SELECT \"Column origen_procedencia already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- Verificar si la empresa por defecto existe antes de agregar FK
-SET @empresa_existe = (SELECT COUNT(*) FROM empresas_grupo WHERE id = 1);
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'tipo_origen';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `creditos` ADD COLUMN `tipo_origen` VARCHAR(50) AFTER `origen_procedencia`',
+    'SELECT \"Column tipo_origen already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- Agregar FK para empresa_id si existe la empresa por defecto
-SET @query = IF(@empresa_existe > 0,
-    'ALTER TABLE creditos ADD CONSTRAINT fk_creditos_empresa FOREIGN KEY (empresa_id) REFERENCES empresas_grupo(id) ON DELETE SET NULL',
-    'SELECT "Empresa por defecto no existe, FK no agregada" AS mensaje');
-PREPARE stmt FROM @query;
-EXECUTE stmt;
-DEALLOCATE PREPARE stmt;
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'promotor_id';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `creditos` ADD COLUMN `promotor_id` INT AFTER `tipo_origen`',
+    'SELECT \"Column promotor_id already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- Nota: FK para producto_financiero_id se puede agregar manualmente después de asociar productos a créditos existentes
--- ALTER TABLE creditos ADD CONSTRAINT fk_creditos_producto FOREIGN KEY (producto_financiero_id) REFERENCES productos_financieros(id) ON DELETE SET NULL;
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'requiere_aval';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `creditos` ADD COLUMN `requiere_aval` TINYINT(1) DEFAULT 0 AFTER `promotor_id`',
+    'SELECT \"Column requiere_aval already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
--- Agregar campo revisado a documentos_credito
-ALTER TABLE documentos_credito 
-ADD COLUMN IF NOT EXISTS revisado TINYINT(1) DEFAULT 0 AFTER ruta_archivo,
-ADD COLUMN IF NOT EXISTS fecha_revision DATETIME AFTER revisado,
-ADD COLUMN IF NOT EXISTS revisado_por INT AFTER fecha_revision;
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'motivo_rechazo';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `creditos` ADD COLUMN `motivo_rechazo` TEXT AFTER `observaciones`',
+    'SELECT \"Column motivo_rechazo already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'dias_mora';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `creditos` ADD COLUMN `dias_mora` INT DEFAULT 0 AFTER `pagos_vencidos`',
+    'SELECT \"Column dias_mora already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'tipo_cartera';
+-- NOTE: doble comilla simple dentro de la cadena SQL duplicada para representar 'vigente'
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `creditos` ADD COLUMN `tipo_cartera` VARCHAR(50) DEFAULT ''vigente'' COMMENT ''vigente, vencida'' AFTER `dias_mora`',
+    'SELECT \"Column tipo_cartera already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 7.2 Agregar índices en creditos (solo si la columna existe y el índice no existe)
+SELECT COUNT(*) INTO @col_exists FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'empresa_id';
+SELECT COUNT(*) INTO @idx_exists FROM information_schema.statistics
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND index_name = 'idx_empresa';
+SET @sql = IF(@col_exists > 0 AND @idx_exists = 0,
+    'ALTER TABLE `creditos` ADD INDEX `idx_empresa` (`empresa_id`)',
+    IF(@idx_exists > 0, 'SELECT \"Index idx_empresa already exists\" AS msg', 'SELECT \"Column empresa_id missing, index not created\" AS msg'));
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @col_exists FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'producto_financiero_id';
+SELECT COUNT(*) INTO @idx_exists FROM information_schema.statistics
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND index_name = 'idx_producto';
+SET @sql = IF(@col_exists > 0 AND @idx_exists = 0,
+    'ALTER TABLE `creditos` ADD INDEX `idx_producto` (`producto_financiero_id`)',
+    IF(@idx_exists > 0, 'SELECT \"Index idx_producto already exists\" AS msg', 'SELECT \"Column producto_financiero_id missing, index not created\" AS msg'));
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @col_exists FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'promotor_id';
+SELECT COUNT(*) INTO @idx_exists FROM information_schema.statistics
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND index_name = 'idx_promotor';
+SET @sql = IF(@col_exists > 0 AND @idx_exists = 0,
+    'ALTER TABLE `creditos` ADD INDEX `idx_promotor` (`promotor_id`)',
+    IF(@idx_exists > 0, 'SELECT \"Index idx_promotor already exists\" AS msg', 'SELECT \"Column promotor_id missing, index not created\" AS msg'));
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @col_exists FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'estatus';
+SELECT COUNT(*) INTO @idx_exists FROM information_schema.statistics
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND index_name = 'idx_estatus';
+SET @sql = IF(@col_exists > 0 AND @idx_exists = 0,
+    'ALTER TABLE `creditos` ADD INDEX `idx_estatus` (`estatus`)',
+    IF(@idx_exists > 0, 'SELECT \"Index idx_estatus already exists\" AS msg', 'SELECT \"Column estatus missing, index not created\" AS msg'));
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @col_exists FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND column_name = 'tipo_cartera';
+SELECT COUNT(*) INTO @idx_exists FROM information_schema.statistics
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND index_name = 'idx_tipo_cartera';
+SET @sql = IF(@col_exists > 0 AND @idx_exists = 0,
+    'ALTER TABLE `creditos` ADD INDEX `idx_tipo_cartera` (`tipo_cartera`)',
+    IF(@idx_exists > 0, 'SELECT \"Index idx_tipo_cartera already exists\" AS msg', 'SELECT \"Column tipo_cartera missing, index not created\" AS msg'));
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- 7.3 Agregar FK para empresa_id si existe la empresa por defecto (id = 1) y la FK no existe
+SELECT COUNT(*) INTO @empresa_existe FROM information_schema.tables
+ WHERE table_schema = DATABASE() AND table_name = 'empresas_grupo';
+-- verificar existencia de empresa id=1 solo si la tabla existe
+SET @empresa_existe = IF(@empresa_existe > 0, (SELECT COUNT(*) FROM empresas_grupo WHERE id = 1), 0);
+
+SELECT COUNT(*) INTO @fk_exists FROM information_schema.table_constraints
+ WHERE table_schema = DATABASE() AND table_name = 'creditos' AND constraint_type = 'FOREIGN KEY' AND constraint_name = 'fk_creditos_empresa';
+
+SET @sql = IF(@empresa_existe > 0 AND @fk_exists = 0,
+    'ALTER TABLE `creditos` ADD CONSTRAINT `fk_creditos_empresa` FOREIGN KEY (`empresa_id`) REFERENCES `empresas_grupo`(`id`) ON DELETE SET NULL',
+    IF(@fk_exists > 0,
+       'SELECT \"FK fk_creditos_empresa already exists\" AS msg',
+       'SELECT \"Empresa por defecto no existe o empresas_grupo ausente, FK no agregada\" AS msg'));
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+-- Nota: FK para producto_financiero_id NO se agrega automáticamente aquí; antes de agregarla,
+-- verifique que todos los valores en creditos.producto_financiero_id sean NULL o existan en productos_financieros.id.
+
+-- 7.4 Actualizar documentos_credito (columnas revisado, fecha_revision, revisado_por)
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'documentos_credito' AND column_name = 'revisado';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `documentos_credito` ADD COLUMN `revisado` TINYINT(1) DEFAULT 0 AFTER `ruta_archivo`',
+    'SELECT \"Column revisado already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'documentos_credito' AND column_name = 'fecha_revision';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `documentos_credito` ADD COLUMN `fecha_revision` DATETIME AFTER `revisado`',
+    'SELECT \"Column fecha_revision already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @cnt FROM information_schema.columns
+ WHERE table_schema = DATABASE() AND table_name = 'documentos_credito' AND column_name = 'revisado_por';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `documentos_credito` ADD COLUMN `revisado_por` INT AFTER `fecha_revision`',
+    'SELECT \"Column revisado_por already exists\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- =====================================================
 -- 8. DATOS INICIALES
@@ -422,8 +528,9 @@ VALUES
 -- =====================================================
 -- 9. VISTAS PARA REPORTES
 -- =====================================================
+-- Asegurarse que las columnas referenciadas en las vistas existen (empresa_id, tipo_cartera, dias_mora).
+-- Si las columnas no existen, las vistas pueden fallar; las ALTER previos intentan crearlas.
 
--- Vista de cartera vigente y vencida
 CREATE OR REPLACE VIEW v_resumen_cartera AS
 SELECT 
     c.empresa_id,
@@ -439,7 +546,6 @@ LEFT JOIN empresas_grupo e ON c.empresa_id = e.id
 WHERE c.estatus IN ('activo', 'formalizado')
 GROUP BY c.empresa_id, e.nombre, c.tipo_cartera, c.estatus;
 
--- Vista de operaciones diarias
 CREATE OR REPLACE VIEW v_operaciones_diarias AS
 SELECT 
     DATE(c.fecha_formalizacion) AS fecha,
@@ -453,7 +559,6 @@ FROM creditos c
 WHERE c.fecha_formalizacion IS NOT NULL
 GROUP BY DATE(c.fecha_formalizacion), c.empresa_id;
 
--- Vista de proyecciones de tesorería
 CREATE OR REPLACE VIEW v_proyecciones_tesoreria AS
 SELECT 
     a.fecha_vencimiento,
@@ -474,16 +579,47 @@ WHERE c.estatus IN ('activo', 'formalizado')
 ORDER BY a.fecha_vencimiento;
 
 -- =====================================================
--- ÍNDICES ADICIONALES PARA OPTIMIZACIÓN
+-- 10. ÍNDICES ADICIONALES PARA OPTIMIZACIÓN (amortizacion, socios)
 -- =====================================================
 
-ALTER TABLE amortizacion ADD INDEX IF NOT EXISTS idx_fecha_vencimiento (fecha_vencimiento);
-ALTER TABLE amortizacion ADD INDEX IF NOT EXISTS idx_estatus (estatus);
-ALTER TABLE socios ADD INDEX IF NOT EXISTS idx_fecha_nacimiento (fecha_nacimiento);
-ALTER TABLE socios ADD INDEX IF NOT EXISTS idx_estatus (estatus);
+SELECT COUNT(*) INTO @cnt FROM information_schema.statistics
+ WHERE table_schema = DATABASE() AND table_name = 'amortizacion' AND index_name = 'idx_fecha_vencimiento';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `amortizacion` ADD INDEX `idx_fecha_vencimiento` (`fecha_vencimiento`)',
+    'SELECT \"Index idx_fecha_vencimiento already exists or amortizacion missing\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @cnt FROM information_schema.statistics
+ WHERE table_schema = DATABASE() AND table_name = 'amortizacion' AND index_name = 'idx_estatus';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `amortizacion` ADD INDEX `idx_estatus` (`estatus`)',
+    'SELECT \"Index idx_estatus already exists or amortizacion missing\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @cnt FROM information_schema.statistics
+ WHERE table_schema = DATABASE() AND table_name = 'socios' AND index_name = 'idx_fecha_nacimiento';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `socios` ADD INDEX `idx_fecha_nacimiento` (`fecha_nacimiento`)',
+    'SELECT \"Index idx_fecha_nacimiento already exists or socios missing\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
+
+SELECT COUNT(*) INTO @cnt FROM information_schema.statistics
+ WHERE table_schema = DATABASE() AND table_name = 'socios' AND index_name = 'idx_estatus';
+SET @sql = IF(@cnt = 0,
+    'ALTER TABLE `socios` ADD INDEX `idx_estatus` (`estatus`)',
+    'SELECT \"Index idx_estatus already exists or socios missing\" AS msg');
+PREPARE stmt FROM @sql; EXECUTE stmt; DEALLOCATE PREPARE stmt;
 
 -- =====================================================
 -- FINALIZACIÓN
 -- =====================================================
-
 COMMIT;
+
+-- =====================================================
+-- RECOMENDACIONES POST-IMPORTACIÓN
+-- =====================================================
+-- 1) Verifique que las columnas nuevas aparecen en DESCRIBE creditos;
+-- 2) Valide datos inconsistentes antes de agregar FK producto_financiero_id:
+--    SELECT DISTINCT producto_financiero_id FROM creditos WHERE producto_financiero_id IS NOT NULL AND producto_financiero_id NOT IN (SELECT id FROM productos_financieros);
+-- 3) Si necesita que agregue automáticamente la FK producto->creditos, solicite que revise los resultados del paso 2; puedo generar el ALTER para agregarla.
+-- 4) Pruebe las vistas y los índices en entorno de staging antes de producción.
